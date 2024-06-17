@@ -1,29 +1,49 @@
 
 # Fake6523A-28
+NET "_reset"		LOC = "P64"  ; # /RESET exp. C
+NET "_write"		LOC = "P62"  ; # R/W exp. 5
+NET "data<0>"		LOC = "P32"  ; # D0 exp. 21
+NET "data<1>"		LOC = "P31"  ; # D1 exp. 20
+NET "data<2>"		LOC = "P27"  ; # D2 exp. 19
+NET "data<3>"		LOC = "P25"  ; # D3 exp. 18
+NET "data<4>"		LOC = "P24"  ; # D4 exp. 17
+NET "data<5>"		LOC = "P23"  ; # D5 exp. 16
+NET "data<6>"		LOC = "P22"  ; # D6 exp. 15
+NET "data<7>"		LOC = "P20"  ; # D7 exp. 14
+NET "port_a<0>"	LOC = "P59"  ; # DIO1, <-> wire 3
+NET "port_a<1>"	LOC = "P58"  ; # DIO2, <-> wire 4
+NET "port_a<2>"	LOC = "P57"  ; # DIO3, <-> wire 5
+NET "port_a<3>"	LOC = "P56"  ; # DIO4, <-> wire 6
+NET "port_a<4>"	LOC = "P52"  ; # DIO5, <-> wire 7
+NET "port_a<5>"	LOC = "P51"  ; # DIO6, <-> wire 8
+NET "port_a<6>"	LOC = "P50"  ; # DIO7, <-> wire 9
+NET "port_a<7>"	LOC = "P49"  ; # DIO8, <-> wire 10
+NET "port_b<0>"	LOC = "P47"  ; # STATUS0, <-, wire 12
+NET "port_b<1>"	LOC = "P45"  ; # STATUS1, <-, wire 14
+NET "port_c<6>"	LOC = "P46"  ; # ACK, ?, wire 13
+NET "port_c<7>"	LOC = "P48"  ; # DAV, ?, wire 11
+NET "rs<0>"			LOC = "P18"  ; # A0 exp. Y
+NET "rs<1>"			LOC = "P17"  ; # A1 exp. X
+NET "rs<2>"			LOC = "P16"  ; # A2 exp. W
+# /CS from PLA (18) F0
 
-NET "_cs"			LOC = "P34"  ;	# PLA output F0
-NET "_reset"		LOC = "P64"  ; # /RESET exp.
-NET "_write"		LOC = "P62"  ; # R/W exp.
-NET "data<0>"		LOC = "P32"  ; # D0 exp.
-NET "data<1>"		LOC = "P31"  ; # D1 exp.
-NET "data<2>"		LOC = "P27"  ; # D2
-NET "data<3>"		LOC = "P25"  ; # D3
-NET "data<4>"		LOC = "P24"  ; # D4
-NET "data<5>"		LOC = "P23"  ; # D5
-NET "data<6>"		LOC = "P22"  ; # D6
-NET "data<7>"		LOC = "P20"  ; # D7
-NET "port_a<0>"	LOC = "P59"  ; # DIO1
-NET "port_a<1>"	LOC = "P58"  ; # DIO2
-NET "port_a<2>"	LOC = "P57"  ; # DIO3
-NET "port_a<3>"	LOC = "P56"  ; # DIO4
-NET "port_a<4>"	LOC = "P52"  ; # DIO5
-NET "port_a<5>"	LOC = "P51"  ; # DIO6
-NET "port_a<6>"	LOC = "P50"  ; # DIO7
-NET "port_a<7>"	LOC = "P49"  ; # DIO8
-NET "port_b<0>"	LOC = "P47"  ; # STATUS0
-NET "port_b<1>"	LOC = "P45"  ; # STATUS1
-NET "port_c<6>"  LOC = "P46"  ; # ACK
-NET "port_c<7>"  LOC = "P48"  ; # DAV
-NET "rs<0>"  LOC = "P18"  ; # A0
-NET "rs<1>"  LOC = "P17"  ; # A1
-NET "rs<2>"  LOC = "P16"  ; # A2
+# PLA outputs
+NET "_cs"			LOC = "P34"  ;	# PLA F0 (18) -> 6523 /CS (12)
+NET "pla_f7" 		LOC = "P33"  ; # PLA F7 (10) -> I0 (2)
+# PLA inputs
+# PLA I0 (9) <- PLA F7 (10) (wired back)
+NET "pla_i<1>"		LOC = "P6"	 ; # PLA I1 (8)   <- A11 exp. L
+NET "pla_i<2>"		LOC = "P5"	 ; # PLA I2 (7)   <- A12 exp. K
+NET "pla_i<3>"    LOC = "P4"	 ; # PLA I3 (6)   <- A13 exp. J
+NET "pla_i<4>"		LOC = "P2"	 ; # PLA I4 (5)   <- A14 exp. H
+NET "pla_i<5>"		LOC = "P1"	 ; # PLA I5 (4)   <- A15 exp. F
+NET "pla_i<6>"		LOC = "P61"  ; # PLA I6 (3)   <- Phi0 exp. E
+NET "pla_i<7>"		LOC = "P63"	 ; # PLA I7 (2)   <- /RAS exp. D
+NET "pla_i<8>"		LOC = "P60"  ; # PLA I8 (27)  <- DEV signal from device (0 or 1), wire 2
+NET "pla_i<9>"    LOC = "P7"   ; # PLA I9 (26)  <- A10 exp. M
+NET "pla_i<10>"   LOC = "P19"  ; # PLA I10 (25) <- MUX exp. 12
+NET "pla_i<11>"   LOC = "P8"   ; # PLA I11 (24) <- A9 exp. N
+NET "pla_i<12>"   LOC = "P9"   ; # PLA I12 (23) <- A8 exp. P
+NET "pla_i<13>"   LOC = "P10"  ; # PLA I13 (22) <- A7 exp. R
+NET "pla_i<14>"   LOC = "P11"  ; # PLA I14 (21) <- A6 exp. S
+NET "pla_i<15>"   LOC = "P12"  ; # PLA I15 (20) <- A5 exp. T
