@@ -1,0 +1,88 @@
+
+(rules PCB tcbm2sd
+  (snap_angle 
+    fortyfive_degree
+  )
+  (autoroute_settings
+    (fanout on)
+    (autoroute on)
+    (postroute on)
+    (vias on)
+    (via_costs 2)
+    (plane_via_costs 5)
+    (start_ripup_costs 100)
+    (start_pass_no 14415)
+    (layer_rule F.Cu
+      (active on)
+      (preferred_direction vertical)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 2.6)
+    )
+    (layer_rule B.Cu
+      (active on)
+      (preferred_direction horizontal)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 1.6)
+    )
+  )
+  (rule
+    (width 250.0)
+    (clearance 152.6)
+    (clearance 125.0 (type smd_to_turn_gap))
+    (clearance 152.6 (type smd))
+    (clearance 152.6 (type "kicad_default"))
+    (clearance 152.6 (type kicad))
+  )
+  (padstack "Via[0-1]_800:400_um"
+    (shape
+      (circle F.Cu 800.0 0.0 0.0)
+    )
+    (shape
+      (circle B.Cu 800.0 0.0 0.0)
+    )
+    (attach off)
+  )
+  (via 
+    "Via[0-1]_800:400_um" "Via[0-1]_800:400_um" default
+  )
+  (via 
+    "Via[0-1]_800:400_um-kicad_default" "Via[0-1]_800:400_um" "kicad_default"
+  )
+  (via_rule
+    default "Via[0-1]_800:400_um"
+  )
+  (via_rule
+    "kicad_default" "Via[0-1]_800:400_um-kicad_default"
+  )
+  (class default
+    /A11 /A13 /A3 /A1 /A5 /A7 /A12 /A0
+    /A6 /A4 /A2 /A8 /A10 /A9 /A14 /A15
+    GND /R{slash}~{W} /D0 /D1 /D2 /D3 /D4 /D5
+    /D6 /D7 /VCC /~{RESET} "unconnected-(U1-Pad35)" "unconnected-(U1-Pad36)" "unconnected-(U1-Pad38)" "unconnected-(U1-Pad39)"
+    "unconnected-(U1-Pad40)" "unconnected-(U1-Pad42)" "unconnected-(U1-Pad43)" "unconnected-(U1-Pad44)" /DEV /DIO1 /DIO2 /DIO3
+    /DIO4 /DIO5 /DIO6 /DIO7 /DIO8 /DAV /STATUS0 /ACK
+    /STATUS1 +3V3 /TDI /TMS /TCK /TDO /PHI0 /MUX
+    /~{RAS} /F7 "/~{6523_F0}" "unconnected-(U2-Pad24)" "unconnected-(U2-PadA7)" "unconnected-(U2-PadA6)" "/SD_CS" "/SD_MOSI"
+    "/SD_MISO" "/SD_SCK" "Net-(J7-Pad2)" /~{IRQ} /C1HI /C2LO /C2HI /~{CS1}
+    /~{CS0} /~{CAS} /BA /AEC "/EXT_AUDIO" /PHI2 /NC2 /C1LO
+    /NC3 /NC1 "unconnected-(U2-Pad1)" "unconnected-(U2-Pad2)"
+    (clearance_class default)
+    (via_rule default)
+    (rule
+      (width 250.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+  (class "kicad_default"
+    (clearance_class "kicad_default")
+    (via_rule "kicad_default")
+    (rule
+      (width 250.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+)
