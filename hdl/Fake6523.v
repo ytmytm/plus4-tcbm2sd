@@ -107,7 +107,7 @@ ioport         ioport_a(
 ioport2bit     ioport_b(
 								.clock(clock), 
 								.reset(!_reset), 
-								.data_in(data), 
+								.data_in(data[1:0]), 
 								.we_ddr(we_ddr_b), 
 								.data_ddr(data_ddr_b), 
 								.we_port(we_port_b), 
@@ -117,7 +117,7 @@ ioport2bit     ioport_b(
 ioport2bit     ioport_c(
 								.clock(clock), 
 								.reset(!_reset), 
-								.data_in(data), 
+								.data_in(data[7:6]), 
 								.we_ddr(we_ddr_c), 
 								.data_ddr(data_ddr_c), 
 								.we_port(we_port_c), 

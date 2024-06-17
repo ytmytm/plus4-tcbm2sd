@@ -30,14 +30,14 @@ module ioport2bit(
               inout [1:0]pins
              );
 
-register       reg_ddr(
+register2bit       reg_ddr(
                        (!we_ddr | !clock), 
                        reset, 
                        1, 
                        data_in, 
                        data_ddr
                       );
-register	      reg_a(
+register2bit	      reg_a(
                      (!we_port | !clock), 
                      reset, 
                      1, 
