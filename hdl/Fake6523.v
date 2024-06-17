@@ -25,16 +25,16 @@ module Fake6523(
                 input _write,
                 inout [7:0]data,
                 inout [7:0]port_a,
-                inout [7:0]port_b,
-                inout [7:0]port_c
+                inout [1:0]port_b,
+                inout [7:6]port_c
                );
 
 reg [7:0]data_out;
 reg [2:0] rs_r;
 wire clock = !_cs;
 wire [7:0] data_ddr_a;
-wire [7:0] data_ddr_b;
-wire [7:0] data_ddr_c;
+wire [1:0] data_ddr_b;
+wire [7:6] data_ddr_c;
 
 wire we_ddr_a;
 wire we_ddr_b;
@@ -60,7 +60,7 @@ ioport         ioport_a(
 								.pins(port_a)
 								);
 								
-ioport         ioport_b(
+ioport2bit     ioport_b(
 								.clock(clock), 
 								.reset(!_reset), 
 								.data_in(data), 
@@ -70,7 +70,7 @@ ioport         ioport_b(
 								.pins(port_b)
 								);
 								
-ioport         ioport_c(
+ioport2bit     ioport_c(
 								.clock(clock), 
 								.reset(!_reset), 
 								.data_in(data), 
