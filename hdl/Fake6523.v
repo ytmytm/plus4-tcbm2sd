@@ -5,7 +5,7 @@
 // 
 // Create Date:    
 // Design Name: 
-// Module Name:    Fake6523 
+// Module Name:    Fake6523-28pin + FakePLA 251641-3 = Fake1551Paddle
 // Project Name: 
 // Target Devices: 
 // Tool versions: 
@@ -15,12 +15,13 @@
 //
 // Revision: 
 // Revision 0.02 - Fixed for 1551
+// Revision 0.03 - added FakePLA 251641-3
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Fake6523(
                 input _reset,
-                input _cs,
+//                input _cs,
                 input [2:0]rs,
                 input _write,
                 inout [7:0]data,
@@ -28,14 +29,42 @@ module Fake6523(
                 inout [1:0]port_b,
                 inout [7:6]port_c,
 					 input [15:1]pla_i,
-					 output pla_f7
+					 output pla_f7,
+					 output _cs
                );
 
-// FakePLA
-// F7 = MUX || (!MUX && Phi0 && _cs && !/RAS)
-assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
-// #define F7 I10||(!I10&&I6&&I0&&!I7)
+// FakePLA 251641-3
 
+// defined in 1551.251641-3.c but not used
+// #define F1 I0&&I6&&!I7
+// F1 = _cs && Phi0 && !/RAS
+// assign pla_f1 = _cs && pla_i[6] && !pla_i[7];
+
+// #define F7 I10||(!I10&&I6&&I0&&!I7)
+// F7 = MUX || (!MUX && Phi0 && _cs && !/RAS)
+// wired back to I0
+assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
+
+//#define F0 !((!I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&	\
+//	      I11&&I14&&!I12&&!I7&&I9&&!I8&&I13)||	\
+//	     (I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&		\
+//	      I11&&I14&&!I12&&!I7&&I9&&I8&&I13))
+// - we don't need pla_f7 can use whole expression here
+// - we could use A3+A4 to narrow down memory space down to 8 addresses connected to Fake6523 rs[2:0]
+// - DEV is input from device, with Arduino we want to make it output - just copy A5
+assign _cs = !(
+		(pla_f7 && 
+			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
+			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
+			!pla_i[12] && // A8=0 
+			pla_i[6] &&   // Phi0
+			!pla_i[7]     // /RAS
+		) &&
+		(
+			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FECF (but without A4 decoded to FEC0-FEDF) TCBM:0 IEC:8
+			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:9
+		)
+		);
 
 // Fake6523
 
