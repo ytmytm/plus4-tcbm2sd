@@ -53,7 +53,7 @@ assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
 // - we could use A3+A4 to narrow down memory space down to 8 addresses connected to Fake6523 rs[2:0]
 // - DEV is input from device, with Arduino we want to make it output - just copy A5
 assign _cs = !(
-		(pla_f7 && 
+		( (pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7])) && // pla_f7 
 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
 			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
 			!pla_i[12] && // A8=0 
