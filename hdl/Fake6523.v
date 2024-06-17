@@ -26,8 +26,18 @@ module Fake6523(
                 inout [7:0]data,
                 inout [7:0]port_a,
                 inout [1:0]port_b,
-                inout [7:6]port_c
+                inout [7:6]port_c,
+					 input [15:1]pla_i,
+					 output pla_f7
                );
+
+// FakePLA
+// F7 = MUX || (!MUX && Phi0 && _cs && !/RAS)
+assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
+// #define F7 I10||(!I10&&I6&&I0&&!I7)
+
+
+// Fake6523
 
 reg [7:0]data_out;
 reg [2:0] rs_r;
