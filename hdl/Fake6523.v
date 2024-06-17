@@ -56,6 +56,7 @@ assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
 // - we don't need pla_f7 can use whole expression here
 // - we could use A3+A4 to narrow down memory space down to 8 addresses connected to Fake6523 rs[2:0]
 // - DEV is input from device, with Arduino we want to make it output - just copy A5
+// - pla F7 routed back to I0? but F7 uses I0 (_cs) in the expression, makes no sense - can be removed?
 assign _cs = !(
 		( (pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7])) && // pla_f7 
 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
