@@ -20,6 +20,9 @@
 *.xrpt
 *.csv
 *.err
+*.lfp
+*.spl
+*.sym
 Fake6523_html/*
 _ngo/*
 _xmsgs/*
