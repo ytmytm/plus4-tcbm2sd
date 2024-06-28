@@ -1191,7 +1191,7 @@
   (gr_text "DEV" (at 124.46 98.039 270) (layer "F.SilkS") (tstamp 7e72e076-b042-46ad-b632-cac52bee2d82)
     (effects (font (size 0.6 0.6) (thickness 0.15)))
   )
-  (gr_text "." (at 148.082 121.92) (layer "F.SilkS") (tstamp 8476f6f3-4ae3-4b1f-8b80-ad3010c265c9)
+  (gr_text "." (at 140.462 121.92) (layer "F.SilkS") (tstamp 8476f6f3-4ae3-4b1f-8b80-ad3010c265c9)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
   (gr_text "F7" (at 171.196 133.35 270) (layer "F.SilkS") (tstamp 89e9ba5c-5555-4a3f-85d0-ab0249ccce83)
