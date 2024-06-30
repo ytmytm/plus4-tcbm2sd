@@ -25,10 +25,12 @@ const uint8_t PIN_D5 = 7;
 const uint8_t PIN_D6 = 8;
 const uint8_t PIN_D7 = 9;
 // inputs
-const uint8_t PIN_DAV = A2;
+//const uint8_t PIN_DAV = A2;
+const uint8_t PIN_DAV = A3; // crossed DAV/ACK
 // outputs
 const uint8_t PIN_DEV = A4; // XXX can be input from CPLD if 2 devices are emulated at once
-const uint8_t PIN_ACK = A3;
+//const uint8_t PIN_ACK = A3;
+const uint8_t PIN_ACK = A2; // crossed DAV/ACK
 const uint8_t PIN_STATUS0 = A0;
 const uint8_t PIN_STATUS1 = A1;
 // TCBM codes
@@ -109,7 +111,7 @@ void tcbm_reset_bus() {
 
 void tcbm_init() {
   // data valid
-  pinMode(PIN_DAV, INPUT);
+  pinMode(PIN_DAV, INPUT_PULLUP);
   // outputs
   pinMode(PIN_ACK, OUTPUT);
   pinMode(PIN_STATUS0, OUTPUT);
