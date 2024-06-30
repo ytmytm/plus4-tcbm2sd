@@ -39,10 +39,10 @@ const uint8_t TCBM_CODE_SECOND  = 0x82; // controller sends command byte (second
 const uint8_t TCBM_CODE_RECV    = 0x83; // controller sends data byte
 const uint8_t TCBM_CODE_SEND    = 0x84; // controller receives data byte
 // STATUSes
-const uint8_t TCBM_STATUS_OK=0;
-const uint8_t TCBM_STATUS_RECV=1;
-const uint8_t TCBM_STATUS_SEND=2;
-const uint8_t TCBM_STATUS_EOI=3;
+const uint8_t TCBM_STATUS_OK=0; // OK, also idle state when waiting for command byte
+const uint8_t TCBM_STATUS_RECV=1; // controller was trying to receive a byte from the device, but the device did not have any data (also FILE NOT FOUND)
+const uint8_t TCBM_STATUS_SEND=2; // controller was trying to send a byte to the device, but the device decided not to accept it
+const uint8_t TCBM_STATUS_EOI=3; // byte currently received by the controller is the last byte of the stream
 
 void tcbm_data_input() {
   pinMode(PIN_D0, INPUT);
