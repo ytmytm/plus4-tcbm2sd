@@ -1,4 +1,8 @@
 // IDE: Arduino Mini w/ ATmega328 (3.3.V)
+// in case of flashing problem change in Arduino/hardware/arduino/avr/boards.txt
+// or home folder: Arduino15\packages\arduino\hardware\avr\1.8.6\boards.txt
+// from: mini.menu.cpu.atmega328.upload.speed=115200
+//   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 #include <SD.h>
 #include <SPI.h>
