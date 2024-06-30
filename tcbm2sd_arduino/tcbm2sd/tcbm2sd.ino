@@ -119,7 +119,7 @@ void tcbm_init() {
 
   // device number selection
   pinMode(PIN_DEV, OUTPUT);
-  digitalWrite(PIN_DEV, 0); // we are device 8
+  digitalWrite(PIN_DEV, 1); // we are device 8
 
   // reset bus status and data direction
   tcbm_reset_bus();
