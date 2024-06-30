@@ -35,7 +35,7 @@ const uint8_t PIN_STATUS0 = A0;
 const uint8_t PIN_STATUS1 = A1;
 // TCBM codes
 const uint8_t TCBM_CODE_COMMAND = 0x81; // controller sends command byte (state change: 0x20/0x3f/0x40/0x5f LISTEN/UNLISTEN/TALK/UNTALK)
-const uint8_t TCBM_CODE_SECOND  = 0x82; // controller sends command byte (secondary addr: 0x60/0xe0/0xf SECOND/CLOSE/OPEN)
+const uint8_t TCBM_CODE_SECOND  = 0x82; // controller sends command byte (secondary addr: 0x60/0xe0/0xf0 SECOND/CLOSE/OPEN)
 const uint8_t TCBM_CODE_RECV    = 0x83; // controller sends data byte
 const uint8_t TCBM_CODE_SEND    = 0x84; // controller receives data byte
 // STATUSes
