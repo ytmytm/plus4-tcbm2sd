@@ -178,16 +178,16 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("initializing I/O");
+  Serial.println(F("initializing I/O"));
   tcbm_init();
-  Serial.print("initializing SD card...");
+  Serial.print(F("initializing SD card..."));
 //  pinMode(PIN_SD_SS, OUTPUT);
 //  if (!SD.begin(PIN_SD_SS)) { // CS pin
-//    Serial.println("init failed!");
+//    Serial.println(F("init failed!"));
 //    return;
 //  }
-  Serial.println("done");
-  Serial.println("tcbm2sd ready");
+  Serial.println(F("done"));
+  Serial.println(F("tcbm2sd ready"));
 }
 
 void loop() {
