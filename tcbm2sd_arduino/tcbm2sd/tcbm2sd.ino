@@ -135,16 +135,22 @@ void tcbm_init() {
 }
 
 uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
-  uint8_t cmd, data;
-  uint16_t result;
-  Serial.println("waiting for DAV=1"); // this wait or the other wait is not necessary
+  uint8_t tmp, cmd, data;
+  uint16_t result = 0;
+  if (tcbm_get_dav() != 1) return 0; // controller ready?
+  tmp = tcbm_data_read();
+  cmd = tcbm_data_read();
+  if (tmp != cmd) return 0; // stable?
+  if (!(cmd & 0x80)) return 0; // command?
+  /*
+  Serial.println(F("waiting for DAV=1")); // this wait or the other wait is not necessary
   while (!(tcbm_get_dav() == 1));
-  Serial.println("waiting for byte with 7 bit set");
+  Serial.println(F("waiting for byte with 7 bit set"));
   do {
+    tmp = tcbm_data_read();
     cmd = tcbm_data_read();
-  } while (!(cmd & 0x80));
-  Serial.print("...got 0x");
-  Serial.println(cmd, HEX);
+  } while (!( (cmd & 0x80) && (cmd==tmp) ));
+  */
   tcbm_set_ack(0);
   Serial.println("ACK=0, waiting for DAV=0");
   while (!(tcbm_get_dav() == 0));
