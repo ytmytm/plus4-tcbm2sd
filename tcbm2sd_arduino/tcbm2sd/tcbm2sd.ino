@@ -151,8 +151,9 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
     cmd = tcbm_data_read();
   } while (!( (cmd & 0x80) && (cmd==tmp) ));
   */
+  //Serial.print(F("...got 0x")); Serial.println(cmd, HEX);
   tcbm_set_ack(0);
-  Serial.println("ACK=0, waiting for DAV=0");
+  //Serial.println(F("ACK=0, waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
   data = tcbm_data_read();
   //Serial.print(F("...got 0x")); Serial.println(data, HEX);
@@ -162,15 +163,14 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
     tcbm_set_status(TCBM_STATUS_OK);
   }
   tcbm_set_ack(1);
-  Serial.println("set status=%10 and ACK=1");
-  Serial.println("waiting for DAV=1");
+  //Serial.println(F("set status=%10 and ACK=1"));
+  //Serial.println(F("waiting for DAV=1"));
   while (!(tcbm_get_dav() == 1));
   tcbm_set_status(TCBM_STATUS_OK);
-  Serial.println("set status=%00");
+  //Serial.println(F("set status=%00"));
   //
   result = (cmd << 8) | data;
-  Serial.print("result=0x");
-  Serial.println(result,HEX);
+  Serial.print(F("result=0x")); Serial.println(result,HEX);
   return result; 
 }
 
