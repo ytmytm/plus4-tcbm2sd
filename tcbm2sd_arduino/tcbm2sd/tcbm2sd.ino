@@ -191,5 +191,61 @@ void setup() {
 }
 
 void loop() {
+  char cmd;
+  uint8_t tmp;
+  if (Serial.available() > 0) {
+    cmd = Serial.read();
+    switch (cmd) {
+      case '0':
+          tcbm_set_status(TCBM_STATUS_OK);
+          Serial.println(F("status=00"));
+          break;
+      case '1':
+          tcbm_set_status(TCBM_STATUS_RECV);
+          Serial.println(F("status=01"));
+          break;
+      case '2':
+          tcbm_set_status(TCBM_STATUS_SEND);
+          Serial.println(F("status=10"));
+          break;
+      case '3':
+          tcbm_set_status(TCBM_STATUS_EOI);
+          Serial.println(F("status=11"));
+          break;
+      case 'i':
+          tcbm_data_input();
+          Serial.println(F("port input: "));
+          tmp = tcbm_data_read();
+          Serial.print(tmp, HEX);
+          break;
+      case 'o':
+          tcbm_data_output();
+          Serial.println(F("port output"));
+          break;
+      case 'z':
+          tcbm_data_write(0);
+          Serial.println(F("port=0x00"));
+          break;
+      case 'f':
+          tcbm_data_write(255);
+          Serial.println(F("port=0xff"));
+          break;
+      case 'a':
+          tcbm_data_write(0xaa);
+          Serial.println(F("port=0xaa"));
+          break;
+      case '5':
+          tcbm_data_write(0x55);
+          Serial.println(F("port=0x55"));
+          break;
+      case 'r':
+          tcbm_reset_bus();
+          Serial.println(F("reset bus"));
+          break;
+      default:
+          Serial.println(F("unknown command, use: 0/1/2/3 i/o z/f/a/5 r"));
+          break;
+    }
+  }
   tcbm_read_byte();
 }
