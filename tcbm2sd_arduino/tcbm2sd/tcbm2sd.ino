@@ -44,6 +44,15 @@ const uint8_t TCBM_STATUS_RECV=1; // controller was trying to receive a byte fro
 const uint8_t TCBM_STATUS_SEND=2; // controller was trying to send a byte to the device, but the device decided not to accept it
 const uint8_t TCBM_STATUS_EOI=3; // byte currently received by the controller is the last byte of the stream
 
+//////////
+
+// 10 REM MACIEJ
+const uint8_t demo[] = { 0x01, 0x10, 0x0e, 0x10, 0x0a, 0x00, 0x8f, 0x20, 0x4d, 0x41, 0x43, 0x49, 0x45, 0x4a, 0x0, 0x0, 0x0 };
+uint16_t dpoint = 0;
+const uint8_t dmax = sizeof(demo);
+
+//////////
+
 void tcbm_data_input() {
   pinMode(PIN_D0, INPUT);
   pinMode(PIN_D1, INPUT);
