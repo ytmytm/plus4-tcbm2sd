@@ -155,9 +155,12 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
   Serial.println("ACK=0, waiting for DAV=0");
   while (!(tcbm_get_dav() == 0));
   data = tcbm_data_read();
-  Serial.print("...got 0x");
-  Serial.println(data, HEX);
-  tcbm_set_status(TCBM_STATUS_SEND);
+  //Serial.print(F("...got 0x")); Serial.println(data, HEX);
+  if (cmd == 0x84) {
+    tcbm_set_status(TCBM_STATUS_EOI); // don't know how to send bytes yet, STATUS_RECV here may give load 'file not found'?
+  } else {
+    tcbm_set_status(TCBM_STATUS_OK);
+  }
   tcbm_set_ack(1);
   Serial.println("set status=%10 and ACK=1");
   Serial.println("waiting for DAV=1");
