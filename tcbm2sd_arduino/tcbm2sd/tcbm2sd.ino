@@ -20,23 +20,23 @@ const uint8_t PIN_SD_SS = 10;
 
 // TCBM bus https://www.pagetable.com/?p=1324
 // data bus I/O
-const uint8_t PIN_D0 = 2;
-const uint8_t PIN_D1 = 3;
-const uint8_t PIN_D2 = 4;
-const uint8_t PIN_D3 = 5;
-const uint8_t PIN_D4 = 6;
-const uint8_t PIN_D5 = 7;
-const uint8_t PIN_D6 = 8;
-const uint8_t PIN_D7 = 9;
+const uint8_t PIN_D0 = 2; // PD2
+const uint8_t PIN_D1 = 3; // PD3
+const uint8_t PIN_D2 = 4; // PD4
+const uint8_t PIN_D3 = 5; // PD5
+const uint8_t PIN_D4 = 6; // PD6
+const uint8_t PIN_D5 = 7; // PD7
+const uint8_t PIN_D6 = 8; // PB0
+const uint8_t PIN_D7 = 9; // PB1
 // inputs
-//const uint8_t PIN_DAV = A2;
-const uint8_t PIN_DAV = A3; // crossed DAV/ACK
+//const uint8_t PIN_DAV = A2; // PC2
+const uint8_t PIN_DAV = A3; // PC3 // crossed DAV/ACK
 // outputs
-const uint8_t PIN_DEV = A4; // XXX can be input from CPLD if 2 devices are emulated at once
+const uint8_t PIN_DEV = A4; // PC4 // XXX can be input from CPLD if 2 devices are emulated at once
 //const uint8_t PIN_ACK = A3;
-const uint8_t PIN_ACK = A2; // crossed DAV/ACK
-const uint8_t PIN_STATUS0 = A0;
-const uint8_t PIN_STATUS1 = A1;
+const uint8_t PIN_ACK = A2; // PC2 // crossed DAV/ACK
+const uint8_t PIN_STATUS0 = A0; // PC0
+const uint8_t PIN_STATUS1 = A1; // PC1
 // TCBM codes
 const uint8_t TCBM_CODE_COMMAND = 0x81; // controller sends command byte (state change: 0x20/0x3f/0x40/0x5f LISTEN/UNLISTEN/TALK/UNTALK)
 const uint8_t TCBM_CODE_SECOND  = 0x82; // controller sends command byte (secondary addr: 0x60/0xe0/0xf0 SECOND/CLOSE/OPEN)
@@ -103,6 +103,7 @@ uint8_t tcbm_data_read(void) {
       (digitalRead(PIN_D6) ? 1 : 0) << 6 |
       (digitalRead(PIN_D7) ? 1 : 0) << 7
   );
+  //return (PORTD & 0xFC) >> 2) || ((PORTB & 0x03) << 6);
 }
 
 void tcbm_data_write(uint8_t d) {
@@ -114,6 +115,8 @@ void tcbm_data_write(uint8_t d) {
     digitalWrite(PIN_D5, d & 0x20 ? 1 : 0);
     digitalWrite(PIN_D6, d & 0x40 ? 1 : 0);
     digitalWrite(PIN_D7, d & 0x80 ? 1 : 0);
+//	PORTD = ( PORTD & 0x03 ) || ((d & 0x3F) << 2);
+//	PORTB = ( PORTB & 0xFC ) || ((d & 0xC0) >> 6);
 }
 
 void tcbm_reset_bus() {
