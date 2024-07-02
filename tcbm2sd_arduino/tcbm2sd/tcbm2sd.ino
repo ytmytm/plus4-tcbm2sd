@@ -4,13 +4,17 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
-//#include <SD.h>
-//#include <SPI.h>
+//#define WITH_SD
 
-//File aFile;
+#ifdef WITH_SD
+#include <SD.h>
+#include <SPI.h>
+
+File aFile;
 
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
+#endif
 
 //////////////////////////////////
 
@@ -180,13 +184,14 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("initializing I/O"));
   tcbm_init();
+#ifdef WITH_SD
   Serial.print(F("initializing SD card..."));
-//  pinMode(PIN_SD_SS, OUTPUT);
-//  if (!SD.begin(PIN_SD_SS)) { // CS pin
-//    Serial.println(F("init failed!"));
-//    return;
-//  }
-  Serial.println(F("done"));
+  pinMode(PIN_SD_SS, OUTPUT);
+  if (!SD.begin(PIN_SD_SS)) { // CS pin
+    Serial.println(F("SD init failed!"));
+    return;
+  }
+#endif
   Serial.println(F("tcbm2sd ready"));
 }
 
