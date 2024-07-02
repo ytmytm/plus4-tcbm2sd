@@ -57,7 +57,7 @@ const uint8_t dmax = sizeof(demo);
 
 //////////
 
-void tcbm_data_input() {
+void tcbm_port_input() {
   pinMode(PIN_D0, INPUT);
   pinMode(PIN_D1, INPUT);
   pinMode(PIN_D2, INPUT);
@@ -68,7 +68,7 @@ void tcbm_data_input() {
   pinMode(PIN_D7, INPUT);
 }
 
-void tcbm_data_output() {
+void tcbm_port_output() {
   pinMode(PIN_D0, OUTPUT);
   pinMode(PIN_D1, OUTPUT);
   pinMode(PIN_D2, OUTPUT);
@@ -92,7 +92,7 @@ uint8_t tcbm_get_dav(void) {
   return digitalRead(PIN_DAV);
 }
 
-uint8_t tcbm_data_read(void) {
+uint8_t tcbm_port_read(void) { // XXX speed it up
   return (
       (digitalRead(PIN_D0) ? 1 : 0)      |
       (digitalRead(PIN_D1) ? 1 : 0) << 1 |
@@ -106,7 +106,7 @@ uint8_t tcbm_data_read(void) {
   //return (PORTD & 0xFC) >> 2) || ((PORTB & 0x03) << 6);
 }
 
-void tcbm_data_write(uint8_t d) {
+void tcbm_port_write(uint8_t d) { // XX speed it up
     digitalWrite(PIN_D0, d & 0x01 ? 1 : 0);
     digitalWrite(PIN_D1, d & 0x02 ? 1 : 0);
     digitalWrite(PIN_D2, d & 0x04 ? 1 : 0);
@@ -120,7 +120,7 @@ void tcbm_data_write(uint8_t d) {
 }
 
 void tcbm_reset_bus() {
-  tcbm_data_input();
+  tcbm_port_input();
   tcbm_set_status(TCBM_STATUS_OK);
   tcbm_set_ack(1); // not ready
 }
@@ -145,8 +145,8 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
   uint8_t tmp, cmd, data;
   uint16_t result = 0;
   if (tcbm_get_dav() != 1) return 0; // controller ready?
-  tmp = tcbm_data_read();
-  cmd = tcbm_data_read();
+  tmp = tcbm_port_read();
+  cmd = tcbm_port_read();
   if (tmp != cmd) return 0; // stable?
   if (!(cmd & 0x80)) return 0; // command?
   /*
@@ -162,7 +162,7 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
   tcbm_set_ack(0);
   //Serial.println(F("ACK=0, waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
-  data = tcbm_data_read();
+  data = tcbm_port_read();
   //Serial.print(F("...got 0x")); Serial.println(data, HEX);
   if (cmd == 0x84) {
     tcbm_set_status(TCBM_STATUS_EOI); // don't know how to send bytes yet, STATUS_RECV here may give load 'file not found'?
@@ -221,29 +221,29 @@ void loop() {
           Serial.println(F("status=11"));
           break;
       case 'i':
-          tcbm_data_input();
+          tcbm_port_input();
           Serial.println(F("port input: "));
-          tmp = tcbm_data_read();
+          tmp = tcbm_port_read();
           Serial.print(tmp, HEX);
           break;
       case 'o':
-          tcbm_data_output();
+          tcbm_port_output();
           Serial.println(F("port output"));
           break;
       case 'z':
-          tcbm_data_write(0);
+          tcbm_port_write(0);
           Serial.println(F("port=0x00"));
           break;
       case 'f':
-          tcbm_data_write(255);
+          tcbm_port_write(255);
           Serial.println(F("port=0xff"));
           break;
       case 'a':
-          tcbm_data_write(0xaa);
+          tcbm_port_write(0xaa);
           Serial.println(F("port=0xaa"));
           break;
       case '5':
-          tcbm_data_write(0x55);
+          tcbm_port_write(0x55);
           Serial.println(F("port=0x55"));
           break;
       case 'r':
