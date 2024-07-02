@@ -225,6 +225,275 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
 }
 #endif
 
+//////////////////////////////////
+
+// state machine
+
+const uint8_t STATE_IDLE = 0; // wait for LISTEN command
+const uint8_t STATE_OPEN = 1; // after LISTEN, receiving filename or command on #15
+const uint8_t STATE_LOAD = 2; // after OPEN on channek 0, after TALK
+const uint8_t STATE_SAVE = 3; // after OPEN on channel 1, after LISTEN+SECOND
+const uint8_t STATE_STAT = 4; // like STATE_LOAD but write from output_buf
+
+uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
+uint8_t state = STATE_IDLE;
+bool file_opened = false;
+
+uint8_t input_buf_ptr = 0; // pointer to within input buffer
+uint8_t input_buf[64]; // input buffer - filename + commands
+uint8_t output_buf[64]; // output buffer, render status here
+
+void state_init() {
+	input_buf_ptr = 0;
+	memset(input_buf, 0, sizeof(input_buf));
+	memset(output_buf, 0, sizeof(output_buf));
+	strcpy(output_buf, (const char*)"00, OK, 00, 00");
+	file_opened = false;
+}
+
+void state_idle() {
+	//
+	uint8_t cmd = tcbm_read_cmd();
+	uint8_t dat = tcbm_read_data(TCBM_STATUS_OK);
+	uint8_t chn = 0; // channel
+	if (cmd != TCBM_CODE_COMMAND) return;
+	if (dat == 0x20) { // LISTEN
+		cmd = tcbm_read_cmd();
+		dat = tcbm_read_data(TCBM_STATUS_OK);
+		Serial.print(F("[LISTEN]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+		if (cmd != TCBM_CODE_SECOND) return;
+		chn = dat & 0x0F;
+		switch (dat & 0xF0) {
+			case 0xF0:	// OPEN
+				Serial.print(F("open chn="));
+				Serial.println(chn);
+				channel = chn;
+				state = STATE_OPEN; // filename or command incoming, until UNLISTEN
+				break;
+			case 0xE0:	// CLOSE
+				Serial.print(F("close chn="));
+				Serial.println(chn);
+				if (channel == 15) {
+					Serial.println(F("handle command from input buf"));
+					// handle command from input buffer: S:, R:, CD<-, CD<name>, CD:<name>, CD//
+				}
+				state_init();
+				break;
+			case 0x60:	// SECOND
+				Serial.print(F("second chn="));
+				Serial.println(chn);
+				channel = chn;
+				switch (channel) {
+					case 1:
+						state = STATE_SAVE; // receive data stream to be saved, until UNLISTEN
+						break;
+					case 15:
+						state = STATE_OPEN; // keep recieving data into input buffer
+						break;
+					default:
+						Serial.println(F("unk SECOND"));
+						state_init();
+						break;
+				}
+				break;
+			default:
+				state_init();
+				Serial.println(F("unk state after LISTEN"));
+				return;
+		}
+	}
+	if (dat == 0x40) { // TALK
+		cmd = tcbm_read_cmd();
+		dat = tcbm_read_data(TCBM_STATUS_OK);	// XXX status for file not found set here?
+		Serial.print(F("[TALK]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+		if (cmd != TCBM_CODE_SECOND) return;
+		chn = dat & 0x0F;
+		switch (dat & 0xF0) {
+			case 0x60: // SECOND
+				Serial.print(F("second chn="));
+				Serial.println(chn);
+				channel = chn;
+				switch (channel) {
+					case 0:
+						if (file_opened) {
+							state = STATE_LOAD; // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+						} else {
+							Serial.println(F("file not open"));
+							state_init();
+						}
+						break;
+					case 15:
+						Serial.println(F("status request, write from outputbuf"));
+						state = STATE_STAT;
+						break;
+					default:
+						Serial.println(F("unk state after OPEN"));
+						state_init();
+						break;
+				}
+				break;
+			default:
+				Serial.println(F("unk state after TALK"));
+				return;
+		}
+	}
+}
+
+void state_load() {
+	// send data until UNTALK
+	uint8_t cmd;
+	uint8_t dat;
+	uint8_t status = TCBM_STATUS_OK; // NOT ok if file not found!
+	bool done = false;
+	Serial.print(F("[LOAD] on channel=")); Serial.println(channel, HEX);
+	while (!done) {
+		cmd = tcbm_read_cmd();
+		switch (cmd) {
+			case TCBM_CODE_SEND:
+				tcbm_write_data(demo[dpoint],status);
+				dpoint++;
+				if (dpoint == dmax) {
+					dpoint--;
+					status = TCBM_STATUS_EOI;
+				}
+				break;
+			case TCBM_CODE_COMMAND:
+				dat = tcbm_read_data(status);
+				if (dat == 0x5F) { // UNTALK
+					Serial.println(F("[UNTALK]"));
+				} else {
+					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				}
+				done = true;
+				break;
+			default:
+				dat = tcbm_read_data(status);
+				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				done = true;
+				break;
+		}
+	}
+	state = STATE_IDLE;
+}
+
+void state_status() { // pretty much the same as state_load but on channel 15 we write from output_buf
+	// send data until UNTALK
+	uint8_t cmd;
+	uint8_t dat;
+	uint8_t status = TCBM_STATUS_OK;
+	uint8_t c = 0;
+	bool done = false;
+	Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX);
+	while (!done) {
+		cmd = tcbm_read_cmd();
+		switch (cmd) {
+			case TCBM_CODE_SEND:
+				tcbm_write_data(output_buf[c],status);
+				c++;
+				if (output_buf[c]==0 || c==sizeof(output_buf)) {
+					c--;
+					status = TCBM_STATUS_EOI;
+				}
+				break;
+			case TCBM_CODE_COMMAND:
+				dat = tcbm_read_data(status);
+				if (dat == 0x5F) { // UNTALK
+					Serial.println(F("[UNTALK]"));
+				} else {
+					Serial.print(F("unk DS CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				}
+				done = true;
+				break;
+			default:
+				dat = tcbm_read_data(status);
+				Serial.print(F("unk DS state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				done = true;
+				break;
+		}
+	}
+	state = STATE_IDLE;
+}
+
+void state_save() {
+	// receive data until UNLISTEN
+	uint8_t cmd;
+	uint8_t dat;
+	uint16_t c = 0;
+	bool done = false;
+	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
+	while (!done) {
+		cmd = tcbm_read_cmd();
+		dat = tcbm_read_data(TCBM_STATUS_OK);
+		switch (cmd) {
+			case TCBM_CODE_RECV:
+				// read and ignore data
+				c++;
+				break;
+			case TCBM_CODE_COMMAND:
+				if (dat == 0x3F) { // UNLISTEN
+					Serial.println(F("[UNLISTEN]"));
+				} else {
+					Serial.print(F("unk SAVE CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				}
+				done = true;
+				break;
+			default:
+				Serial.print(F("unk SAVE state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				done = true;
+				break;
+		}
+	}
+	Serial.print(F("saved bytes:")); Serial.println(c, HEX);
+	state = STATE_IDLE;
+}
+
+void state_open() {
+	// after LISTEN+OPEN, receive data into input buffer until UNLISTEN - it's command or file name, after UNLISTEN file is opened
+	// XXX for channel 15 it's possible to have LISTEN+SECOND without LISTEN+OPEN with BASIC: OPEN 1,2,15:PRINT#15,"I0" ? 
+	uint8_t cmd;
+	uint8_t dat;
+	bool done = false;
+	Serial.print(F("[OPEN] on channel=")); Serial.println(channel, HEX);
+	while (!done) {
+		cmd = tcbm_read_cmd();
+		dat = tcbm_read_data(TCBM_STATUS_OK);
+		switch (cmd) {
+			case TCBM_CODE_RECV:
+				input_buf[input_buf_ptr] = dat;
+				input_buf_ptr++;
+				if (input_buf_ptr==sizeof(input_buf)) {	// prevent overflow, just in case
+					input_buf_ptr--;
+					input_buf[input_buf_ptr] = 0;
+				}
+				break;
+			case TCBM_CODE_COMMAND:
+				if (dat == 0x3F) { // UNLISTEN
+					Serial.println(F("[UNLISTEN]"));
+					file_opened = true;
+				} else {
+					Serial.print(F("unk OPEN CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					input_buf_ptr = 0;
+				}
+				done = true;
+				break;
+			default:
+				Serial.print(F("unk OPEN state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				input_buf_ptr = 0;
+				done = true;
+				break;
+		}
+	}
+	Serial.println(input_buf_ptr, HEX);
+	Serial.print(F("...got [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	if (channel == 0) {
+		// find file for LOAD
+		dpoint = 0; // reset pointer, reset status for file not found
+	}
+	if (channel == 1) {
+		// prepare for SAVE
+	}
+	state = STATE_IDLE;
+}
 
 //////////////////////////////////
 
@@ -232,6 +501,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("initializing I/O"));
   tcbm_init();
+  state_init();
 #ifdef WITH_SD
   Serial.print(F("initializing SD card..."));
   pinMode(PIN_SD_SS, OUTPUT);
@@ -244,6 +514,27 @@ void setup() {
 }
 
 void loop() {
+	
+	switch (state) {
+		case STATE_IDLE:
+			state_idle();
+			break;
+		case STATE_OPEN:
+			state_open();
+			break;
+		case STATE_LOAD:
+			state_load();
+			break;
+		case STATE_SAVE:
+			state_save();
+			break;
+		case STATE_STAT:
+			state_status();
+			break;
+		default:
+			Serial.print(F("unknown state=")); Serial.println(state, HEX);
+			break;
+	}
   char cmd;
   uint8_t tmp;
   if (Serial.available() > 0) {
@@ -300,5 +591,4 @@ void loop() {
           break;
     }
   }
-  tcbm_read_byte();
 }
