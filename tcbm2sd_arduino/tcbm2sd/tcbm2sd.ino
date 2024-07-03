@@ -92,7 +92,9 @@ uint8_t tcbm_get_dav(void) {
   return digitalRead(PIN_DAV);
 }
 
-uint8_t tcbm_port_read(void) { // XXX speed it up
+uint8_t tcbm_port_read(void) {
+  return (PIND >> 2) | ((PINB & 0x03) << 6);
+  /*
   return (
       (digitalRead(PIN_D0) ? 1 : 0)      |
       (digitalRead(PIN_D1) ? 1 : 0) << 1 |
@@ -103,7 +105,7 @@ uint8_t tcbm_port_read(void) { // XXX speed it up
       (digitalRead(PIN_D6) ? 1 : 0) << 6 |
       (digitalRead(PIN_D7) ? 1 : 0) << 7
   );
-  //return (PORTD & 0xFC) >> 2) || ((PORTB & 0x03) << 6);
+  */
 }
 
 void tcbm_port_write(uint8_t d) { // XX speed it up
@@ -115,8 +117,8 @@ void tcbm_port_write(uint8_t d) { // XX speed it up
     digitalWrite(PIN_D5, d & 0x20 ? 1 : 0);
     digitalWrite(PIN_D6, d & 0x40 ? 1 : 0);
     digitalWrite(PIN_D7, d & 0x80 ? 1 : 0);
-//	PORTD = ( PORTD & 0x03 ) || ((d & 0x3F) << 2);
-//	PORTB = ( PORTB & 0xFC ) || ((d & 0xC0) >> 6);
+//	PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
+//	PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
 }
 
 void tcbm_reset_bus() {
