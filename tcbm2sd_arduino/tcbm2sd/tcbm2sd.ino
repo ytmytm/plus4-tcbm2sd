@@ -5,7 +5,7 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 //#define WITH_SD
-#define UNUSED_CODE
+//#define UNUSED_CODE
 
 #ifdef WITH_SD
 #include <SD.h>
@@ -279,7 +279,7 @@ void state_init() {
 void state_idle() {
 	//
 	uint8_t cmd = tcbm_read_cmd();
-  if (cmd==0) return;
+	if (cmd==0) return;
 	uint8_t dat = tcbm_read_data(TCBM_STATUS_OK);
 	uint8_t chn = 0; // channel
 //  Serial.println((uint16_t)(cmd << 8 | dat), HEX);
@@ -467,7 +467,7 @@ void state_save() {
 			case TCBM_CODE_RECV:
 				// read and ignore data
 				c++;
-        Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX);
+//				Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX);
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
@@ -505,7 +505,7 @@ void state_open() {
 				input_buf[input_buf_ptr] = dat;
 				input_buf_ptr++;
 				if (input_buf_ptr==sizeof(input_buf)) {	// prevent overflow, just in case
-          // or change status - that we won't accept anything more
+				// or change status - that we won't accept anything more
 					input_buf_ptr--;
 					input_buf[input_buf_ptr] = 0;
 				}
@@ -577,8 +577,8 @@ void loop() {
 		case STATE_STAT:
 			state_status();
 			break;
-    case 255:
-      break;
+		case 255: // for state=-1 from debug with tcbm_read_byte()
+			break;
 		default:
 			Serial.print(F("unknown state=")); Serial.println(state, HEX);
 			break;
