@@ -271,7 +271,8 @@ void state_init() {
 	input_buf_ptr = 0;
 	memset(input_buf, 0, sizeof(input_buf));
 	memset(output_buf, 0, sizeof(output_buf));
-	strcpy(output_buf, (const char*)"00, OK, 00, 00");
+//	strcpy(output_buf, (const char*)"00, OK, 00, 00");
+  strcpy(output_buf, (const char*)"73, TCBM2SD 2024, 00, 00");
 	file_opened = false;
 }
 
