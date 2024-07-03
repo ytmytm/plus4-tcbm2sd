@@ -548,7 +548,7 @@ void setup() {
   tcbm_init();
   state_init();
   state = STATE_IDLE;
-  Serial.begin(115200);
+  Serial.begin(115200); // in fact 57600(?)
   Serial.println(F("initializing I/O"));
 #ifdef WITH_SD
   Serial.print(F("initializing SD card..."));
