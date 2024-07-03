@@ -499,6 +499,7 @@ void state_open() {
 				input_buf[input_buf_ptr] = dat;
 				input_buf_ptr++;
 				if (input_buf_ptr==sizeof(input_buf)) {	// prevent overflow, just in case
+          // or change status - that we won't accept anything more
 					input_buf_ptr--;
 					input_buf[input_buf_ptr] = 0;
 				}
