@@ -89,11 +89,11 @@ void tcbm_set_ack(uint8_t ack) {
   digitalWrite(PIN_ACK, ack);
 }
 
-uint8_t tcbm_get_dav(void) {
+volatile uint8_t tcbm_get_dav(void) {
   return digitalRead(PIN_DAV);
 }
 
-uint8_t tcbm_port_read(void) {
+volatile uint8_t tcbm_port_read(void) {
   return (PIND >> 2) | ((PINB & 0x03) << 6);
   /*
   return (
@@ -145,7 +145,7 @@ void tcbm_init() {
 }
 
 uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
-  uint8_t tmp, cmd;
+  volatile uint8_t tmp, cmd;
 //  Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav());
   if (tcbm_get_dav() != 1) return 0; // controller ready?
   tmp = tcbm_port_read();
@@ -159,7 +159,7 @@ uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
 }
 
 uint8_t tcbm_read_cmd_block() { // block until read command byte - 0 or $81/82/83/84
-  uint8_t tmp=0, cmd=1;
+  volatile uint8_t tmp=0, cmd=1;
 ///  Serial.println(F("wait for DAV=1"));
   while (!(tcbm_get_dav() == 1));
   while (!(cmd & 0x80)) {
@@ -177,7 +177,7 @@ uint8_t tcbm_read_cmd_block() { // block until read command byte - 0 or $81/82/8
 }
 
 uint8_t tcbm_read_data(uint8_t status) { // read data following command byte, with preset status
-  uint8_t data;
+  volatile uint8_t data;
 //  Serial.println(F("ACK=0 waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
   data = tcbm_port_read();
