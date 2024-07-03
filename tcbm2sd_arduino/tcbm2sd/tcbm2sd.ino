@@ -279,6 +279,7 @@ void state_init() {
 void state_idle() {
 	//
 	uint8_t cmd = tcbm_read_cmd();
+  if (cmd==0) return;
 	uint8_t dat = tcbm_read_data(TCBM_STATUS_OK);
 	uint8_t chn = 0; // channel
 //  Serial.println((uint16_t)(cmd << 8 | dat), HEX);
