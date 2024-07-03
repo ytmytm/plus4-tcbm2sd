@@ -146,42 +146,47 @@ void tcbm_init() {
 uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
   uint8_t tmp, cmd, data;
   uint16_t result = 0;
+//  Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav());
   if (tcbm_get_dav() != 1) return 0; // controller ready?
   tmp = tcbm_port_read();
   cmd = tcbm_port_read();
+//  Serial.print(F("tmp,cmd=")); Serial.println((uint16_t)(tmp << 8 | cmd),HEX);
   if (tmp != cmd) return 0; // stable?
   if (!(cmd & 0x80)) return 0; // command?
+//  Serial.println(F("set ACK=0"));
   tcbm_set_ack(0);
   return cmd;
 }
 
 uint8_t tcbm_read_data(uint8_t status) { // read data following command byte, with preset status
   uint8_t data;
+//  Serial.println(F("ACK=0 waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
   data = tcbm_port_read();
   tcbm_set_status(status);
   tcbm_set_ack(1);
+//  Serial.println(F("ACK=1 waiting for DAV=1"));
   while (!(tcbm_get_dav() == 1));
   tcbm_set_status(TCBM_STATUS_OK);
   return data;
 }
 
 void tcbm_write_data(uint8_t data, uint8_t status) { // write data following TCBM_CODE_SEND command, with preset status
-  Serial.println(F("ACK=0 waiting for DAV=0"));
+//  Serial.println(F("ACK=0 waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
   tcbm_port_output();
   tcbm_port_write(data);
   tcbm_set_status(status);
   tcbm_set_ack(1);
-  Serial.println(F("data+status out, ACK=1 waiting for DAV=1"));
+//  Serial.println(F("data+status out, ACK=1 waiting for DAV=1"));
   while (!(tcbm_get_dav() == 1));
   tcbm_port_input();
   tcbm_set_status(TCBM_STATUS_OK);
   tcbm_set_ack(0);
-  Serial.println(F("ACK=0 waiting for DAV=0"));
+//  Serial.println(F("ACK=0 waiting for DAV=0"));
   while (!(tcbm_get_dav() == 0));
   tcbm_set_ack(1);
-  Serial.println(F("ACK=1 waiting for DAV=1"));
+//  Serial.println(F("ACK=1 waiting for DAV=1"));
   while (!(tcbm_get_dav() == 1));
 }
 
@@ -258,6 +263,7 @@ void state_idle() {
 	uint8_t cmd = tcbm_read_cmd();
 	uint8_t dat = tcbm_read_data(TCBM_STATUS_OK);
 	uint8_t chn = 0; // channel
+//  Serial.println((uint16_t)(cmd << 8 | dat), HEX);
 	if (cmd != TCBM_CODE_COMMAND) return;
 	if (dat == 0x20) { // LISTEN
 		cmd = tcbm_read_cmd();
@@ -352,6 +358,7 @@ void state_load() {
 		cmd = tcbm_read_cmd();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
+//        Serial.print(F("new character from ")); Serial.println(dpoint, HEX);
 				tcbm_write_data(demo[dpoint],status);
 				dpoint++;
 				if (dpoint == dmax) {
@@ -390,6 +397,7 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 		cmd = tcbm_read_cmd();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
+ //       Serial.print(F("new character from ")); Serial.println(c, HEX);
 				tcbm_write_data(output_buf[c],status);
 				c++;
 				if (output_buf[c]==0 || c==sizeof(output_buf)) {
@@ -430,6 +438,7 @@ void state_save() {
 			case TCBM_CODE_RECV:
 				// read and ignore data
 				c++;
+        Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX);
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
@@ -458,9 +467,12 @@ void state_open() {
 	Serial.print(F("[OPEN] on channel=")); Serial.println(channel, HEX);
 	while (!done) {
 		cmd = tcbm_read_cmd();
+//    Serial.println(cmd,HEX);
 		dat = tcbm_read_data(TCBM_STATUS_OK);
+//    Serial.println(dat,HEX);
 		switch (cmd) {
 			case TCBM_CODE_RECV:
+//        Serial.print(F("new character at ")); Serial.println(input_buf_ptr, HEX);
 				input_buf[input_buf_ptr] = dat;
 				input_buf_ptr++;
 				if (input_buf_ptr==sizeof(input_buf)) {	// prevent overflow, just in case
