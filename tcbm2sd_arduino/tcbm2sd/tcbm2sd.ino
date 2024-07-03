@@ -144,8 +144,7 @@ void tcbm_init() {
 }
 
 uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
-  uint8_t tmp, cmd, data;
-  uint16_t result = 0;
+  uint8_t tmp, cmd;
 //  Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav());
   if (tcbm_get_dav() != 1) return 0; // controller ready?
   tmp = tcbm_port_read();
