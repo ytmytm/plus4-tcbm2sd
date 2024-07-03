@@ -371,6 +371,7 @@ void state_load() {
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK; // NOT ok if file not found!
+  uint8_t b;
 	bool done = false;
 	Serial.print(F("[LOAD] on channel=")); Serial.println(channel, HEX);
 	while (!done) {
@@ -378,12 +379,13 @@ void state_load() {
 		switch (cmd) {
 			case TCBM_CODE_SEND:
 //        Serial.print(F("new character from ")); Serial.println(dpoint, HEX);
-				tcbm_write_data(demo[dpoint],status);
+        b = demo[dpoint];
 				dpoint++;
 				if (dpoint == dmax) {
 					dpoint--;
-					status = TCBM_STATUS_EOI;
+          status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
 				}
+        tcbm_write_data(b, status);
 				break;
 			case TCBM_CODE_COMMAND:
 				dat = tcbm_read_data(status);
@@ -409,6 +411,7 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
+  uint8_t b;
 	uint8_t c = 0;
 	bool done = false;
 	Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX);
@@ -417,12 +420,13 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 		switch (cmd) {
 			case TCBM_CODE_SEND:
  //       Serial.print(F("new character from ")); Serial.println(c, HEX);
-				tcbm_write_data(output_buf[c],status);
+        b = output_buf[c];
 				c++;
 				if (output_buf[c]==0 || c==sizeof(output_buf)) {
 					c--;
-					status = TCBM_STATUS_EOI;
+					status = TCBM_STATUS_EOI; // status must be set with last valid byte
 				}
+        tcbm_write_data(b, status);
 				break;
 			case TCBM_CODE_COMMAND:
 				dat = tcbm_read_data(status);
