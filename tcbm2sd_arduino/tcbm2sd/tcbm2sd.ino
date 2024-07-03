@@ -5,6 +5,7 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 //#define WITH_SD
+#define UNUSED_CODE
 
 #ifdef WITH_SD
 #include <SD.h>
@@ -553,7 +554,8 @@ void setup() {
 }
 
 void loop() {
-	
+//  tcbm_read_byte(); state = -1;
+//	Serial.println(state);
 	switch (state) {
 		case STATE_IDLE:
 			state_idle();
@@ -570,6 +572,8 @@ void loop() {
 		case STATE_STAT:
 			state_status();
 			break;
+    case 255:
+      break;
 		default:
 			Serial.print(F("unknown state=")); Serial.println(state, HEX);
 			break;
