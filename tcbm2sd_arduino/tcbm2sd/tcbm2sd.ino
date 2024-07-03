@@ -83,14 +83,17 @@ void tcbm_port_output() {
 void tcbm_set_status(uint8_t status) {
   digitalWrite(PIN_STATUS0, status & 0x01);
   digitalWrite(PIN_STATUS1, status & 0x02);
+//  PORTC = (PORTC & 0xFC) | (status & 0x03);
 }
 
 void tcbm_set_ack(uint8_t ack) {
   digitalWrite(PIN_ACK, ack);
+//  PORTC = (PORTC & 0xFB) | ((ack & 0x01) << 2);
 }
 
 volatile uint8_t tcbm_get_dav(void) {
   return digitalRead(PIN_DAV);
+//  return (PINC & 0x08) >> 3;
 }
 
 volatile uint8_t tcbm_port_read(void) {
