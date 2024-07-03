@@ -375,6 +375,10 @@ void state_load() {
   uint8_t b;
 	bool done = false;
 	Serial.print(F("[LOAD] on channel=")); Serial.println(channel, HEX);
+  if (input_buf[2]=='0') {
+    Serial.println(F("filenotfound"));
+    status = TCBM_STATUS_SEND; // XXX SEND works - FILE not found but gets state machine out of sync; RECV, EOI don't work - there is still SEARCHING+LOADING, should be moved to TALK?
+  }
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
