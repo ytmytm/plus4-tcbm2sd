@@ -536,10 +536,11 @@ void state_open() {
 //////////////////////////////////
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println(F("initializing I/O"));
   tcbm_init();
   state_init();
+  state = STATE_IDLE;
+  Serial.begin(115200);
+  Serial.println(F("initializing I/O"));
 #ifdef WITH_SD
   Serial.print(F("initializing SD card..."));
   pinMode(PIN_SD_SS, OUTPUT);
