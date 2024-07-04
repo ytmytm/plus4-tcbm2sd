@@ -4,7 +4,7 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
-//#define WITH_SD
+#define WITH_SD
 //#define UNUSED_CODE
 
 #ifdef WITH_SD
@@ -15,6 +15,10 @@ File aFile;
 
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
+
+// ls
+File root;
+
 #endif
 
 //////////////////////////////////
@@ -579,6 +583,10 @@ void setup() {
   }
 #endif
   Serial.println(F("tcbm2sd ready"));
+  //
+// works
+//  root = SD.open("/");
+//  printDirectory(root, 0);
 }
 
 void loop() {
@@ -602,6 +610,28 @@ void loop() {
 			Serial.print(F("unknown state=")); Serial.println(state, HEX);
 			break;
 	}
+}
+
+void printDirectory(File dir, int numTabs) {
+  while (true) {
+
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
     }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+      printDirectory(entry, numTabs + 1);
+    } else {
+      // files have sizes, directories do not
+      Serial.print("\t\t");
+      Serial.println(entry.size(), DEC);
+    }
+    entry.close();
   }
 }
