@@ -35,11 +35,11 @@ const uint8_t PIN_D6 = 8; // PB0
 const uint8_t PIN_D7 = 9; // PB1
 // inputs
 //const uint8_t PIN_DAV = A2; // PC2
-const uint8_t PIN_DAV = A3; // PC3 // crossed DAV/ACK
+const uint8_t PIN_DAV = A3; // PC3 // crossed DAV/ACK (this is ACK on schematic)
 // outputs
 const uint8_t PIN_DEV = A4; // PC4 // XXX can be input from CPLD if 2 devices are emulated at once
 //const uint8_t PIN_ACK = A3;
-const uint8_t PIN_ACK = A2; // PC2 // crossed DAV/ACK
+const uint8_t PIN_ACK = A2; // PC2 // crossed DAV/ACK (this is DAV on schematic)
 const uint8_t PIN_STATUS0 = A0; // PC0
 const uint8_t PIN_STATUS1 = A1; // PC1
 // TCBM codes
@@ -124,7 +124,7 @@ volatile uint8_t tcbm_port_read(void) {
   */
 }
 
-void tcbm_port_write(uint8_t d) { // XX speed it up
+void tcbm_port_write(uint8_t d) {
   PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
   PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
 /*
