@@ -295,7 +295,7 @@ void state_idle() {
 	if (cmd==0) return;
 	uint8_t dat = tcbm_read_data(TCBM_STATUS_OK);
 	uint8_t chn = 0; // channel
-//  Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+//  Serial.print(F("IDLE:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
 	if (cmd != TCBM_CODE_COMMAND) return;
 	if (dat == 0x20) { // LISTEN
 		cmd = tcbm_read_cmd_block();
@@ -344,7 +344,7 @@ void state_idle() {
 	}
 	if (dat == 0x40) { // TALK
 		cmd = tcbm_read_cmd_block();
-		dat = tcbm_read_data(TCBM_STATUS_OK);	// XXX status for file not found set here?
+		dat = tcbm_read_data(TCBM_STATUS_OK);
 		Serial.print(F("[TALK]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
@@ -420,6 +420,7 @@ void state_load() {
 				break;
 		}
 	}
+	Serial.print(F("loaded bytes:")); Serial.println(dpoint, HEX);
 	state = STATE_IDLE;
 }
 
@@ -502,19 +503,18 @@ void state_save() {
 
 void state_open() {
 	// after LISTEN+OPEN, receive data into input buffer until UNLISTEN - it's command or file name, after UNLISTEN file is opened
-	// XXX for channel 15 it's possible to have LISTEN+SECOND without LISTEN+OPEN with BASIC: OPEN 1,2,15:PRINT#15,"I0" ? 
 	uint8_t cmd;
 	uint8_t dat;
 	bool done = false;
 	Serial.print(F("[OPEN] on channel=")); Serial.println(channel, HEX);
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
-//    Serial.println(cmd,HEX);
+//		Serial.println(cmd,HEX);
 		dat = tcbm_read_data(TCBM_STATUS_OK);
-//    Serial.println(dat,HEX);
+//		Serial.println(dat,HEX);
 		switch (cmd) {
 			case TCBM_CODE_RECV:
-//        Serial.print(F("new character at ")); Serial.println(input_buf_ptr, HEX);
+//				Serial.print(F("new character at ")); Serial.println(input_buf_ptr, HEX);
 				input_buf[input_buf_ptr] = dat;
 				input_buf_ptr++;
 				if (input_buf_ptr==sizeof(input_buf)) {	// prevent overflow, just in case
