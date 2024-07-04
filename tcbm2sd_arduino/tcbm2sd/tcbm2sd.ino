@@ -383,28 +383,37 @@ void state_load() {
 	// send data until UNTALK
 	uint8_t cmd;
 	uint8_t dat;
-	uint8_t status = TCBM_STATUS_OK; // NOT ok if file not found!
-  uint8_t b;
+	uint8_t status = TCBM_STATUS_OK;
+	uint8_t b;
 	bool done = false;
 	Serial.print(F("[LOAD] on channel=")); Serial.println(channel, HEX);
-  if (input_buf[2]=='0') {
-    Serial.println(F("filenotfound"));
-    status = TCBM_STATUS_SEND; // XXX SEND works - FILE not found but gets state machine out of sync; RECV, EOI don't work - there is still SEARCHING+LOADING, should be moved to TALK?
-  }
+	if (input_buf[2]=='0') { // simulate file not found by checking for first name character
+		Serial.println(F("filenotfound"));
+		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+	}
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
-//        Serial.print(F("new character from ")); Serial.println(dpoint, HEX);
-        b = demo[dpoint];
-				dpoint++;
-				if (dpoint == dmax) {
-					dpoint--;
-          status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+				if (status != TCBM_STATUS_OK) {		// file not found, not OK
+//					Serial.println(F("0D : 0D"));
+					tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
+					state_init(); // called this to reset input buf ptr and set file_opened flag to false
+					strcpy(output_buf, (const char*)"62, FILE NOT FOUND,00,00");
+					done = true; // exit immediately, there will be no UNTALK
+				} else {
+					b = demo[dpoint];
+//					Serial.print(dpoint,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
+					dpoint++;
+					if (dpoint == dmax) {
+						dpoint--;
+						status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+					}
+					tcbm_write_data(b, status);
 				}
-        tcbm_write_data(b, status);
 				break;
 			case TCBM_CODE_COMMAND:
+				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
 					Serial.println(F("[UNTALK]"));
