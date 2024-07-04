@@ -59,6 +59,9 @@ const uint8_t dmax = sizeof(demo);
 //////////
 
 void tcbm_port_input() {
+  DDRD = DDRD & 0x03;
+  DDRB = DDRB & 0xFC;
+/*
   pinMode(PIN_D0, INPUT);
   pinMode(PIN_D1, INPUT);
   pinMode(PIN_D2, INPUT);
@@ -67,9 +70,13 @@ void tcbm_port_input() {
   pinMode(PIN_D5, INPUT);
   pinMode(PIN_D6, INPUT);
   pinMode(PIN_D7, INPUT);
+*/
 }
 
 void tcbm_port_output() {
+  DDRD = DDRD | 0xFC;
+  DDRB = DDRB | 0x03;
+/*
   pinMode(PIN_D0, OUTPUT);
   pinMode(PIN_D1, OUTPUT);
   pinMode(PIN_D2, OUTPUT);
@@ -78,22 +85,23 @@ void tcbm_port_output() {
   pinMode(PIN_D5, OUTPUT);
   pinMode(PIN_D6, OUTPUT);
   pinMode(PIN_D7, OUTPUT);
+*/
 }
 
 void tcbm_set_status(uint8_t status) {
-  digitalWrite(PIN_STATUS0, status & 0x01);
-  digitalWrite(PIN_STATUS1, status & 0x02);
-//  PORTC = (PORTC & 0xFC) | (status & 0x03);
+  PORTC = (PORTC & 0xFC) | (status & 0x03);
+//  digitalWrite(PIN_STATUS0, status & 0x01);
+//  digitalWrite(PIN_STATUS1, status & 0x02);
 }
 
 void tcbm_set_ack(uint8_t ack) {
-  digitalWrite(PIN_ACK, ack);
-//  PORTC = (PORTC & 0xFB) | ((ack & 0x01) << 2);
+  PORTC = (PORTC & 0xFB) | ((ack & 0x01) << 2);
+//  digitalWrite(PIN_ACK, ack);
 }
 
 volatile uint8_t tcbm_get_dav(void) {
-  return digitalRead(PIN_DAV);
-//  return (PINC & 0x08) >> 3;
+  return (PINC & 0x08) >> 3;
+//  return digitalRead(PIN_DAV);
 }
 
 volatile uint8_t tcbm_port_read(void) {
@@ -113,6 +121,9 @@ volatile uint8_t tcbm_port_read(void) {
 }
 
 void tcbm_port_write(uint8_t d) { // XX speed it up
+  PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
+  PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
+/*
     digitalWrite(PIN_D0, d & 0x01 ? 1 : 0);
     digitalWrite(PIN_D1, d & 0x02 ? 1 : 0);
     digitalWrite(PIN_D2, d & 0x04 ? 1 : 0);
@@ -121,8 +132,7 @@ void tcbm_port_write(uint8_t d) { // XX speed it up
     digitalWrite(PIN_D5, d & 0x20 ? 1 : 0);
     digitalWrite(PIN_D6, d & 0x40 ? 1 : 0);
     digitalWrite(PIN_D7, d & 0x80 ? 1 : 0);
-//	PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
-//	PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
+*/
 }
 
 void tcbm_reset_bus() {
