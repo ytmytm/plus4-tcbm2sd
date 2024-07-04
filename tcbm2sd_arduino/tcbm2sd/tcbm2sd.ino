@@ -429,7 +429,7 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
-  uint8_t b;
+	uint8_t b;
 	uint8_t c = 0;
 	bool done = false;
 	Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX);
@@ -437,16 +437,17 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
- //       Serial.print(F("new character from ")); Serial.println(c, HEX);
-        b = output_buf[c];
+ //				Serial.print(F("new character from ")); Serial.println(c, HEX);
+				b = output_buf[c];
 				c++;
 				if (output_buf[c]==0 || c==sizeof(output_buf)) {
 					c--;
 					status = TCBM_STATUS_EOI; // status must be set with last valid byte
 				}
-        tcbm_write_data(b, status);
+				tcbm_write_data(b, status);
 				break;
 			case TCBM_CODE_COMMAND:
+				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
 					Serial.println(F("[UNTALK]"));
