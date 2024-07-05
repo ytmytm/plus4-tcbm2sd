@@ -520,14 +520,14 @@ void state_load() {
 					Serial.println(F("[UNTALK]"));
 				} else {
 					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
-					status = TCBM_STATUS_SEND; // some kind of error
+					status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
 				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
-				status = TCBM_STATUS_SEND; // some kind of error
+				status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				done = true;
 				break;
 		}
