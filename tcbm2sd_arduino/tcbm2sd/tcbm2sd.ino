@@ -480,7 +480,7 @@ void state_load() {
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print((const char*)filename);
-	if (SD.exists(filename)) {
+	if (SD.exists(filename)) { // XXX exists is not enough, have to do own search and name globbing if there are '*' and '?' in filename
 		Serial.println(F("filefound"));
 		aFile = SD.open(filename, FILE_READ);
 		if (!aFile) {
