@@ -11,8 +11,6 @@
 #include <SD.h>
 #include <SPI.h>
 
-File aFile;
-
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
 
@@ -269,13 +267,12 @@ uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
 
 //////////////////////////////////
 
-// state machine
-
 const uint8_t STATE_IDLE = 0; // wait for LISTEN command
 const uint8_t STATE_OPEN = 1; // after LISTEN, receiving filename or command on #15
 const uint8_t STATE_LOAD = 2; // after OPEN on channek 0, after TALK
 const uint8_t STATE_SAVE = 3; // after OPEN on channel 1, after LISTEN+SECOND
 const uint8_t STATE_STAT = 4; // like STATE_LOAD but write from output_buf
+const uint8_t STATE_DIR  = 5; // like STATE_LOAD but render directory listing
 
 uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
 uint8_t state = STATE_IDLE;
@@ -285,11 +282,92 @@ uint8_t input_buf_ptr = 0; // pointer to within input buffer
 uint8_t input_buf[64]; // input buffer - filename + commands
 uint8_t output_buf[64]; // output buffer, render status here
 
+// filesystem
+
+uint8_t filename[17];
+bool filename_is_dir = false;
+
+bool input_to_filename(uint8_t start) {
+	// copy input buffer from [start] to filename buffer:
+	// skip over initial '0:'
+	// if '$' stop immediately (no directory filtering)
+	// strip any <CR> characters
+	// return true if filename is directory
+	memset(filename, 0, sizeof(filename));
+	uint8_t in=start;
+	uint8_t out=0;
+	filename_is_dir = false;
+	if (input_buf[in]=='0') { in++; }
+	if (input_buf[in]==':') { in++; }
+	while (out<sizeof(filename) && in<input_buf_ptr && !filename_is_dir && input_buf[in]) {
+		if (input_buf[in]!=0x0d) {
+			filename[out] = input_buf[in];
+			out++;
+			if (input_buf[in]=='$') {
+				Serial.println(F("..filename is $"));
+				filename_is_dir = true;
+			}
+		}
+		in++;
+	}
+	Serial.print(F("...filename [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	return filename_is_dir;
+}
+
+void handle_command() {
+	Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	strcpy(output_buf, (const char*)"00, OK,00,00");
+	// CD?
+	if (input_buf[0]=='C' && input_buf[1]=='D') {
+		input_to_filename(2);
+		Serial.print(F("CD"));
+		if (!filename[0]) {
+			Serial.println(F("...no dirname"));
+			return;
+		}
+		if ((filename[0]==0x5f) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
+			Serial.println(F("...parent"));
+			return;
+		}
+		if (filename[0]=='/' && filename[1]=='/' && filename[2]==0) {
+			Serial.println(F("...root"));
+			return;
+		}
+		Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]"));
+		return;
+	}
+	// S?
+	if (input_buf[0]=='S') {
+		Serial.print(F("SCRATCH"));
+		input_to_filename(1);
+		if (!filename[0]) {
+			Serial.println(F("...no name"));
+			return;
+		}
+		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
+		return;
+	}
+	// I
+	if (input_buf[0]=='I') {
+		Serial.println(F("INIT"));
+		return;
+	}
+	// UI / UJ
+	if (input_buf[0]=='U' && (input_buf[1]=='I' || input_buf[1]=='J')) {
+		Serial.println(F("RESET"));
+		strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
+		return;
+	}
+}
+
+//////////////////////////////////
+
+// state machine
+
 void state_init() {
 	input_buf_ptr = 0;
 	memset(input_buf, 0, sizeof(input_buf));
 	memset(output_buf, 0, sizeof(output_buf));
-	strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
 	file_opened = false;
 }
 
@@ -320,6 +398,7 @@ void state_idle() {
 				if (channel == 15) {
 					Serial.println(F("handle command from input buf"));
 					// handle command from input buffer: S:, R:, CD<-, CD<name>, CD:<name>, CD//
+					handle_command();
 				}
 				state_init();
 				break;
@@ -329,6 +408,7 @@ void state_idle() {
 				channel = chn;
 				switch (channel) {
 					case 1:
+						input_to_filename(0);
 						state = STATE_SAVE; // receive data stream to be saved, until UNLISTEN
 						break;
 					case 15:
@@ -360,7 +440,12 @@ void state_idle() {
 				switch (channel) {
 					case 0:
 						if (file_opened) {
-							state = STATE_LOAD; // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+							input_to_filename(0);
+							if (filename_is_dir) {
+								state = STATE_DIR;	// render and send directory data
+							} else {
+								state = STATE_LOAD; // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+							}
 						} else {
 							Serial.println(F("file not open"));
 							state_init();
@@ -389,9 +474,22 @@ void state_load() {
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
 	uint8_t b;
+	uint16_t c = 0;
 	bool done = false;
-	Serial.print(F("[LOAD] on channel=")); Serial.println(channel, HEX);
-	if (input_buf[2]=='0') { // simulate file not found by checking for first name character
+	File aFile;
+
+	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
+	Serial.print(F(" searching for:")); Serial.print((const char*)filename);
+	if (SD.exists(filename)) {
+		Serial.println(F("filefound"));
+		aFile = SD.open(filename, FILE_READ);
+		if (!aFile) {
+			Serial.println(F("file open error"));
+			status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+			state_init(); // called this to reset input buf ptr and set file_opened flag to false
+			strcpy(output_buf, (const char*)"23, READ ERROR,00,00");
+		}
+	} else {
 		Serial.println(F("filenotfound"));
 		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 	}
@@ -406,13 +504,12 @@ void state_load() {
 					strcpy(output_buf, (const char*)"62, FILE NOT FOUND,00,00");
 					done = true; // exit immediately, there will be no UNTALK
 				} else {
-					b = demo[dpoint];
-//					Serial.print(dpoint,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
-					dpoint++;
-					if (dpoint == dmax) {
-						dpoint--;
-						status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+					b = aFile.read();
+					if (!aFile.available()) {		// was that last byte?
+						status = TCBM_STATUS_EOI;	// status must be set with last valid byte
 					}
+					c++;
+//					Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
 					tcbm_write_data(b, status);
 				}
 				break;
@@ -423,17 +520,25 @@ void state_load() {
 					Serial.println(F("[UNTALK]"));
 				} else {
 					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					status = TCBM_STATUS_SEND; // some kind of error
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
 				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				status = TCBM_STATUS_SEND; // some kind of error
 				done = true;
 				break;
 		}
 	}
-	Serial.print(F("loaded bytes:")); Serial.println(dpoint, HEX);
+	if (aFile) {
+		aFile.close();
+	}
+	Serial.print(F("loaded bytes:")); Serial.println(c, HEX);
+	state = STATE_IDLE;
+}
+
 	state = STATE_IDLE;
 }
 
@@ -571,6 +676,7 @@ void state_open() {
 void setup() {
   tcbm_init();
   state_init();
+  strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
   state = STATE_IDLE;
   Serial.begin(115200); // in fact 57600(?)
   Serial.println(F("initializing I/O"));
