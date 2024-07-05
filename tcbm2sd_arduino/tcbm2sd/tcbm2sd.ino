@@ -539,6 +539,45 @@ void state_load() {
 	state = STATE_IDLE;
 }
 
+void state_directory() {
+	// send data until UNTALK
+	uint8_t cmd;
+	uint8_t dat;
+	uint8_t status = TCBM_STATUS_OK;
+	uint8_t b;
+	bool done = false;
+	Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX);
+	while (!done) {
+		cmd = tcbm_read_cmd_block();
+		switch (cmd) {
+			case TCBM_CODE_SEND:
+				b = demo[dpoint];
+//					Serial.print(dpoint,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
+				dpoint++;
+				if (dpoint == dmax) {
+					dpoint--;
+					status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+				}
+				tcbm_write_data(b, status);
+				break;
+			case TCBM_CODE_COMMAND:
+				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
+				dat = tcbm_read_data(status);
+				if (dat == 0x5F) { // UNTALK
+					Serial.println(F("[UNTALK]"));
+				} else {
+					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				}
+				done = true;
+				break;
+			default:
+				dat = tcbm_read_data(status);
+				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				done = true;
+				break;
+		}
+	}
+	Serial.print(F("dir bytes:")); Serial.println(dpoint, HEX);
 	state = STATE_IDLE;
 }
 
@@ -735,6 +774,9 @@ void loop() {
 			break;
 		case STATE_STAT:
 			state_status();
+			break;
+		case STATE_DIR:
+			state_directory();
 			break;
 		default:
 			Serial.print(F("unknown state=")); Serial.println(state, HEX);
