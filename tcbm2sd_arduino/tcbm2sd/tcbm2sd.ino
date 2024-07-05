@@ -590,17 +590,38 @@ void state_save() {
 	// receive data until UNLISTEN
 	uint8_t cmd;
 	uint8_t dat;
+	uint8_t status = TCBM_STATUS_OK;
 	uint16_t c = 0;
 	bool done = false;
+	File aFile;
+
 	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
+	Serial.print(F(" searching for:")); Serial.print((const char*)filename);
+	if (SD.exists(filename)) {
+		Serial.println(F("filefound"));
+		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
+		state_init(); // called this to reset input buf ptr and set file_opened flag to false
+		strcpy(output_buf, (const char*)"63, FILE EXISTS,00,00");
+	} else {
+		Serial.println(F("filenotfound"));
+		aFile = SD.open(filename, FILE_WRITE);
+		if (!aFile) {
+			Serial.println(F("file open error"));
+			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
+			state_init(); // called this to reset input buf ptr and set file_opened flag to false
+			strcpy(output_buf, (const char*)"26, WRITE PROTECT ON,00,00");
+		}
+	}
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
-		dat = tcbm_read_data(TCBM_STATUS_OK);
+		dat = tcbm_read_data(status);
 		switch (cmd) {
 			case TCBM_CODE_RECV:
-				// read and ignore data
-				c++;
 //				Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX);
+				if (aFile) {
+					aFile.write(dat);
+				}
+				c++;
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
@@ -615,6 +636,9 @@ void state_save() {
 				done = true;
 				break;
 		}
+	}
+	if (aFile) {
+		aFile.close();
 	}
 	Serial.print(F("saved bytes:")); Serial.println(c, HEX);
 	state = STATE_IDLE;
