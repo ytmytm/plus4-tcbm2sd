@@ -359,6 +359,18 @@ void handle_command() {
 			return;
 		}
 		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
+    if (SD.exists(pwd+String((const char*)filename))) { // XXX like with LOAD exists is not enough - this should glob the file patterns
+      if (SD.remove(pwd+String((const char*)filename))) {
+        Serial.println(F("...deleted"));
+        strcpy(output_buf, (const char*)"01, FILES SCRATCHED,01");
+      } else {
+        Serial.println(F("...not deleted"));
+        strcpy(output_buf, (const char*)"26, WRITE PROTECT ON,00,00");        
+      }
+    } else {
+      Serial.println(F("...NOT FOUND"));
+      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
+    }
 		return;
 	}
 	// I
