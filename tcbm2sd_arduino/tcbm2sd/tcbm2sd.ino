@@ -309,6 +309,7 @@ bool input_to_filename(uint8_t start) {
 
 void handle_command() {
 	Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+  memset(output_buf, 0, sizeof(output_buf));
 	strcpy(output_buf, (const char*)"00, OK,00,00");
 	// CD?
 	if (input_buf[0]=='C' && input_buf[1]=='D') {
@@ -354,6 +355,7 @@ void handle_command() {
 		input_to_filename(1);
 		if (!filename[0]) {
 			Serial.println(F("...no name"));
+      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
 			return;
 		}
 		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
@@ -370,6 +372,7 @@ void handle_command() {
 		strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
 		return;
 	}
+  strcpy(output_buf, (const char*)"30, SYNTAX ERROR,00,00");
 }
 
 //////////////////////////////////
@@ -379,7 +382,6 @@ void handle_command() {
 void state_init() {
 	input_buf_ptr = 0;
 	memset(input_buf, 0, sizeof(input_buf));
-	memset(output_buf, 0, sizeof(output_buf));
 	file_opened = false;
 }
 
@@ -490,6 +492,7 @@ void state_load() {
 	bool done = false;
 	File aFile;
   String fname = pwd + String((const char*)filename);
+  strcpy(output_buf, (const char*)"00, OK,00,00");
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
@@ -802,6 +805,8 @@ void state_save() {
 	File aFile;
 
   String fname = pwd + String((const char*)filename);
+
+  strcpy(output_buf, (const char*)"00, OK,00,00");
 	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
 	if (SD.exists(fname)) {
