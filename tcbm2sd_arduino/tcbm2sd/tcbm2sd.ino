@@ -273,6 +273,8 @@ uint8_t input_buf[64]; // input buffer - filename + commands
 uint8_t output_buf_ptr = 0; // pointer to within output buffer (can't rely on C strings when sending data bytes)
 uint8_t output_buf[64]; // output buffer, render status here
 
+String pwd = "/";
+
 // filesystem
 
 uint8_t filename[17];
@@ -318,13 +320,32 @@ void handle_command() {
 		}
 		if ((filename[0]==0x5f) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
 			Serial.println(F("...parent"));
+      Serial.println(pwd);
+      if (pwd.length()>1) {
+        pwd = pwd.substring(0,pwd.length()-1);
+        Serial.println(pwd);
+        int i = pwd.lastIndexOf('/');
+        Serial.println(i);
+        if (i>=0) {
+          pwd = pwd.substring(0,i+1);
+        }
+      }
+      Serial.println(pwd);
 			return;
 		}
 		if (filename[0]=='/' && filename[1]=='/' && filename[2]==0) {
 			Serial.println(F("...root"));
+      pwd = "/";
 			return;
 		}
+    if (SD.exists(pwd+String((const char*)filename))) {
+      pwd = pwd + String((const char*)filename) + String("/");
+    } else {
+      Serial.println(F("...NOT FOUND"));
+      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
+    }
 		Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]"));
+    Serial.println(pwd);
 		return;
 	}
 	// S?
@@ -468,12 +489,13 @@ void state_load() {
 	uint16_t c = 0;
 	bool done = false;
 	File aFile;
+  String fname = pwd + String((const char*)filename);
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
-	Serial.print(F(" searching for:")); Serial.print((const char*)filename);
-	if (SD.exists(filename)) { // XXX exists is not enough, have to do own search and name globbing if there are '*' and '?' in filename
+	Serial.print(F(" searching for:")); Serial.print(fname);
+	if (SD.exists(fname)) { // XXX exists is not enough, have to do own search and name globbing if there are '*' and '?' in filename and ascii/petscii+limit to 16 chars
 		Serial.println(F("filefound"));
-		aFile = SD.open(filename, FILE_READ);
+		aFile = SD.open(fname, FILE_READ);
 		if (!aFile) {
 			Serial.println(F("file open error"));
 			status = TCBM_STATUS_SEND; // FILE not found == nothing to send
@@ -779,16 +801,17 @@ void state_save() {
 	bool done = false;
 	File aFile;
 
+  String fname = pwd + String((const char*)filename);
 	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
-	Serial.print(F(" searching for:")); Serial.print((const char*)filename);
-	if (SD.exists(filename)) {
+	Serial.print(F(" searching for:")); Serial.print(fname);
+	if (SD.exists(fname)) {
 		Serial.println(F("filefound"));
 		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
 		strcpy(output_buf, (const char*)"63, FILE EXISTS,00,00");
 	} else {
 		Serial.println(F("filenotfound"));
-		aFile = SD.open(filename, FILE_WRITE);
+		aFile = SD.open(fname, FILE_WRITE);
 		if (!aFile) {
 			Serial.println(F("file open error"));
 			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
