@@ -165,6 +165,7 @@ uint8_t tcbm_read_cmd_block() { // block until read command byte - 0 or $81/82/8
   volatile uint8_t tmp=0, cmd=1;
 ///  Serial.println(F("wait for DAV=1"));
   while (!(tcbm_get_dav() == 1));
+  while (!(cmd==0x81 || cmd==0x82 || cmd==0x83 || cmd==0x84)) {
   while (!(cmd & 0x80)) {
     tmp=0; cmd=1;
     while (tmp!=cmd) {
@@ -172,6 +173,7 @@ uint8_t tcbm_read_cmd_block() { // block until read command byte - 0 or $81/82/8
      cmd = tcbm_port_read();
 //    Serial.print(F("tmp,cmd=")); Serial.println((uint16_t)(tmp << 8 | cmd), HEX);
     }
+  }
   }
 ///  Serial.print(F("CMCMD=")); Serial.println((uint16_t)(tmp << 8 | cmd), HEX);
 ///  Serial.println(F("set ACK=0"));
