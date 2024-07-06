@@ -14,9 +14,6 @@
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
 
-// ls
-File root;
-
 #endif
 
 //////////////////////////////////
@@ -50,13 +47,6 @@ const uint8_t TCBM_STATUS_OK	= 0; // OK, also idle state when waiting for comman
 const uint8_t TCBM_STATUS_RECV	= 1; // controller was trying to receive a byte from the device, but the device did not have any data (also FILE NOT FOUND)
 const uint8_t TCBM_STATUS_SEND	= 2; // controller was trying to send a byte to the device, but the device decided not to accept it
 const uint8_t TCBM_STATUS_EOI	= 3; // byte currently received by the controller is the last byte of the stream
-
-//////////
-
-// 10 REM MACIEJ
-const uint8_t demo[] = { 0x01, 0x10, 0x0e, 0x10, 0x0a, 0x00, 0x8f, 0x20, 0x4d, 0x41, 0x43, 0x49, 0x45, 0x4a, 0x0, 0x0, 0x0 };
-uint16_t dpoint = 0;
-const uint8_t dmax = sizeof(demo);
 
 //////////
 
@@ -280,6 +270,7 @@ bool file_opened = false;
 
 uint8_t input_buf_ptr = 0; // pointer to within input buffer
 uint8_t input_buf[64]; // input buffer - filename + commands
+uint8_t output_buf_ptr = 0; // pointer to within output buffer (can't rely on C strings when sending data bytes)
 uint8_t output_buf[64]; // output buffer, render status here
 
 // filesystem
@@ -539,24 +530,178 @@ void state_load() {
 	state = STATE_IDLE;
 }
 
+// render volume header to the buffer, incl. load address
+void dir_render_header() {
+	uint8_t i=0, j=0;
+	output_buf_ptr = 0;
+	// load address 0x0401 (PET)
+	output_buf[i++] = 1;
+	output_buf[i++] = 4;
+	// BASIC link 0x0101
+	output_buf[i++] = 1;
+	output_buf[i++] = 1;
+	// size 0
+	output_buf[i++] = 0;
+	output_buf[i++] = 0;
+	output_buf[i++] = 0x12; // REV ON?
+	output_buf[i++] = '"';
+	// volume name
+	for (uint8_t j=0; j<16; j++) {
+		output_buf[i++]=' ';
+	}
+	output_buf[i++] = '"';
+	output_buf[i++] = ' ';
+	output_buf[i++] = '0';
+	output_buf[i++] = '0';
+	output_buf[i++] = ' ';
+	output_buf[i++] = '2';
+	output_buf[i++] = 'A';
+	output_buf[i++] = 0; // end of line
+	output_buf_ptr = i;
+}
+
+// render blocks free to the buffer, incl. three zero bytes at the end of BASIC
+void dir_render_footer() {
+	uint8_t i=0;
+	// BASIC link 0x0101
+	output_buf[i++] = 1;
+	output_buf[i++] = 1;
+	// 999
+	output_buf[i++] = 0xe7;
+	output_buf[i++] = 0x03;
+	output_buf[i++] = 'B';
+	output_buf[i++] = 'L';
+	output_buf[i++] = 'O';
+	output_buf[i++] = 'C';
+	output_buf[i++] = 'K';
+	output_buf[i++] = 'S';
+	output_buf[i++] = ' ';
+	output_buf[i++] = 'F';
+	output_buf[i++] = 'R';
+	output_buf[i++] = 'E';
+	output_buf[i++] = 'E';
+	output_buf[i++] = '.';
+	output_buf[i++] = 0; // end of line
+	// end of program
+	output_buf[i++] = 0;
+	output_buf[i++] = 0;
+	output_buf_ptr = i;
+}
+
+bool dir_render_file(File dir) {
+    File entry =  dir.openNextFile();
+	output_buf_ptr = 0;
+	char *name;
+	uint32_t size;
+
+	if (!entry) { return false; } // no more files
+/*
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("DIR");
+    } else {
+      // files have sizes, directories do not
+      Serial.print("\t\t");
+      Serial.println(entry.size(), DEC);
+	}
+*/
+	name = entry.name();
+	size = 1 + entry.size() / 254;
+
+	memset(output_buf, 0, sizeof(output_buf));
+	uint8_t i=0, c=0;
+
+	// BASIC link 0x0101
+	output_buf[i++] = 1;
+	output_buf[i++] = 1;
+	// size
+	output_buf[i++] = (uint8_t)(size & 0x00FF);
+	output_buf[i++] = (uint8_t)((size & 0xFF00) >> 8);
+	// pad so that name starts at 5th character
+	if (size < 10)		{ output_buf[i++] = ' '; }
+	if (size < 100) 	{ output_buf[i++] = ' '; }
+	if (size < 1000) 	{ output_buf[i++] = ' '; }
+	if (size < 10000) 	{ output_buf[i++] = ' '; }
+	// quote
+	output_buf[i++] = '"';
+	// name
+	while (name[c]) {
+		output_buf[i++] = name[c++];
+	}
+	// endquote
+	output_buf[i++] = '"';
+	// pad to 16
+	while (c<16) {
+		output_buf[i++] = ' ';
+    c++;
+	}
+	// space or splat
+	output_buf[i++] = ' ';
+	// filetype
+    if (entry.isDirectory()) {
+		output_buf[i++] = 'D';
+		output_buf[i++] = 'I';
+		output_buf[i++] = 'R';
+	} else {
+		output_buf[i++] = 'P';
+		output_buf[i++] = 'R';
+		output_buf[i++] = 'G';
+	}
+	// space or <
+	output_buf[i++] = ' ';
+	// last space
+	output_buf[i++] = ' ';
+	// end of line
+	output_buf[i++] = 0; // end of line
+	//
+	output_buf_ptr = i;
+  entry.close();
+	return true;
+}
+
 void state_directory() {
 	// send data until UNTALK
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
-	uint8_t b;
+	uint8_t b, i;
 	bool done = false;
+	bool footer = false; // footer && end of buffer means end of transmission
+  strcpy(output_buf, (const char*)"00, OK,00,00");
+
+	File aFile;
+	aFile = SD.open(pwd); // current dir
+	if (!aFile) {
+		Serial.println(F("directory open error"));
+		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+		state_init(); // called this to reset input buf ptr and set file_opened flag to false
+		strcpy(output_buf, (const char*)"23, READ ERROR,00,00");
+	}
+
 	Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX);
+	dir_render_header();
+  i = 0;
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
-				b = demo[dpoint];
-//					Serial.print(dpoint,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
-				dpoint++;
-				if (dpoint == dmax) {
-					dpoint--;
-					status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+				b = output_buf[i];
+//				Serial.print(i,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
+				i++;
+				if (i == output_buf_ptr) {
+//					Serial.print(F("..end of buffer:"));
+					i = 0;
+					if (footer) {
+//						Serial.print(F("..EOI"));
+						status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
+					} else {
+//						Serial.print(F("..next file"));
+						footer = !dir_render_file(aFile);
+						if (footer) {
+//							Serial.print(F("..no more files, footer"));
+							dir_render_footer();
+						}
+					}
 				}
 				tcbm_write_data(b, status);
 				break;
@@ -566,18 +711,18 @@ void state_directory() {
 				if (dat == 0x5F) { // UNTALK
 					Serial.println(F("[UNTALK]"));
 				} else {
-					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					Serial.print(F("unk DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
-				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				Serial.print(F("unk DIR state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
 				done = true;
 				break;
 		}
 	}
-	Serial.print(F("dir bytes:")); Serial.println(dpoint, HEX);
+  strcpy(output_buf, (const char*)"00, OK,00,00");
 	state = STATE_IDLE;
 }
 
@@ -725,8 +870,8 @@ void state_open() {
 	Serial.println(input_buf_ptr, HEX);
 	Serial.print(F("...got [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
 	if (channel == 0) {
-		// find file for LOAD
-		dpoint = 0; // reset pointer, reset status for file not found
+		// find file for LOAD?
+		// reset pointer, reset status for file not found
 	}
 	if (channel == 1) {
 		// prepare for SAVE
@@ -752,10 +897,6 @@ void setup() {
   }
 #endif
   Serial.println(F("tcbm2sd ready"));
-  //
-// works
-//  root = SD.open("/");
-//  printDirectory(root, 0);
 }
 
 void loop() {
@@ -782,28 +923,4 @@ void loop() {
 			Serial.print(F("unknown state=")); Serial.println(state, HEX);
 			break;
 	}
-}
-
-void printDirectory(File dir, int numTabs) {
-  while (true) {
-
-    File entry =  dir.openNextFile();
-    if (! entry) {
-      // no more files
-      break;
-    }
-    for (uint8_t i = 0; i < numTabs; i++) {
-      Serial.print('\t');
-    }
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println("/");
-      printDirectory(entry, numTabs + 1);
-    } else {
-      // files have sizes, directories do not
-      Serial.print("\t\t");
-      Serial.println(entry.size(), DEC);
-    }
-    entry.close();
-  }
 }
