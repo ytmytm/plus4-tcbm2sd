@@ -184,7 +184,10 @@ uint8_t tcbm_read_cmd_block() { // block until read command byte - 0 or $81/82/8
   while (!(cmd & 0x80)) {
     tmp=0; cmd=1;
     while (tmp!=cmd) {
+//     tmp = tcbm_port_read_slow(); // this delay seems to help, but problem may be in CPLD logic
      tmp = tcbm_port_read();
+     tcbm_port_read();
+     tcbm_port_read();
      cmd = tcbm_port_read();
 //    Serial.print(F("tmp,cmd=")); Serial.println((uint16_t)(tmp << 8 | cmd), HEX);
     }
