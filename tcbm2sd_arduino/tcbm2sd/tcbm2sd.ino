@@ -631,9 +631,25 @@ void dir_render_header() {
 	output_buf[i++] = 0;
 	output_buf[i++] = 0x12; // REV ON?
 	output_buf[i++] = '"';
-	// volume name
+	// volume name -- last part of path
+  String p(pwd);
+//  Serial.println(p);
+  if (p.length()>1) {
+    p=p.substring(0,p.length()-1);
+//    Serial.println(p);
+    int idx = p.lastIndexOf('/');
+//    Serial.println(i);
+    if (idx>=0) {
+      p = p.substring(idx,p.length());
+    }
+  }
+//  Serial.println(p);
 	for (uint8_t j=0; j<16; j++) {
-		output_buf[i++]=' ';
+    if (j<p.length()) {
+      output_buf[i++]=p.charAt(j);
+    } else {
+		  output_buf[i++]=' ';
+    }
 	}
 	output_buf[i++] = '"';
 	output_buf[i++] = ' ';
