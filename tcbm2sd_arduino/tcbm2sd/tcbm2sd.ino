@@ -370,12 +370,12 @@ void handle_command() {
 		}
 		if ((filename[0]==0x5f) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
 			Serial.println(F("...parent"));
-      Serial.println(pwd);
+//      Serial.println(pwd);
       if (pwd.length()>1) {
         pwd = pwd.substring(0,pwd.length()-1);
-        Serial.println(pwd);
+//        Serial.println(pwd);
         int i = pwd.lastIndexOf('/');
-        Serial.println(i);
+//        Serial.println(i);
         if (i>=0) {
           pwd = pwd.substring(0,i+1);
         }
