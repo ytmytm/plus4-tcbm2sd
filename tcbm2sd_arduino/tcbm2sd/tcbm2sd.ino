@@ -1077,6 +1077,7 @@ void setup() {
     return;
   }
   Serial.println(F("tcbm2sd ready"));
+  Serial.end();
 }
 
 void loop() {
