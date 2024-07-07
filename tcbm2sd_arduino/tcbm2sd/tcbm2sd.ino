@@ -981,6 +981,11 @@ void state_open() {
 	if (channel == 1) {
 		// prepare for SAVE
 	}
+  if (channel == 15) {
+    // Directory browser doesn't call CLOSE, only unlisten
+    handle_command();
+    state_init(); // reset input buffer
+  }
 	state = STATE_IDLE;
 }
 
