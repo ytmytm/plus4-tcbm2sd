@@ -48,7 +48,7 @@ const uint8_t TCBM_STATUS_EOI	= 3; // byte currently received by the controller 
 
 //////////
 
-void tcbm_port_input() {
+void volatile inline tcbm_port_input() {
   DDRD = DDRD & 0x03;
   DDRB = DDRB & 0xFC;
 /*
@@ -63,7 +63,7 @@ void tcbm_port_input() {
 */
 }
 
-void tcbm_port_output() {
+void volatile inline tcbm_port_output() {
   DDRD = DDRD | 0xFC;
   DDRB = DDRB | 0x03;
 /*
@@ -78,23 +78,23 @@ void tcbm_port_output() {
 */
 }
 
-void tcbm_set_status(uint8_t status) {
+void volatile inline tcbm_set_status(uint8_t status) {
   PORTC = (PORTC & 0xFC) | (status & 0x03);
 //  digitalWrite(PIN_STATUS0, status & 0x01);
 //  digitalWrite(PIN_STATUS1, status & 0x02);
 }
 
-void tcbm_set_ack(uint8_t ack) {
+void volatile inline tcbm_set_ack(uint8_t ack) {
   PORTC = (PORTC & 0xFB) | ((ack & 0x01) << 2);
 //  digitalWrite(PIN_ACK, ack);
 }
 
-volatile uint8_t tcbm_get_dav(void) {
+volatile inline uint8_t tcbm_get_dav(void) {
   return (PINC & 0x08) >> 3;
 //  return digitalRead(PIN_DAV);
 }
 
-volatile uint8_t tcbm_port_read(void) {
+volatile inline uint8_t tcbm_port_read(void) {
   return (PIND >> 2) | ((PINB & 0x03) << 6);
   /*
   return (
@@ -110,7 +110,22 @@ volatile uint8_t tcbm_port_read(void) {
   */
 }
 
-void tcbm_port_write(uint8_t d) {
+/*
+volatile inline uint8_t tcbm_port_read_slow(void) { // used only in blocking cmd read
+  return (
+      (digitalRead(PIN_D0) ? 1 : 0)      |
+      (digitalRead(PIN_D1) ? 1 : 0) << 1 |
+      (digitalRead(PIN_D2) ? 1 : 0) << 2 |
+      (digitalRead(PIN_D3) ? 1 : 0) << 3 |
+      (digitalRead(PIN_D4) ? 1 : 0) << 4 |
+      (digitalRead(PIN_D5) ? 1 : 0) << 5 |
+      (digitalRead(PIN_D6) ? 1 : 0) << 6 |
+      (digitalRead(PIN_D7) ? 1 : 0) << 7
+  );
+}
+*/
+
+volatile void tcbm_port_write(uint8_t d) {
   PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
   PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
 /*
