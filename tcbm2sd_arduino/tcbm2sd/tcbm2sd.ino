@@ -287,6 +287,7 @@ uint8_t input_buf_ptr = 0; // pointer to within input buffer
 uint8_t input_buf[64]; // input buffer - filename + commands
 uint8_t output_buf_ptr = 0; // pointer to within output buffer (can't rely on C strings when sending data bytes)
 uint8_t output_buf[64]; // output buffer, render status here
+uint8_t cbm_errno = 0; // CBM DOS error number
 
 String pwd = "/";
 
@@ -322,10 +323,43 @@ bool input_to_filename(uint8_t start) {
 	return filename_is_dir;
 }
 
+void set_error_msg(uint8_t error) {
+  cbm_errno = error;
+  memset(output_buf, 0, sizeof(output_buf));
+  switch (cbm_errno) {
+    case 0:
+      strcpy((char*)output_buf, (const char*)"00, OK,00,00");
+      break;
+    case 1:
+      strcpy((char*)output_buf, (const char*)"01, FILES SCRATCHED,01");
+      break;
+    case 23:
+      strcpy((char*)output_buf, (const char*)"23, READ ERROR,00,00");
+      break;
+    case 26:
+      strcpy((char*)output_buf, (const char*)"26, WRITE PROTECT ON,00,00");
+      break;
+    case 30:
+      strcpy((char*)output_buf, (const char*)"30, SYNTAX ERROR,00,00");
+      break;
+    case 62:
+      strcpy((char*)output_buf, (const char*)"62, FILE NOT FOUND,00,00");
+      break;
+    case 63:
+      strcpy((char*)output_buf, (const char*)"63, FILE EXISTS,00,00");
+      break;
+    case 73:
+      strcpy((char*)output_buf, (const char*)"73, TCBM2SD 2024,00,00");
+      break;
+    default:
+      strcpy((char*)output_buf, (const char*)"99, UNKNOWN,00,00");
+      break;
+  }
+}
+
 void handle_command() {
 	Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
-  memset(output_buf, 0, sizeof(output_buf));
-	strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 	// CD?
 	if (input_buf[0]=='C' && input_buf[1]=='D') {
 		input_to_filename(2);
@@ -358,7 +392,7 @@ void handle_command() {
       pwd = pwd + String((const char*)filename) + String("/");
     } else {
       Serial.println(F("...NOT FOUND"));
-      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
+      set_error_msg(62);
     }
 		Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]"));
     Serial.println(pwd);
@@ -370,21 +404,21 @@ void handle_command() {
 		input_to_filename(1);
 		if (!filename[0]) {
 			Serial.println(F("...no name"));
-      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
+      set_error_msg(62);
 			return;
 		}
 		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
     if (SD.exists(pwd+String((const char*)filename))) { // XXX like with LOAD exists is not enough - this should glob the file patterns
       if (SD.remove(pwd+String((const char*)filename))) {
         Serial.println(F("...deleted"));
-        strcpy(output_buf, (const char*)"01, FILES SCRATCHED,01");
+        set_error_msg(1);
       } else {
         Serial.println(F("...not deleted"));
-        strcpy(output_buf, (const char*)"26, WRITE PROTECT ON,00,00");        
+        set_error_msg(26);
       }
     } else {
       Serial.println(F("...NOT FOUND"));
-      strcpy(output_buf, (const char*)"63, FILE NOT FOUND,00,00");
+      set_error_msg(62);
     }
 		return;
 	}
@@ -396,10 +430,10 @@ void handle_command() {
 	// UI / UJ
 	if (input_buf[0]=='U' && (input_buf[1]=='I' || input_buf[1]=='J')) {
 		Serial.println(F("RESET"));
-		strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
+    set_error_msg(73);
 		return;
 	}
-  strcpy(output_buf, (const char*)"30, SYNTAX ERROR,00,00");
+  set_error_msg(30);
 }
 
 //////////////////////////////////
@@ -519,7 +553,7 @@ void state_load() {
 	bool done = false;
 	File aFile;
   String fname = pwd + String((const char*)filename);
-  strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
@@ -530,7 +564,7 @@ void state_load() {
 			Serial.println(F("file open error"));
 			status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
-			strcpy(output_buf, (const char*)"23, READ ERROR,00,00");
+      set_error_msg(23);
 		}
 	} else {
 		Serial.println(F("filenotfound"));
@@ -544,7 +578,7 @@ void state_load() {
 //					Serial.println(F("0D : 0D"));
 					tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
 					state_init(); // called this to reset input buf ptr and set file_opened flag to false
-					strcpy(output_buf, (const char*)"62, FILE NOT FOUND,00,00");
+          set_error_msg(62);
 					done = true; // exit immediately, there will be no UNTALK
 				} else {
 					b = aFile.read();
@@ -719,7 +753,7 @@ void state_directory() {
 	uint8_t b, i;
 	bool done = false;
 	bool footer = false; // footer && end of buffer means end of transmission
-  strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 
 	File aFile;
 	aFile = SD.open(pwd); // current dir
@@ -727,7 +761,7 @@ void state_directory() {
 		Serial.println(F("directory open error"));
 		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
-		strcpy(output_buf, (const char*)"23, READ ERROR,00,00");
+    set_error_msg(23);
 	}
 
 	Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX);
@@ -774,7 +808,7 @@ void state_directory() {
 				break;
 		}
 	}
-  strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 	state = STATE_IDLE;
 }
 
@@ -818,7 +852,7 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 		}
 	}
 	// reset any error
-	strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 	state = STATE_IDLE;
 }
 
@@ -833,14 +867,14 @@ void state_save() {
 
   String fname = pwd + String((const char*)filename);
 
-  strcpy(output_buf, (const char*)"00, OK,00,00");
+  set_error_msg(0);
 	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
 	if (SD.exists(fname)) {
 		Serial.println(F("filefound"));
 		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
-		strcpy(output_buf, (const char*)"63, FILE EXISTS,00,00");
+    set_error_msg(63);
 	} else {
 		Serial.println(F("filenotfound"));
 		aFile = SD.open(fname, FILE_WRITE);
@@ -848,7 +882,7 @@ void state_save() {
 			Serial.println(F("file open error"));
 			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
-			strcpy(output_buf, (const char*)"26, WRITE PROTECT ON,00,00");
+      set_error_msg(26);
 		}
 	}
 	while (!done) {
@@ -939,7 +973,7 @@ void state_open() {
 void setup() {
   tcbm_init();
   state_init();
-  strcpy(output_buf, (const char*)"73, TCBM2SD 2024,00,00");
+  set_error_msg(73);
   state = STATE_IDLE;
   Serial.begin(115200); // in fact 57600(?)
   Serial.println(F("initializing I/O"));
