@@ -323,6 +323,75 @@ bool input_to_filename(uint8_t start) {
 	return filename_is_dir;
 }
 
+// match filename[] to directory entry, return matched filename (if not matched it can be wrong - then SD.exists(fname) fails with file-not-found error
+String fullfname;
+String match_filename(bool onlyDir) {
+  String fname = String((const char*)filename);
+  fullfname = pwd + fname;
+
+//  Serial.print(F(" searching for:")); Serial.println(fullfname);
+  if (fname.indexOf('*')<0 && fname.indexOf('?')<0) {
+//    Serial.println(F(" no globs"));
+    return fullfname;
+  }
+//  Serial.print(F(" matching...")); Serial.println(fname);
+
+  File dir;
+  File entry;
+  dir = SD.open(pwd); // current dir
+  if (!dir) {
+    return fullfname; // this will fail later on open
+  }
+  entry = dir.openNextFile();
+  String entryname = String(entry.name());
+  while (entry) {
+    uint8_t i=0;
+    bool match;
+    char c;
+    if ((onlyDir && entry.isDirectory()) || (!onlyDir && !entry.isDirectory())) {
+      i=0;
+      match = true;
+      entryname = String(entry.name());
+//      Serial.println(entryname);
+      while (i<16 && i<fname.length() && i<entryname.length() && match) {
+        c = fname.charAt(i);
+//        Serial.print(i); Serial.print(":"); Serial.println(c); 
+        switch (c) {
+          case '?':
+            break;  // skip to next one
+          case '*':
+            fullfname = pwd + entryname;
+            entry.close();
+            dir.close();
+            return fullfname; // have match
+            break;
+          default:
+            match = match && (c == entryname.charAt(i));
+            break;
+        }
+//        Serial.println(i);
+        i++;
+      }
+      if (match && ((i==16 && entryname.length()>16) || (i<=16 && entryname.length()==fname.length()))) {
+//        Serial.println(F("..matched/first 16 chars to longentry "));
+        fullfname = pwd + entryname;
+        entry.close();
+        dir.close();
+        return fullfname;
+      }
+    }
+    entry.close();
+    entry = dir.openNextFile();
+  }
+  if (entry) {
+    entry.close();
+  }
+  if (dir) {
+    dir.close();
+  }
+  return fullfname; // this will fail
+}
+
 void set_error_msg(uint8_t error) {
   cbm_errno = error;
   memset(output_buf, 0, sizeof(output_buf));
@@ -358,6 +427,7 @@ void set_error_msg(uint8_t error) {
 }
 
 void handle_command() {
+  String fname;
 	Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
   set_error_msg(0);
 	// CD?
@@ -388,8 +458,9 @@ void handle_command() {
       pwd = "/";
 			return;
 		}
-    if (SD.exists(pwd+String((const char*)filename))) {
-      pwd = pwd + String((const char*)filename) + String("/");
+    fname = match_filename(true);
+    if (SD.exists(fname)) { // XXX pattern match
+      pwd = fname + String("/");
     } else {
       Serial.println(F("...NOT FOUND"));
       set_error_msg(62);
@@ -408,8 +479,9 @@ void handle_command() {
 			return;
 		}
 		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
-    if (SD.exists(pwd+String((const char*)filename))) { // XXX like with LOAD exists is not enough - this should glob the file patterns
-      if (SD.remove(pwd+String((const char*)filename))) {
+    fname = match_filename(false);
+    if (SD.exists(fname)) { // will remove only first matching file
+      if (SD.remove(fname)) {
         Serial.println(F("...deleted"));
         set_error_msg(1);
       } else {
@@ -552,8 +624,8 @@ void state_load() {
 	uint16_t c = 0;
 	bool done = false;
 	File aFile;
-  String fname = pwd + String((const char*)filename);
   set_error_msg(0);
+  String fname = match_filename(false); // only files
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
