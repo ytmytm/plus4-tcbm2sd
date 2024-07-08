@@ -29,6 +29,7 @@ module Fake6523(
                 inout [1:0]port_b,
                 inout [7:6]port_c,
 					 input [15:1]pla_i,	// PLA pins
+					 input [4:3]addr, 	// remaining addr lines
 					 output pla_f7, 		// PLA feedback output pin (debug)
 					 output _cs, 			// 6523 /CS pin (debug)
 					 output _resetout		// 3.3V /RESET
@@ -80,11 +81,12 @@ assign _cs = !(
 		( (pla_f7) && // pla_f7 - with feedback
 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
 			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
+			!addr[3] && // A3=0
 			!pla_i[12] // A8=0
 		) &&
 		(
-			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
-			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEE7 TCBM:1 IEC:8
+			(!addr[4] && !pla_i[15] && !pla_i[8]) || // A4==0 && A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
+			( addr[4] &&  pla_i[15] &&  pla_i[8])    // A4==1 && A5==1 && DEV==1 // FEF0-FEF7 TCBM:1 IEC:8
 		)
 		);
 

@@ -47,5 +47,8 @@ NET "pla_i<12>"   LOC = "P9"   ; # PLA I12 (23) <- A8 exp. P
 NET "pla_i<13>"   LOC = "P10"  ; # PLA I13 (22) <- A7 exp. R
 NET "pla_i<14>"   LOC = "P11"  ; # PLA I14 (21) <- A6 exp. S
 NET "pla_i<15>"   LOC = "P12"  ; # PLA I15 (20) <- A5 exp. T
+# additional inputs
+NET "addr<4>"     LOC = "P13"  ; # PLA xxx      <- A4 exp. U
+NET "addr<3>"     LOC = "P15"  ; # PLA xxx      <- A3 exp. V
 # additional output
 NET "_resetout"   LOC = "P44"  ; # copy 5V /RESET to 3.3V /RESET
