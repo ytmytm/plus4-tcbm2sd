@@ -69,8 +69,8 @@ assign _cs = !(
 			!pla_i[7]     // /RAS
 		) &&
 		(
-			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FECF (but without A4 decoded to FEC0-FEDF) TCBM:0 IEC:8
-			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:9
+			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FECF (but without A4 decoded to FEC0-FEDF) TCBM:0 IEC:9
+			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:8
 		)
 		);
 */
@@ -83,8 +83,8 @@ assign _cs = !(
 			!pla_i[12] // A8=0
 		) &&
 		(
-			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FECF (but without A4 decoded to FEC0-FEDF) TCBM:0 IEC:8
-			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:9
+			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
+			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEE7 TCBM:1 IEC:8
 		)
 		);
 
