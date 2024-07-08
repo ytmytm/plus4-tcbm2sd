@@ -31,6 +31,7 @@ module Fake6523(
 					 input [15:1]pla_i,
 					 output pla_f7,
 					 output _cs
+					 output _resetout		// 3.3V /RESET
                );
 
 // FakePLA 251641-3
@@ -86,6 +87,9 @@ assign _cs = !(
 			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:9
 		)
 		);
+
+// 3.3V RESET
+assign _resetout = _reset;
 
 // Fake6523
 
