@@ -36,8 +36,8 @@ module Fake6523(
 // FakePLA 251641-3
 // - can be further simplified:
 //		- portb[1:0] is always input (STATUS0/1) 
-//		- portc[6] is always input (ACK)
-//    - portc[7] is always output (DAV)
+//		- portc[6] is always output (DAV for drive)
+//    - portc[7] is always input (ACK from drive)
 
 // defined in 1551.251641-3.c but not used
 // #define F1 I0&&I6&&!I7
