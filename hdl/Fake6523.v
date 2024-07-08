@@ -28,9 +28,9 @@ module Fake6523(
                 inout [7:0]port_a,
                 inout [1:0]port_b,
                 inout [7:6]port_c,
-					 input [15:1]pla_i,
-					 output pla_f7,
-					 output _cs
+					 input [15:1]pla_i,	// PLA pins
+					 output pla_f7, 		// PLA feedback output pin (debug)
+					 output _cs, 			// 6523 /CS pin (debug)
 					 output _resetout		// 3.3V /RESET
                );
 
