@@ -47,7 +47,8 @@ module Fake6523(
 // #define F7 I10||(!I10&&I6&&I0&&!I7)
 // F7 = MUX || (!MUX && Phi0 && _cs && !/RAS)
 // wired back to I0
-assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
+//assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
+assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && pla_f7 && !pla_i[7]);
 
 //#define F0 !((!I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&	\
 //	      I11&&I14&&!I12&&!I7&&I9&&!I8&&I13)||	\
@@ -72,9 +73,10 @@ assign _cs = !(
 		)
 		);
 */
-// alternative without feedback
+
 assign _cs = !(
-		( (pla_i[10] || (!pla_i[10] && pla_i[6] && !pla_i[7])) && // pla_f7: (MUX || !MUX && Phi0 && !/RAS) && <adres> 
+//		( (pla_i[10] || (!pla_i[10] && pla_i[6] && !pla_i[7])) && // pla_f7: (MUX || !MUX && Phi0 && !/RAS) && <address> // without feedback
+		( (pla_f7) && // pla_f7 - with feedback
 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
 			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
 			!pla_i[12] // A8=0
