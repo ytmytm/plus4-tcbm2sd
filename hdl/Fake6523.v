@@ -57,8 +57,6 @@ assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && pla_f7 && !pla_i[7]);
 //	     (I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&		\
 //	      I11&&I14&&!I12&&!I7&&I9&&I8&&I13))
 // - we don't need pla_f7 can use whole expression here
-// - we could use A3+A4 to narrow down memory space down to 8 addresses connected to Fake6523 rs[2:0]
-// - DEV is input from device, with Arduino we want to make it output - just copy A5
 // - pla F7 routed back to I0? but F7 uses I0 (_cs) in the expression, makes no sense - can be removed?
 /*
 assign _cs = !(
@@ -75,6 +73,9 @@ assign _cs = !(
 		)
 		);
 */
+
+// version without pla_f7 feedback (uncomment first line, comment out second one) has no warnings from ISE but sometimes glitches
+// version with pla_f7 feedback (comment out first line, uncomment second one) gives racing condition warning but works much better
 
 assign _cs = !(
 //		( (pla_i[10] || (!pla_i[10] && pla_i[6] && !pla_i[7])) && // pla_f7: (MUX || !MUX && Phi0 && !/RAS) && <address> // without feedback
