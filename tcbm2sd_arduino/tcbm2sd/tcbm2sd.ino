@@ -524,6 +524,7 @@ void handle_command() {
 		} else {
 			dev_to_eeprom(0);
 		}
+		return;
 	}
 	// unknown command
 	set_error_msg(30);
