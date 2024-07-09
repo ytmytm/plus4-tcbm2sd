@@ -335,10 +335,14 @@ bool input_to_filename(uint8_t start) {
 }
 
 // match filename[] to directory entry, return matched filename (if not matched it can be wrong - then SD.exists(fname) fails with file-not-found error
-String fullfname;
+String fullfname; // global to pass result
 String match_filename(bool onlyDir) {
   String fname = String((const char*)filename);
-  fullfname = pwd + fname;
+  String cwd = String(pwd); // local directory or root
+  if (filename[0]=='/') {
+    cwd = '/'; // absolute path
+  }
+  fullfname = cwd + fname;
 
 //  Serial.print(F(" searching for:")); Serial.println(fullfname);
   if (fname.indexOf('*')<0 && fname.indexOf('?')<0) {
@@ -349,7 +353,7 @@ String match_filename(bool onlyDir) {
 
   File dir;
   File entry;
-  dir = SD.open(pwd); // current dir
+  dir = SD.open(cwd); // current dir
   if (!dir) {
     return fullfname; // this will fail later on open
   }
