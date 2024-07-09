@@ -8,8 +8,9 @@
 
 //////////////////////////////////
 
-#include <SD.h>
-#include <SPI.h>
+#include <SdFat.h> // 2.2.3
+
+SdFat32 SD;
 
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
@@ -353,12 +354,17 @@ String match_filename(bool onlyDir) {
 
   File dir;
   File entry;
+  char entryname_c[128];
   dir = SD.open(cwd); // current dir
   if (!dir) {
     return fullfname; // this will fail later on open
   }
   entry = dir.openNextFile();
-  String entryname = String(entry.name());
+  String entryname;
+  if (entry) {
+    entry.getName(entryname_c,sizeof(entryname_c));
+    entryname = String(entryname_c);
+  }
   while (entry) {
     uint8_t i=0;
     bool match;
@@ -366,7 +372,8 @@ String match_filename(bool onlyDir) {
     if ((onlyDir && entry.isDirectory()) || (!onlyDir && !entry.isDirectory())) {
       i=0;
       match = true;
-      entryname = String(entry.name());
+      entry.getName(entryname_c,sizeof(entryname_c));
+      entryname = String(entryname_c);
 //      Serial.println(entryname);
       while (i<16 && i<fname.length() && i<entryname.length() && match) {
         c = fname.charAt(i);
@@ -786,10 +793,12 @@ void dir_render_footer() {
 	output_buf_ptr = i;
 }
 
-bool dir_render_file(File dir) {
-    File entry =  dir.openNextFile();
+bool dir_render_file(File32 *dir) {
+//    File32 entry =  dir->openNextFile();
+  File32 entry;
+  entry.openNext(dir,O_RDONLY);
 	output_buf_ptr = 0;
-	char *name;
+	char name[128];
 	uint32_t size;
 
 	if (!entry) { return false; } // no more files
@@ -803,7 +812,9 @@ bool dir_render_file(File dir) {
       Serial.println(entry.size(), DEC);
 	}
 */
-	name = entry.name();
+  memset(name, 0, sizeof(name));
+	entry.getName7(name,sizeof(name));
+//  Serial.println(name);
 	size = 1 + entry.size() / 254;
 
 	memset(output_buf, 0, sizeof(output_buf));
@@ -834,9 +845,13 @@ bool dir_render_file(File dir) {
     c++;
 	}
 	// space or splat
-	output_buf[i++] = ' ';
+  if (entry.isHidden()) {
+    output_buf[i++] = '*';
+  } else {
+	  output_buf[i++] = ' ';
+  }
 	// filetype
-    if (entry.isDirectory()) {
+    if (entry.isDir()) {
 		output_buf[i++] = 'D';
 		output_buf[i++] = 'I';
 		output_buf[i++] = 'R';
@@ -846,7 +861,11 @@ bool dir_render_file(File dir) {
 		output_buf[i++] = 'G';
 	}
 	// space or <
-	output_buf[i++] = ' ';
+  if (entry.attrib() & (FS_ATTRIB_READ_ONLY | FS_ATTRIB_SYSTEM)) {
+    output_buf[i++] = '<';
+  } else {
+  	output_buf[i++] = ' ';
+  }
 	// last space
 	output_buf[i++] = ' ';
 	// end of line
@@ -867,7 +886,7 @@ void state_directory() {
 	bool footer = false; // footer && end of buffer means end of transmission
   set_error_msg(0);
 
-	File aFile;
+	File32 aFile;
 	aFile = SD.open(pwd); // current dir
 	if (!aFile) {
 		Serial.println(F("directory open error"));
@@ -894,7 +913,7 @@ void state_directory() {
 						status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
 					} else {
 //						Serial.print(F("..next file"));
-						footer = !dir_render_file(aFile);
+						footer = !dir_render_file(&aFile);
 						if (footer) {
 //							Serial.print(F("..no more files, footer"));
 							dir_render_footer();
