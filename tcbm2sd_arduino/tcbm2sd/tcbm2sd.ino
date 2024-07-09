@@ -939,6 +939,9 @@ void state_directory() {
 				break;
 		}
 	}
+  if (aFile) {
+    aFile.close();
+  }
   set_error_msg(0);
 	state = STATE_IDLE;
 }
