@@ -289,6 +289,24 @@ String pwd = "/";
 uint8_t filename[17];
 bool filename_is_dir = false;
 
+// convert everything to lowercase petscii
+static char to_petscii(unsigned char c) {
+  if (c >= 0x80+'a' && c <= 0x80+'z') {
+    c -= 0xa0;
+  }
+  if (c >= 0x80+'A' && c <= 0x80+'Z') {
+    c -= 0x80;
+  }
+  if (c >= 'a' && c <= 'z') {
+    c -= 0x20;
+  }
+  //if (c >= 'A' && c <= 'Z') { // don't deal with upper/lower case, keep everything lowercase petscii
+  //  c += 0x20;
+  //}
+
+  return c;
+}
+
 bool input_to_filename(uint8_t start) {
 	// copy input buffer from [start] to filename buffer:
 	// skip over initial '0:'
@@ -303,7 +321,7 @@ bool input_to_filename(uint8_t start) {
 	if (input_buf[in]==':') { in++; }
 	while (out<sizeof(filename) && in<input_buf_ptr && !filename_is_dir && input_buf[in]) {
 		if (input_buf[in]!=0x0d) {
-			filename[out] = input_buf[in];
+			filename[out] = to_petscii(input_buf[in]);
 			out++;
 			if (input_buf[in]=='$') {
 				Serial.println(F("..filename is $"));
@@ -359,7 +377,7 @@ String match_filename(bool onlyDir) {
             return fullfname; // have match
             break;
           default:
-            match = match && (c == entryname.charAt(i));
+            match = match && (to_petscii(c) == to_petscii(entryname.charAt(i)));
             break;
         }
 //        Serial.println(i);
@@ -720,7 +738,7 @@ void dir_render_header() {
 //  Serial.println(p);
 	for (uint8_t j=0; j<16; j++) {
     if (j<p.length()) {
-      output_buf[i++]=p.charAt(j);
+      output_buf[i++]=to_petscii(p.charAt(j));
     } else {
 		  output_buf[i++]=' ';
     }
@@ -801,8 +819,8 @@ bool dir_render_file(File dir) {
 	// quote
 	output_buf[i++] = '"';
 	// name
-	while (name[c]) {
-		output_buf[i++] = name[c++];
+	while (name[c] && c<16) {
+		output_buf[i++] = to_petscii(name[c++]);
 	}
 	// endquote
 	output_buf[i++] = '"';
