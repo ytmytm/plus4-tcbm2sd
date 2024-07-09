@@ -680,7 +680,6 @@ void state_load() {
 				if (status != TCBM_STATUS_OK) {		// file not found, not OK
 //					Serial.println(F("0D : 0D"));
 					tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
-					state_init(); // called this to reset input buf ptr and set file_opened flag to false
           set_error_msg(62);
 					done = true; // exit immediately, there will be no UNTALK
 				} else {
@@ -712,6 +711,7 @@ void state_load() {
 				break;
 		}
 	}
+  state_init(); // called this to reset input buf ptr and set file_opened flag to false
 	if (aFile) {
 		aFile.close();
 	}
