@@ -5,7 +5,6 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 #include <EEPROM.h>
-//#define UNUSED_CODE
 
 //////////////////////////////////
 
@@ -262,47 +261,7 @@ void dev_to_eeprom(uint8_t devnum) {
 		EEPROM.put(O_EEPROM_DEVNUM, devnum);
 		digitalWrite(PIN_DEV, devnum);
 	}
-#ifdef UNUSED_CODE
-uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
-  uint8_t tmp, cmd, data;
-  uint16_t result = 0;
-  if (tcbm_get_dav() != 1) return 0; // controller ready?
-  tmp = tcbm_port_read();
-  cmd = tcbm_port_read();
-  if (tmp != cmd) return 0; // stable?
-  if (!(cmd & 0x80)) return 0; // command?
-  /*
-  Serial.println(F("waiting for DAV=1")); // this wait or the other wait is not necessary
-  while (!(tcbm_get_dav() == 1));
-  Serial.println(F("waiting for byte with 7 bit set"));
-  do {
-    tmp = tcbm_data_read();
-    cmd = tcbm_data_read();
-  } while (!( (cmd & 0x80) && (cmd==tmp) ));
-  */
-  //Serial.print(F("...got 0x")); Serial.println(cmd, HEX);
-  tcbm_set_ack(0);
-  //Serial.println(F("ACK=0, waiting for DAV=0"));
-  while (!(tcbm_get_dav() == 0));
-  data = tcbm_port_read();
-  //Serial.print(F("...got 0x")); Serial.println(data, HEX);
-  if (cmd == 0x84) {
-    tcbm_set_status(TCBM_STATUS_EOI); // don't know how to send bytes yet, STATUS_RECV here may give load 'file not found'?
-  } else {
-    tcbm_set_status(TCBM_STATUS_OK);
-  }
-  tcbm_set_ack(1);
-  //Serial.println(F("set status=%10 and ACK=1"));
-  //Serial.println(F("waiting for DAV=1"));
-  while (!(tcbm_get_dav() == 1));
-  tcbm_set_status(TCBM_STATUS_OK);
-  //Serial.println(F("set status=%00"));
-  //
-  result = (cmd << 8) | data;
-  Serial.print(F("result=0x")); Serial.println(result,HEX);
-  return result; 
 }
-#endif
 
 //////////////////////////////////
 
