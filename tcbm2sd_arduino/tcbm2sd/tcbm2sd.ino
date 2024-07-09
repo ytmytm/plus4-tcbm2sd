@@ -116,21 +116,6 @@ volatile inline uint8_t tcbm_port_read(void) {
   */
 }
 
-/*
-volatile inline uint8_t tcbm_port_read_slow(void) { // used only in blocking cmd read
-  return (
-      (digitalRead(PIN_D0) ? 1 : 0)      |
-      (digitalRead(PIN_D1) ? 1 : 0) << 1 |
-      (digitalRead(PIN_D2) ? 1 : 0) << 2 |
-      (digitalRead(PIN_D3) ? 1 : 0) << 3 |
-      (digitalRead(PIN_D4) ? 1 : 0) << 4 |
-      (digitalRead(PIN_D5) ? 1 : 0) << 5 |
-      (digitalRead(PIN_D6) ? 1 : 0) << 6 |
-      (digitalRead(PIN_D7) ? 1 : 0) << 7
-  );
-}
-*/
-
 volatile void tcbm_port_write(uint8_t d) {
   PORTD = ( PORTD & 0x03 ) | ((d & 0x3F) << 2);
   PORTB = ( PORTB & 0xFC ) | ((d & 0xC0) >> 6);
@@ -486,7 +471,7 @@ void handle_command() {
 			return;
 		}
     fname = match_filename(true);
-    if (SD.exists(fname)) { // XXX pattern match
+    if (SD.exists(fname)) {
       pwd = fname + String("/");
     } else {
       Serial.println(F("...NOT FOUND"));
@@ -665,7 +650,7 @@ void state_load() {
 
 	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
 	Serial.print(F(" searching for:")); Serial.print(fname);
-	if (SD.exists(fname)) { // XXX exists is not enough, have to do own search and name globbing if there are '*' and '?' in filename and ascii/petscii+limit to 16 chars
+	if (SD.exists(fname)) {
 		Serial.println(F("filefound"));
 		aFile = SD.open(fname, FILE_READ);
 		if (!aFile) {
