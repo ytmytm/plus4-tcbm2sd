@@ -4,6 +4,7 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
+#include <EEPROM.h>
 //#define UNUSED_CODE
 
 //////////////////////////////////
@@ -231,6 +232,36 @@ void tcbm_write_data(uint8_t data, uint8_t status) { // write data following TCB
   while (!(tcbm_get_dav() == 1));
 }
 
+//////////////////////////////////
+
+const uint16_t EEPROM_MAGIC = 0x55aa;
+const uint16_t O_EEPROM_MAGIC = 0;
+const uint16_t O_EEPROM_DEVNUM = 2;
+
+void dev_from_eeprom() {
+	uint16_t magic = 0;
+	uint8_t devnum = 1; // default is device #8
+
+	EEPROM.get(O_EEPROM_MAGIC, magic);
+	if (magic == EEPROM_MAGIC) {
+		EEPROM.get(O_EEPROM_DEVNUM, devnum);
+		Serial.print(F("dev magic, devnum=")); Serial.println(devnum);
+		// protect against corruption
+		if (devnum != 0 && devnum != 1) {
+			devnum = 1; // DEV == 1 - device #8
+		}
+	} else {
+		Serial.print(F("no magic, default to #8"));
+	}
+	digitalWrite(PIN_DEV, devnum);
+}
+
+void dev_to_eeprom(uint8_t devnum) {
+	if (devnum == 0 || devnum == 1) {
+		EEPROM.put(O_EEPROM_MAGIC, EEPROM_MAGIC); // put does update(), so doesn't rewrite EEPROM if the value didn't change
+		EEPROM.put(O_EEPROM_DEVNUM, devnum);
+		digitalWrite(PIN_DEV, devnum);
+	}
 #ifdef UNUSED_CODE
 uint16_t tcbm_read_byte() { // hibyte = command, lobyte = data
   uint8_t tmp, cmd, data;
@@ -508,7 +539,16 @@ void handle_command() {
     set_error_msg(73);
 		return;
 	}
-  set_error_msg(30);
+	// U0><devnum+8>
+	if (input_buf[0]=='U' && input_buf[1]=='0' && input_buf[2]=='>' && (input_buf[3]==8 || input_buf[3]==9)) {
+		if (input_buf[3]==8) {
+			dev_to_eeprom(1);
+		} else {
+			dev_to_eeprom(0);
+		}
+	}
+	// unknown command
+	set_error_msg(30);
 }
 
 //////////////////////////////////
@@ -1068,6 +1108,7 @@ void state_open() {
 
 void setup() {
   tcbm_init();
+  dev_from_eeprom();
   state_init();
   set_error_msg(73);
   state = STATE_IDLE;
