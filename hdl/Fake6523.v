@@ -15,7 +15,7 @@
 //
 // Revision: 
 // Revision 0.02 - Fixed for 1551
-// Revision 0.03 - added FakePLA 251641-3
+// Revision 0.03 - added FakePLA 251641-3, Maciej Witkowiak <ytm@elysium.pl>
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////

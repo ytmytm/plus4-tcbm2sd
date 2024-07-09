@@ -1,3 +1,8 @@
+// TCBM2SD
+//
+// (c) Maciej Witkowiak, <ytm@elysium.pl>
+
+
 // IDE: Arduino Mini w/ ATmega328 (3.3.V)
 // in case of flashing problem change in Arduino/hardware/arduino/avr/boards.txt
 // or home folder: Arduino15\packages\arduino\hardware\avr\1.8.6\boards.txt
