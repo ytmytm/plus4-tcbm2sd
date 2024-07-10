@@ -9,6 +9,8 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
+const uint8_t debug=0; // set to value larger than one for debug messages
+
 #include <EEPROM.h>
 
 //////////////////////////////////
@@ -230,13 +232,13 @@ void dev_from_eeprom() {
 	EEPROM.get(O_EEPROM_MAGIC, magic);
 	if (magic == EEPROM_MAGIC) {
 		EEPROM.get(O_EEPROM_DEVNUM, devnum);
-		Serial.print(F("dev magic, devnum=")); Serial.println(devnum);
+		if (debug) { Serial.print(F("dev magic, devnum=")); Serial.println(devnum); }
 		// protect against corruption
 		if (devnum != 0 && devnum != 1) {
 			devnum = 1; // DEV == 1 - device #8
 		}
 	} else {
-		Serial.print(F("no magic, default to #8"));
+		if (debug) { Serial.print(F("no magic, default to #8")); }
 	}
 	digitalWrite(PIN_DEV, devnum);
 }
@@ -310,13 +312,13 @@ bool input_to_filename(uint8_t start) {
 			filename[out] = to_petscii(input_buf[in]);
 			out++;
 			if (input_buf[in]=='$') {
-				Serial.println(F("..filename is $"));
+				if (debug) { Serial.println(F("..filename is $")); }
 				filename_is_dir = true;
 			}
 		}
 		in++;
 	}
-	Serial.print(F("...filename [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	if (debug) { Serial.print(F("...filename [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
 	return filename_is_dir;
 }
 
@@ -435,18 +437,18 @@ void set_error_msg(uint8_t error) {
 
 void handle_command() {
   String fname;
-	Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
   set_error_msg(0);
 	// CD?
 	if (input_buf[0]=='C' && input_buf[1]=='D') {
 		input_to_filename(2);
-		Serial.print(F("CD"));
+		if (debug) { Serial.print(F("CD")); }
 		if (!filename[0]) {
-			Serial.println(F("...no dirname"));
+			if (debug) { Serial.println(F("...no dirname")); }
 			return;
 		}
 		if ((filename[0]==0x5f) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
-			Serial.println(F("...parent"));
+			if (debug) { Serial.println(F("...parent")); }
 //      Serial.println(pwd);
       if (pwd.length()>1) {
         pwd = pwd.substring(0,pwd.length()-1);
@@ -457,11 +459,11 @@ void handle_command() {
           pwd = pwd.substring(0,i+1);
         }
       }
-      Serial.println(pwd);
+      if (debug) { Serial.println(pwd); }
 			return;
 		}
 		if (filename[0]=='/' && filename[1]=='/' && filename[2]==0) {
-			Serial.println(F("...root"));
+			if (debug) { Serial.println(F("...root")); }
       pwd = "/";
 			return;
 		}
@@ -469,46 +471,46 @@ void handle_command() {
     if (SD.exists(fname)) {
       pwd = fname + String("/");
     } else {
-      Serial.println(F("...NOT FOUND"));
+      if (debug) { Serial.println(F("...NOT FOUND")); }
       set_error_msg(62);
     }
-		Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]"));
-    Serial.println(pwd);
+		if (debug) { Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]")); }
+    if (debug) { Serial.println(pwd); }
 		return;
 	}
 	// S?
 	if (input_buf[0]=='S') {
-		Serial.print(F("SCRATCH"));
+		if (debug) { Serial.print(F("SCRATCH")); }
 		input_to_filename(1);
 		if (!filename[0]) {
 			Serial.println(F("...no name"));
       set_error_msg(62);
 			return;
 		}
-		Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]"));
+		if (debug) { Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]")); }
     fname = match_filename(false);
     if (SD.exists(fname)) { // will remove only first matching file
       if (SD.remove(fname)) {
-        Serial.println(F("...deleted"));
+        if (debug) { Serial.println(F("...deleted")); }
         set_error_msg(1);
       } else {
-        Serial.println(F("...not deleted"));
+        if (debug) { Serial.println(F("...not deleted")); }
         set_error_msg(26);
       }
     } else {
-      Serial.println(F("...NOT FOUND"));
+      if (debug) { Serial.println(F("...NOT FOUND")); }
       set_error_msg(62);
     }
 		return;
 	}
 	// I
 	if (input_buf[0]=='I') {
-		Serial.println(F("INIT"));
+		if (debug) { Serial.println(F("INIT")); }
 		return;
 	}
 	// UI / UJ
 	if (input_buf[0]=='U' && (input_buf[1]=='I' || input_buf[1]=='J')) {
-		Serial.println(F("RESET"));
+		if (debug) { Serial.println(F("RESET")); }
     set_error_msg(73);
 		return;
 	}
@@ -546,29 +548,29 @@ void state_idle() {
 	if (dat == 0x20) { // LISTEN
 		cmd = tcbm_read_cmd_block();
 		dat = tcbm_read_data(TCBM_STATUS_OK);
-		Serial.print(F("[LISTEN]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+		if (debug) { Serial.print(F("[LISTEN]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
 		switch (dat & 0xF0) {
 			case 0xF0:	// OPEN
-				Serial.print(F("open chn="));
-				Serial.println(chn);
+				if (debug) { Serial.print(F("open chn=")); }
+				if (debug) { Serial.println(chn); }
 				channel = chn;
 				state = STATE_OPEN; // filename or command incoming, until UNLISTEN
 				break;
 			case 0xE0:	// CLOSE
-				Serial.print(F("close chn="));
-				Serial.println(chn);
+				if (debug) { Serial.print(F("close chn=")); }
+				if (debug) { Serial.println(chn); }
 				if (channel == 15) {
-					Serial.println(F("handle command from input buf"));
+					if (debug) { Serial.println(F("handle command from input buf")); }
 					// handle command from input buffer: S:, R:, CD<-, CD<name>, CD:<name>, CD//
 					handle_command();
 				}
 				state_init();
 				break;
 			case 0x60:	// SECOND
-				Serial.print(F("second chn="));
-				Serial.println(chn);
+				if (debug) { Serial.print(F("second chn=")); }
+				if (debug) { Serial.println(chn); }
 				channel = chn;
 				switch (channel) {
 					case 1:
@@ -579,27 +581,27 @@ void state_idle() {
 						state = STATE_OPEN; // keep recieving data into input buffer
 						break;
 					default:
-						Serial.println(F("unk SECOND"));
+						if (debug) { Serial.println(F("unk SECOND")); }
 						state_init();
 						break;
 				}
 				break;
 			default:
 				state_init();
-				Serial.println(F("unk state after LISTEN"));
+				if (debug) { Serial.println(F("unk state after LISTEN")); }
 				return;
 		}
 	}
 	if (dat == 0x40) { // TALK
 		cmd = tcbm_read_cmd_block();
 		dat = tcbm_read_data(TCBM_STATUS_OK);
-		Serial.print(F("[TALK]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+		if (debug) { Serial.print(F("[TALK]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
 		switch (dat & 0xF0) {
 			case 0x60: // SECOND
-				Serial.print(F("second chn="));
-				Serial.println(chn);
+				if (debug) { Serial.print(F("second chn=")); }
+				if (debug) { Serial.println(chn); }
 				channel = chn;
 				switch (channel) {
 					case 0:
@@ -611,22 +613,22 @@ void state_idle() {
 								state = STATE_LOAD; // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
 							}
 						} else {
-							Serial.println(F("file not open"));
+							if (debug) { Serial.println(F("file not open")); }
 							state_init();
 						}
 						break;
 					case 15:
-						Serial.println(F("status request, write from outputbuf"));
+						if (debug) { Serial.println(F("status request, write from outputbuf")); }
 						state = STATE_STAT;
 						break;
 					default:
-						Serial.println(F("unk state after OPEN"));
+						if (debug) { Serial.println(F("unk state after OPEN")); }
 						state_init();
 						break;
 				}
 				break;
 			default:
-				Serial.println(F("unk state after TALK"));
+				if (debug) { Serial.println(F("unk state after TALK")); }
 				return;
 		}
 	}
@@ -644,19 +646,19 @@ void state_load() {
   set_error_msg(0);
   String fname = match_filename(false); // only files
 
-	Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX);
-	Serial.print(F(" searching for:")); Serial.print(fname);
+	if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
+	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 	if (SD.exists(fname)) {
-		Serial.println(F("filefound"));
+		if (debug) { Serial.println(F("filefound")); }
 		aFile = SD.open(fname, FILE_READ);
 		if (!aFile) {
-			Serial.println(F("file open error"));
+			if (debug) { Serial.println(F("file open error")); }
 			status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
       set_error_msg(23);
 		}
 	} else {
-		Serial.println(F("filenotfound"));
+		if (debug) { Serial.println(F("filenotfound")); }
 		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 	}
 	while (!done) {
@@ -682,16 +684,16 @@ void state_load() {
 				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
-					Serial.println(F("[UNTALK]"));
+					if (debug) { Serial.println(F("[UNTALK]")); }
 				} else {
-					Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					if (debug) { Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 					status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
-				Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				if (debug) { Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				done = true;
 				break;
@@ -701,7 +703,7 @@ void state_load() {
 	if (aFile) {
 		aFile.close();
 	}
-	Serial.print(F("loaded bytes:")); Serial.println(c, HEX);
+	if (debug) { Serial.print(F("loaded bytes:")); Serial.println(c, HEX); }
 	state = STATE_IDLE;
 }
 
@@ -875,13 +877,13 @@ void state_directory() {
 	File32 aFile;
 	aFile = SD.open(pwd); // current dir
 	if (!aFile) {
-		Serial.println(F("directory open error"));
+		if (debug) { Serial.println(F("directory open error")); }
 		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
     set_error_msg(23);
 	}
 
-	Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX);
+	if (debug) { Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX); }
 	dir_render_header();
   i = 0;
 	while (!done) {
@@ -912,15 +914,15 @@ void state_directory() {
 				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
-					Serial.println(F("[UNTALK]"));
+					if (debug) { Serial.println(F("[UNTALK]")); }
 				} else {
-					Serial.print(F("unk DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					if (debug) { Serial.print(F("unk DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
-				Serial.print(F("unk DIR state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				if (debug) { Serial.print(F("unk DIR state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				done = true;
 				break;
 		}
@@ -940,7 +942,7 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 	uint8_t b;
 	uint8_t c = 0;
 	bool done = false;
-	Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX);
+	if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
@@ -958,15 +960,15 @@ void state_status() { // pretty much the same as state_load but on channel 15 we
 				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
-					Serial.println(F("[UNTALK]"));
+					if (debug) { Serial.println(F("[UNTALK]")); }
 				} else {
-					Serial.print(F("unk DS CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					if (debug) { Serial.print(F("unk DS CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
-				Serial.print(F("unk DS state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				if (debug) { Serial.print(F("unk DS state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				done = true;
 				break;
 		}
@@ -988,18 +990,18 @@ void state_save() {
   String fname = pwd + String((const char*)filename);
 
   set_error_msg(0);
-	Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX);
-	Serial.print(F(" searching for:")); Serial.print(fname);
+	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
+	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 	if (SD.exists(fname)) {
-		Serial.println(F("filefound"));
+		if (debug) { Serial.println(F("filefound")); }
 		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
     set_error_msg(63);
 	} else {
-		Serial.println(F("filenotfound"));
+		if (debug) { Serial.println(F("filenotfound")); }
 		aFile = SD.open(fname, FILE_WRITE);
 		if (!aFile) {
-			Serial.println(F("file open error"));
+			if (debug) { Serial.println(F("file open error")); }
 			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
       set_error_msg(26);
@@ -1018,14 +1020,14 @@ void state_save() {
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
-					Serial.println(F("[UNLISTEN]"));
+					if (debug) { Serial.println(F("[UNLISTEN]")); }
 				} else {
-					Serial.print(F("unk SAVE CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					if (debug) { Serial.print(F("unk SAVE CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				}
 				done = true;
 				break;
 			default:
-				Serial.print(F("unk SAVE state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				if (debug) { Serial.print(F("unk SAVE state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				done = true;
 				break;
 		}
@@ -1033,7 +1035,7 @@ void state_save() {
 	if (aFile) {
 		aFile.close();
 	}
-	Serial.print(F("saved bytes:")); Serial.println(c, HEX);
+	if (debug) { Serial.print(F("saved bytes:")); Serial.println(c, HEX); }
 	state = STATE_IDLE;
 }
 
@@ -1042,7 +1044,7 @@ void state_open() {
 	uint8_t cmd;
 	uint8_t dat;
 	bool done = false;
-	Serial.print(F("[OPEN] on channel=")); Serial.println(channel, HEX);
+	if (debug) { Serial.print(F("[OPEN] on channel=")); Serial.println(channel, HEX); }
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 //		Serial.println(cmd,HEX);
@@ -1061,23 +1063,23 @@ void state_open() {
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
-					Serial.println(F("[UNLISTEN]"));
+					if (debug) { Serial.println(F("[UNLISTEN]")); }
 					file_opened = true;
 				} else {
-					Serial.print(F("unk OPEN CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+					if (debug) { Serial.print(F("unk OPEN CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 					input_buf_ptr = 0;
 				}
 				done = true;
 				break;
 			default:
-				Serial.print(F("unk OPEN state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX);
+				if (debug) { Serial.print(F("unk OPEN state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 				input_buf_ptr = 0;
 				done = true;
 				break;
 		}
 	}
-	Serial.println(input_buf_ptr, HEX);
-	Serial.print(F("...got [")); Serial.print((const char*)input_buf); Serial.println(F("]"));
+	if (debug) { Serial.println(input_buf_ptr, HEX); }
+	if (debug) { Serial.print(F("...got [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
 	if (channel == 0) {
 		// find file for LOAD?
 		// reset pointer, reset status for file not found
@@ -1101,16 +1103,17 @@ void setup() {
   state_init();
   set_error_msg(73);
   state = STATE_IDLE;
+  if (debug) {
   Serial.begin(115200); // in fact 57600(?)
   Serial.println(F("initializing I/O"));
   Serial.print(F("initializing SD card..."));
+  }
   pinMode(PIN_SD_SS, OUTPUT);
   if (!SD.begin(PIN_SD_SS)) { // CS pin
-    Serial.println(F("SD init failed!"));
+    if (debug) { Serial.println(F("SD init failed!")); }
     return;
   }
-  Serial.println(F("tcbm2sd ready"));
-  Serial.end();
+  if (debug) { Serial.println(F("tcbm2sd ready")); }
 }
 
 void loop() {
@@ -1134,7 +1137,7 @@ void loop() {
 			state_directory();
 			break;
 		default:
-			Serial.print(F("unknown state=")); Serial.println(state, HEX);
+			if (debug) { Serial.print(F("unknown state=")); Serial.println(state, HEX); }
 			break;
 	}
 }
