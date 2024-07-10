@@ -1247,7 +1247,6 @@
     )
   )
 
-
   (junction (at 152.4 38.1) (diameter 0) (color 0 0 0 0)
     (uuid 0828cc3f-7f92-4b48-85b9-f62d2de76310)
   )
@@ -1696,11 +1695,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 3084d700-c02b-4aba-b69d-dc76ea0af23f)
   )
-  (text "follow Brain's order" (at 264.16 149.86 0)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 3ad5d3bf-4479-437b-a1ac-06a229a51b3f)
-  )
-  (text "02x08 or 01x17 connector for a real drive\n(or just use U2 solder points)"
+  (text "02x08 or 01x17 connector for a real drive\n(or just use U2 solder points)\n\nNOTE: ACK here is controller's ACK output and goes to cable pin 13 (drive's DAV input)\nNOTE: DAV here is controller's DAV input and goes to cable pin 11 (drive's ACK output)\n"
     (at 266.7 101.6 90)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 6e8a4605-9af1-481b-bf8c-f57f67e30e7b)
@@ -1720,14 +1715,6 @@
   (text "23x18mm\nSD Card module\n3.3v" (at 199.39 149.86 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid c75481a3-a164-487e-b8af-92e9800865ac)
-  )
-  (text "CPLD 1-16" (at 106.68 83.82 90)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid e9049ceb-da47-4f3b-8732-b80ca8cfe70a)
-  )
-  (text "CPLD 17-32" (at 105.41 33.02 90)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid f3b5304e-6202-4a0a-93d5-7a92a9fc1278)
   )
 
   (label "A7" (at 55.88 138.43 180)
