@@ -799,7 +799,7 @@ bool dir_render_file(File32 *dir) {
 	}
 */
   memset(name, 0, sizeof(name));
-	entry.getName7(name,sizeof(name));
+	entry.getName(name,sizeof(name));
 //  Serial.println(name);
 	size = 1 + entry.size() / 254;
 
