@@ -2,18 +2,26 @@
 
 CBM 1551 paddle replacement and/or mass storage using an SD card interfacing with the Commodore C16/116/Plus4 simulating a TCBM bus 1551 disk drive
 
-It is not as feature rich as sd2iec, there is no support for disk images and limited support for commands, but it's enough to quickly and easily load file-based programs.
+It's enough to quickly and easily load file-based programs though it is not as feature rich as sd2iec.
 
-Pic: media/01.pcb-top.png
+<img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
 
 ## Features
 
-- DLOAD and DSAVE support
-- transfer up to 3.1KB/s (a little bit less than JiffyDOS 1541)
-- device number stored permanently in EEPROM
+### Paddle replacement
+
+- PLA 251641-3 and 6523T (28 pin triport) integrated into a single CPLD
+- low part count: CPLD, 3.3V voltage regulator and four capacitors
 - improved PLA equations make the paddle occupy only 8 I/O addresses
   - FEF0-FEF7 for device 8
   - FEC0-FEC7 for device 9
+- passthrough for all 50 signals of the expansion port
+
+### 1551 drive simulation
+
+- DLOAD and DSAVE support
+- transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
+- device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
   - remove file `S:<filename>`
@@ -22,13 +30,28 @@ Pic: media/01.pcb-top.png
   - you can DLOAD a file from root folder from anywhere in the filesystem, e.g. file browser: `DLOAD"/FB16`
 - compatible with file browsers: FileBrowser 1.6 and Directory Browser 1.2
 
+### tcbm2sd or sd2tcbm?
+
+This is not a sd2iec port, just a simple 1551 simulator. There is no support for disk images.
+This is more like Tapecart - a loader for file-based programs rather than sd2iec.
+
+If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
+
+Another microcontroller must be used because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
+
+Note that for development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
+
+## KiCad project
+
+Project files for Kicad 6.0 are in [this folder](tcbm2sd).
+
 ## Schematic
 
-tcbm2sd/plots/tcbm2sd.pdf
+A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/plots/tcbm2sd.pdf) for preview.
 
 ## PCB
 
-Gerbers tcbm2sd/plots/tcbm2sd.pdf
+Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
 ## Parts
 
@@ -38,13 +61,13 @@ To be soldered:
 - 4x 0.1uF capacitor (0805 footprint)
 - 50 pin edge connector (optional), straight or right angle
 
-The first revision of PCB was meant primarily as a development platform, so it relies on modules:
+The first revision of PCB was meant primarily as a development platform, so it relies on cheap, ready to use modules:
 
 - AMS1117 3.3V power supply module with 3 pins
 - SD card 3.3V adapter
 - Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114
 
-You only need the power supply module if all you need is a paddle replacement.
+If all you want is a paddle replacement then only the power supply module is needed.
 
 ### Arduino Mini Pro A4/SDA pin
 
