@@ -13,7 +13,7 @@
 .var LORAM = $05F5
 
 .segment Patch1 []
-		.pc = $25e7 "Patch loader"
+		* = $25e7 "Patch loader"
 
         lda #<LOADER_0600                       // source
         sta $D8
@@ -182,7 +182,7 @@ b1060:
         pha
         lda #0
         sta aFF06                                   // ;like $D011, blank screen
-        sta aFEF2                                   // ;ACK=0
+        sta aFEF2                                   // ;ACK=0 - WE ARE READY
         sta aFEF3                                   // ;port A DDR = input
         sta aFEF0                                   // ;port A (to clear pullups?)
 
@@ -208,7 +208,7 @@ jmp *-3
         lda RAM_MEMUSS+1
         sta tgt+1
 
-LOADSTART:
+LOADSTART:  // XXX this is probably a bug - LDY #0 here is offet by (tgt) but at the end it's stored to tgt as lowbyte - it should be added to (tgt) instead
         ldy #0
 LOADLOOP:
         lda aFEF2                                   // ;wait for DAV low
@@ -227,11 +227,11 @@ LOADLOOP:
 
         lda aFEF0                                   // XXX need to flip ACK after this
         sta (tgt),y
-
         iny
         bne LOADLOOP
         inc tgt+1
         bne LOADLOOP
+
 LOADEND:
         lda #$ff                                    // ;port A to output
         sta aFEF3
@@ -249,5 +249,10 @@ LOADRET:
         ldy tgt+1                                   // ;return end address+1 and C=0=no error
         clc                                         // no error
         rts
+
+
+        // safe at least up to $07CC
+        .if (*>$07CC) { .error "low code too long, exceeds $07CC" }
+
 }
 LOADER_0600_END:
