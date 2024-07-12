@@ -26,11 +26,6 @@
         ldx #<(LOADER_0600_END-LOADER_0600)     // length
         ldy #>(LOADER_0600_END-LOADER_0600)
         jsr $25c0                               // copying routine (just before this one)
-        jmp LORAM                               // load and run
-
-// 2601
-LOADER_0600:
-.pseudopc LORAM {
         sei
         sta $ff3e
         cli
@@ -51,11 +46,18 @@ L060B:  sta $da
         ldy $d3
         jsr $ffbd
         lda #$00
-        jsr $ff90
+        jsr $ff90                               // SETMSG
         lda #$00
         ldx $2b
         ldy $2c                                 // all this stuff doesn't have to be in loram
-        jsr $ffd5
+        jmp LORAM                               // load and run
+
+// 2601
+LOADER_0600:
+.pseudopc LORAM {
+        //;jsr $ffd5
+        jsr FastLoad
+        //; original CODE
         stx $2d
         sty $2e
         jsr $d888
@@ -81,5 +83,171 @@ L0659:  jsr $8bbe
         bne L0665
         jmp $8bea
 L0665:  jmp $867e
+
+        // adapted from Warpload 1551 with ACK after each data read
+
+.var RAM_STATUS = $90
+.var RAM_VERFCK = $93            // ;VERFCK  Flag:  0 = load,  1 = verify
+.var tgt = $9D                   // (2)
+.var RAM_LA = $AC
+.var RAM_SA = $AD
+.var RAM_FA = $AE                // ;FA      Current device number
+.var RAM_FNADR = $AF             // (2) ;FNADDR  Vector to filename
+.var RAM_MEMUSS = $B4            // (2) ;MEMUSS  Load ram base
+.var a05FF = LORAM-1             // temp storagefor load address flag, can be anywhere
+.var a07DF = $07DF
+
+.var RAM_RLUDES = $07D9          // ;RLUDES  Indirect routine downloaded
+
+.var eF160 = $F160               // ;print "SEARCHING"
+.var eF27C = $F27C               // ;print ERROR, ?LOAD ERROR?
+.var eF189 = $F189               // ;print "LOADING"
+// KERNAL routines without jumptable
+.var ICLRCHN = $EF0C             // ;ICLRCHN $FFCC
+.var ISENDSA = $F005             // ;SEND SA ; before TALK? and it's not TLKSA
+.var ITALK = $EDFA               // ;TALK
+.var ITLKSA = $EE1A              // ;TKSA
+.var IACPTR = $EC8B              // ;ACPTR (receive)
+.var ILISTEN = $EE2C             // ;LISTEN $FFB1
+.var ISECOND = $EE4D             // ;SECOND $FF93
+.var IIECOUT = $ECDF             // ;IECOUT (send) $FFA8
+.var ROM_UNLSN = $FFAE           // ;UNLISTEN
+
+// IO
+
+.var aFEF0 = $FEF0              // portA
+.var aFEF1 = $FEF1              // portB 1/0
+.var aFEF2 = $FEF2              // portC 7/6
+.var aFEF3 = $FEF3              // portA DDR
+.var aFF06 = $FF06              // like $d011 for screen blank
+
+
+b101B:	jmp $FFD5                                   // ROM load
+FastLoad:
+        sta RAM_VERFCK                              // ;VERFCK  Flag:  0 = load,  1 = verify
+        lda RAM_FA                                  // ;FA      Current device number
+        cmp #$04                                    // XXX don't have to check for tape, but have to remember current dev when browser was started - it will be tcbm2sd device
+        bcc b101B                                   // ;less than 4 - tape
+        lda #RAM_FNADR                              // ;filename at ($AF/$B0)
+        sta a07DF
+        ldy #$00                                    // XXX this is not a LOAD wedge, '$' won't be loaded this way
+        jsr RAM_RLUDES                              // ;RLUDES  Indirect routine downloaded
+        cmp #'$'                                    // ;if '$' then ROM load
+        beq b101B
+        lda RAM_FA                                  // remember device number in LA ;FA      Current device number
+        sta RAM_LA                                  // ;LA      Current logical fiie number
+        jsr eF160                                   // ;print "SEARCHING" XXX but messages are disabled
+
+// XXX try to read one byte from file - drive ROM will find it and report error if not found; SPEED DOS does the same thing
+        jsr ICLRCHN                                 // ;ICLRCHN $FFCC
+        ldx RAM_SA                                  // ;SA      Current seconda.y address
+        stx a05FF                                   // ;preserve SA (LOAD address parameter (set in $B4/B5 (RAM_MEMUSS) or from file))
+        lda #$60
+        sta RAM_SA                                  // ;SA      Current seconda.y address
+        jsr ISENDSA                                 // ;SEND SA ; before TALK? and it's not TLKSA
+        lda RAM_FA                                  // ;FA      Current device number
+        jsr ITALK                                   // ;TALK
+        lda RAM_SA                                  // ;SA      Current seconda.y address
+        jsr ITLKSA                                  // ;TLKSA
+        jsr IACPTR                                  // ;ACPTR (input after talk)
+        lda RAM_STATUS                              // ;STATUS  Kernal I/O status word: ST
+        lsr
+        lsr
+        bcc b1060                                   // ;no error
+
+// XXX ; note: NO UNTALK after ITALK
+        jmp eF27C                                   // ;print ERROR, ?LOAD ERROR? XXX but messages are disabled
+
+b1060:
+        jsr eF189                                   // ;print "LOADING" XXX but messages are disabled
+        lda RAM_FA                                  // ;FA      Current device number
+        jsr ILISTEN                                 // ;direct to FFB1
+        lda #$6F                                    // ;second #15
+        jsr ISECOND                                 // ;direct to FF93
+        lda #'M'
+        jsr IIECOUT                                 // ;direct to FFA8
+        lda #'-'
+        jsr IIECOUT
+        lda #'E'
+        jsr IIECOUT
+        lda #$00
+        jsr IIECOUT
+        lda #$3C
+        jsr IIECOUT
+        jsr ROM_UNLSN                               // ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
+
+// loader preparation starts here: I/O
+        sei
+        lda aFF06                                   // ;preserve FF06 (like $D011, before blank)
+        pha
+        lda #0
+        sta aFF06                                   // ;like $D011, blank screen
+        sta aFEF2                                   // ;ACK=0
+        sta aFEF3                                   // ;port A DDR = input
+        sta aFEF0                                   // ;port A (to clear pullups?)
+
+//
+inc $FF19
+jmp *-3
+//
+
+        lda aFEF2                                   // ;wait for DAV low
+        bmi *-3
+        lda aFEF0                                   // ;1st byte = load addr low  // need to flip ACK after this
+        sta tgt
+
+        lda aFEF2                                   // ;wait for DAV high
+        bpl *-3
+        lda aFEF0                                   // ;2nd byte = load addr high // need to flip ACK after this
+        sta tgt+1
+
+        lda a05FF                                   // ;check if we load to load addr from file or from $b4/b5 (RAM_MEMUSS)
+        bne LOADSTART
+        lda RAM_MEMUSS
+        sta tgt
+        lda RAM_MEMUSS+1
+        sta tgt+1
+
+LOADSTART:
+        ldy #0
+LOADLOOP:
+        lda aFEF2                                   // ;wait for DAV low
+        bmi *-3
+        lda aFEF1                                   // EOI? XXX need to clear upper 6 bits
+        bne LOADEND
+
+        lda aFEF0                                   // XXX need to flip ACK after this
+        sta (tgt),y
+        iny
+
+        lda aFEF2                                   // ;wait for DAV high
+        bpl *-3
+        lda aFEF1                                   // EOI? XXX need to clear upper 6 bits
+        bne LOADEND
+
+        lda aFEF0                                   // XXX need to flip ACK after this
+        sta (tgt),y
+
+        iny
+        bne LOADLOOP
+        inc tgt+1
+        bne LOADLOOP
+LOADEND:
+        lda #$ff                                    // ;port A to output
+        sta aFEF3
+        lda #$40                                    // ;$40 = ACK (bit 6) to 1
+        sta aFEF2
+        pla
+        sta aFF06                                   // ;restore FF06 (like $D011), turn off blank
+        cli
+        sty tgt                                     // ;adjust end address to point at the next byte
+        inc tgt
+        bne LOADRET
+        inc tgt+1
+LOADRET:
+        ldx tgt
+        ldy tgt+1                                   // ;return end address+1 and C=0=no error
+        clc                                         // no error
+        rts
 }
 LOADER_0600_END:
