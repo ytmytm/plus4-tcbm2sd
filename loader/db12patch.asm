@@ -46,7 +46,7 @@ L060B:  sta $da
         ldy $d3
         jsr $ffbd
         lda #$00
-        jsr $ff90                               // SETMSG
+        jsr $ff90                               // SETMSG, messagess off
         lda #$00
         ldx $2b
         ldy $2c                                 // all this stuff doesn't have to be in loram
@@ -86,33 +86,19 @@ L0665:  jmp $867e
 
         // adapted from Warpload 1551 with ACK after each data read
 
-.var RAM_STATUS = $90
 .var RAM_VERFCK = $93            // ;VERFCK  Flag:  0 = load,  1 = verify
 .var tgt = $9D                   // (2)
 .var RAM_LA = $AC
 .var RAM_SA = $AD
 .var RAM_FA = $AE                // ;FA      Current device number
-.var RAM_FNADR = $AF             // (2) ;FNADDR  Vector to filename
-.var RAM_FNLEN = $A8             // (1) ;FNLEN   Length of filename
 .var RAM_MEMUSS = $B4            // (2) ;MEMUSS  Load ram base
-.var a05FF = LORAM-1             // temp storagefor load address flag, can be anywhere
-.var a07DF = $07DF
+.var a05FF = $D8                 // (1) temp storagefor load address flag, can be anywhere
 
-.var RAM_RLUDES = $07D9          // ;RLUDES  Indirect routine downloaded
-
-.var eF160 = $F160               // ;print "SEARCHING"
-.var eF27C = $F27C               // ;print ERROR, ?LOAD ERROR?
-.var eF189 = $F189               // ;print "LOADING"
 // KERNAL routines without jumptable
 .var ICLRCHN = $EF0C             // ;ICLRCHN $FFCC
 .var ISENDSA = $F005             // ;SEND SA ; before TALK? and it's not TLKSA
 .var ITALK = $EDFA               // ;TALK
 .var ITLKSA = $EE1A              // ;TKSA
-.var IACPTR = $EC8B              // ;ACPTR (receive)
-.var ROM_LISTEN = $FFB1          // ; LISTEN
-.var ROM_SECOND = $FF93          // ; SECOND
-.var ROM_UNLSN = $FFAE           // ;UNLISTEN
-.var ROM_UNTALK = $FFAB          // ;UNTALK
 
 // IO
 
@@ -122,22 +108,10 @@ L0665:  jmp $867e
 .var aFEF3 = $FEF3              // portA DDR
 .var aFF06 = $FF06              // like $d011 for screen blank
 
-
-b101B:	jmp $FFD5                                   // ROM load
 FastLoad:
         sta RAM_VERFCK                              // ;VERFCK  Flag:  0 = load,  1 = verify
-//        lda RAM_FA                                  // ;FA      Current device number
-//        cmp #$04                                    // XXX don't have to check for tape, but have to remember current dev when browser was started - it will be tcbm2sd device
-//        bcc b101B                                   // ;less than 4 - tape
-//        lda #RAM_FNADR                              // ;filename at ($AF/$B0)
-//        sta a07DF
-//        ldy #$00                                    // XXX this is not a LOAD wedge, '$' won't be loaded this way
-//        jsr RAM_RLUDES                              // ;RLUDES  Indirect routine downloaded
-//        cmp #'$'                                    // ;if '$' then ROM load
-//        beq b101B
         lda RAM_FA                                  // remember device number in LA ;FA      Current device number
         sta RAM_LA                                  // ;LA      Current logical fiie number
-//        jsr eF160                                   // ;print "SEARCHING" XXX but messages are disabled
 
         jsr ICLRCHN                                 // ;ICLRCHN $FFCC
         ldx RAM_SA                                  // ;SA      Current seconda.y address
@@ -150,13 +124,6 @@ FastLoad:
         lda #$70                                    // ;SA      Fastload indicator - on channel 16 (treated as channel 0 = LOAD)
         jsr ITLKSA                                  // ;TLKSA
 
-// XXX BUG ; note: NO UNTALK after ITALK
-//        jmp eF27C                                   // ;print ERROR, ?LOAD ERROR? XXX but messages are disabled
-
-b1060:
-//        jsr eF189                                   // ;print "LOADING" XXX but messages are disabled
-
-// loader preparation starts here: I/O
         sei
         lda aFF06                                   // ;preserve FF06 (like $D011, before blank)
         pha
@@ -172,18 +139,17 @@ b1060:
         sta tgt
         lda #$40                                    // DAV=1 confirm
         sta aFEF2
-        lda aFEF1
+        lda aFEF1                                   // STATUS
         and #%00000011
         bne LOADEND                                 // file not found
 
-aCont:
         bit aFEF2                                   // ;wait for ACK high
         bpl *-3
         lda aFEF0                                   // ;2nd byte = load addr high // need to flip ACK after this
         sta tgt+1
         lda #$00                                    // DAV=0 confirm
         sta aFEF2
-        lda aFEF1
+        lda aFEF1                                   // STATUS
         and #%00000011
         bne LOADEND                                 // error
 
@@ -199,7 +165,7 @@ LOADSTART:
 LOADLOOP:
         lda aFEF2                                   // ;wait for ACK low
         bmi *-3
-inc $FF19
+//inc $FF19
         lda aFEF0
         sta (tgt),y
         iny
@@ -212,7 +178,7 @@ inc $FF19
 
         lda aFEF2                                   // ;wait for DAV high
         bpl *-3
-inc $FF19
+//inc $FF19
         lda aFEF0                                   // XXX need to flip ACK after this
         sta (tgt),y
         iny
@@ -245,18 +211,11 @@ LOADEND:
 LOADRET:
         lda #$ff                                    // ;port A to output (a bit delayed after ACK)
         sta aFEF3
-        // close channel 0
-        lda RAM_FA                                  // ;FA      Current device number
-        jsr $FFB1                                   // ;direct to FFB1 ROM_LISTEN
-        lda #$E0                                    // ;second CLOSE #0
-        jsr $FF93                                   // ;direct to FF93 ROM_SECOND
-        jsr ROM_UNLSN                               // ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
 
         ldx tgt
         ldy tgt+1                                   // ;return end address+1 and C=0=no error
         clc                                         // no error
         rts
-
 
         // safe at least up to $07CC
         .if (*>$07CC) { .error "low code too long, exceeds $07CC" }
