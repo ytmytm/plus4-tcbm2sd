@@ -9,7 +9,7 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
-const uint8_t debug=0; // set to value larger than one for debug messages
+const uint8_t debug=2; // set to value larger than one for debug messages
 
 #include <EEPROM.h>
 
@@ -259,6 +259,7 @@ const uint8_t STATE_LOAD = 2; // after OPEN on channek 0, after TALK
 const uint8_t STATE_SAVE = 3; // after OPEN on channel 1, after LISTEN+SECOND
 const uint8_t STATE_STAT = 4; // like STATE_LOAD but write from output_buf
 const uint8_t STATE_DIR  = 5; // like STATE_LOAD but render directory listing
+const uint8_t STATE_FASTLOAD = 6; // like STATE_LOAD but with fast transfer protocol
 
 uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
 uint8_t state = STATE_IDLE;
@@ -599,6 +600,9 @@ void state_idle() {
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
 		switch (dat & 0xF0) {
+      case 0x70: // SECOND (fastload on channel 0)
+        if (debug) { Serial.print(F("[FASTLOAD]")); }
+        // fall through
 			case 0x60: // SECOND
 				if (debug) { Serial.print(F("second chn=")); }
 				if (debug) { Serial.println(chn); }
@@ -610,7 +614,12 @@ void state_idle() {
 							if (filename_is_dir) {
 								state = STATE_DIR;	// render and send directory data
 							} else {
-								state = STATE_LOAD; // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+                // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+                if ((dat & 0xF0) == 0x70) {
+                  state = STATE_FASTLOAD;
+							  } else {
+							    state = STATE_LOAD;
+							  }
 							}
 						} else {
 							if (debug) { Serial.println(F("file not open")); }
@@ -632,6 +641,81 @@ void state_idle() {
 				return;
 		}
 	}
+}
+
+void state_fastload() {
+  // send data until UNTALK
+  uint8_t status = TCBM_STATUS_OK;
+  uint8_t b;
+  uint16_t c = 0;
+  uint8_t ack = 1; // initial ACK state is 1
+  uint8_t dav = 0; // waiting for initial DAV=0
+  bool done = false;
+  File aFile;
+  set_error_msg(0);
+  String fname = match_filename(false); // only files
+
+  tcbm_set_ack(ack); // set ack high (it should be already high)
+  if (debug) { Serial.print(F("[FASTLOAD] on channel=")); Serial.print(channel, HEX); }
+  if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
+  if (SD.exists(fname)) {
+    if (debug) { Serial.println(F("filefound")); }
+    aFile = SD.open(fname, FILE_READ);
+    if (!aFile) {
+      if (debug) { Serial.println(F("file open error")); }
+      status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+      state_init(); // called this to reset input buf ptr and set file_opened flag to false
+      set_error_msg(23);
+    }
+  } else {
+    if (debug) { Serial.println(F("filenotfound")); }
+    status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+  }
+  // initial state is DAV=1, ACK=1 - controller will put DAV=0 when port is switched to input, then we switch to output
+  if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+  while (!(tcbm_get_dav() == dav)); // wait for initial dav=low
+  tcbm_port_output();
+
+  while (!done) {
+        if (status != TCBM_STATUS_OK) {   // file not found, not OK
+          if (debug>1) { Serial.println(F("0D : 0D")); }
+          tcbm_set_status(status); // put out status
+          tcbm_port_write(13); // anything
+          ack ^= 1; // flip ACK
+          dav ^= 1; // flip DAV
+          if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+          tcbm_set_ack(ack);
+          while (!(tcbm_get_dav() == dav)); // wait for confirmation
+          tcbm_port_input(); // return to initial state
+          if (debug>1) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
+          tcbm_set_ack(1);
+          tcbm_set_status(TCBM_STATUS_OK);
+          while (!(tcbm_get_dav() == 1)); // must return to initial state
+          set_error_msg(62);
+          done = true; // exit immediately, there will be no UNTALK
+        } else {
+          b = aFile.read();
+          if (!aFile.available()) {   // was that last byte?
+            status = TCBM_STATUS_EOI; // status must be set with last valid byte
+            if (debug>1) { Serial.println(F("EOF")); }
+          }
+          c++;
+          if (debug>2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
+          tcbm_set_status(status); // put out status
+          tcbm_port_write(b);
+          ack ^= 1; // flip ACK
+          dav ^= 1; // flip DAV
+          if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+          tcbm_set_ack(ack);
+          while (!(tcbm_get_dav() == dav)); // wait for confirmation
+        }
+  }
+  state_init(); // called this to reset input buf ptr and set file_opened flag to false
+  if (aFile) {
+    aFile.close();
+  }
+  if (debug) { Serial.print(F("loaded bytes:")); Serial.println(c, HEX); }
+  state = STATE_IDLE;
 }
 
 void state_load() {
@@ -1136,6 +1220,9 @@ void loop() {
 		case STATE_DIR:
 			state_directory();
 			break;
+    case STATE_FASTLOAD:
+      state_fastload();
+      break;
 		default:
 			if (debug) { Serial.print(F("unknown state=")); Serial.println(state, HEX); }
 			break;

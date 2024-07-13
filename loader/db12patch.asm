@@ -147,59 +147,67 @@ FastLoad:
         jsr ISENDSA                                 // ;SEND SA ; before TALK? and it's not TLKSA
         lda RAM_FA                                  // ;FA      Current device number
         jsr ITALK                                   // ;TALK
-        lda RAM_SA                                  // ;SA      Current seconda.y address
+        lda #$70                                  // ;SA      Current seconda.y address
         jsr ITLKSA                                  // ;TLKSA
-        jsr IACPTR                                  // ;ACPTR (input after talk)
-        lda RAM_STATUS                              // ;STATUS  Kernal I/O status word: ST
-        lsr
-        lsr
-        bcc b1060                                   // ;no error
 
-// XXX ; note: NO UNTALK after ITALK
-        jmp eF27C                                   // ;print ERROR, ?LOAD ERROR? XXX but messages are disabled
+// XXX BUG ; note: NO UNTALK after ITALK
+//        jmp eF27C                                   // ;print ERROR, ?LOAD ERROR? XXX but messages are disabled
 
 b1060:
-        jsr eF189                                   // ;print "LOADING" XXX but messages are disabled
-        lda RAM_FA                                  // ;FA      Current device number
-        jsr ILISTEN                                 // ;direct to FFB1
-        lda #$6F                                    // ;second #15
-        jsr ISECOND                                 // ;direct to FF93
-        lda #'M'
-        jsr IIECOUT                                 // ;direct to FFA8
-        lda #'-'
-        jsr IIECOUT
-        lda #'E'
-        jsr IIECOUT
-        lda #$00
-        jsr IIECOUT
-        lda #$3C
-        jsr IIECOUT
-        jsr ROM_UNLSN                               // ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
+//        jsr eF189                                   // ;print "LOADING" XXX but messages are disabled
+
+// XXX should switch to full ram configuratio here?
 
 // loader preparation starts here: I/O
         sei
         lda aFF06                                   // ;preserve FF06 (like $D011, before blank)
         pha
         lda #0
-        sta aFF06                                   // ;like $D011, blank screen
-        sta aFEF2                                   // ;ACK=0 - WE ARE READY
-        sta aFEF3                                   // ;port A DDR = input
+//XXX   sta aFF06                                   // ;like $D011, blank screen
+        sta aFEF3                                   // ;port A DDR = input first
         sta aFEF0                                   // ;port A (to clear pullups?)
-
+        sta aFEF2                                   // ;DAV=0 - WE ARE READY
+sta $0c00
+sta $7c00
 //
-inc $FF19
-jmp *-3
+//inc $FF19
+//jmp *-3
+//
+// XXX what is the status here? DAV must be high because we wait for LOW, ACK was just set to be low, status must be set to 00 by device before setting DAV low
 //
 
-        lda aFEF2                                   // ;wait for DAV low
+        bit aFEF2                                   // ;wait for ACK low
         bmi *-3
+inc $FF19
+inc $0c00
+inc $7c00
         lda aFEF0                                   // ;1st byte = load addr low  // need to flip ACK after this
         sta tgt
+sta $0c01
+sta $7c01
+        lda #$40                                    // DAV=1 confirm
+        sta aFEF2
+        lda aFEF1
+        and #%00000011
+// enable after removing debug stuff        bne LOADEND                                 // file not found
+        beq aCont
+        jmp LOADEND
 
-        lda aFEF2                                   // ;wait for DAV high
+aCont:
+        bit aFEF2                                   // ;wait for ACK high
         bpl *-3
+inc $FF19
+inc $0c00
+inc $7c00
         lda aFEF0                                   // ;2nd byte = load addr high // need to flip ACK after this
         sta tgt+1
+sta $0c02
+sta $7c02
+        lda #$00                                    // DAV=0 confirm
+        sta aFEF2
+        lda aFEF1
+        and #%00000011
+        bne LOADEND                                 // error
 
         lda a05FF                                   // ;check if we load to load addr from file or from $b4/b5 (RAM_MEMUSS)
         bne LOADSTART
@@ -211,24 +219,40 @@ jmp *-3
 LOADSTART:  // XXX this is probably a bug - LDY #0 here is offet by (tgt) but at the end it's stored to tgt as lowbyte - it should be added to (tgt) instead
         ldy #0
 LOADLOOP:
-        lda aFEF2                                   // ;wait for DAV low
+        lda aFEF2                                   // ;wait for ACK low
         bmi *-3
-        lda aFEF1                                   // EOI? XXX need to clear upper 6 bits
-        bne LOADEND
-
-        lda aFEF0                                   // XXX need to flip ACK after this
+inc $FF19
+inc $0c00
+inc $7c00
+        lda aFEF0
         sta (tgt),y
         iny
+        ldx aFEF1                                   // STATUS
+        lda #$40                                    // DAV=1 confirm
+        sta aFEF2
+        txa                                         // EOI?
+        and #%00000011
+        bne LOADEND
 
         lda aFEF2                                   // ;wait for DAV high
         bpl *-3
-        lda aFEF1                                   // EOI? XXX need to clear upper 6 bits
-        bne LOADEND
-
+inc $FF19
+inc $0c00
+inc $7c00
         lda aFEF0                                   // XXX need to flip ACK after this
         sta (tgt),y
         iny
+        ldx aFEF1                                   // STATUS
+        lda #$00                                    // DAV=0 confirm
+        sta aFEF2
+        txa                                         // EOI?
+        and #%00000011
+        bne LOADEND
+
+        tya
         bne LOADLOOP
+inc $0c02
+inc $7c02
         inc tgt+1
         bne LOADLOOP
 
@@ -240,11 +264,25 @@ LOADEND:
         pla
         sta aFF06                                   // ;restore FF06 (like $D011), turn off blank
         cli
-        sty tgt                                     // ;adjust end address to point at the next byte
-        inc tgt
-        bne LOADRET
+        tya
+        clc
+        adc tgt
+        sta tgt
+        bcc LOADRET
         inc tgt+1
+lda tgt
+sta $7c03
+lda tgt+1
+sta $7c04
+
 LOADRET:
+        // close channel 0
+        lda RAM_FA                                  // ;FA      Current device number
+        jsr $FFB1                                   // ;direct to FFB1 ROM_LISTEN
+        lda #$E0                                    // ;second CLOSE #0
+        jsr $FF93                                   // ;direct to FF93 ROM_SECOND
+        jsr ROM_UNLSN                               // ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
+
         ldx tgt
         ldy tgt+1                                   // ;return end address+1 and C=0=no error
         clc                                         // no error
