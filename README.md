@@ -4,6 +4,8 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 
 It's enough to quickly and easily load file-based programs though it is not as feature rich as sd2iec.
 
+It's fast - with patched Directory Browser (included) you can load 220 blocks within 6 seconds.
+
 <img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
 
 ## Features
@@ -20,15 +22,19 @@ It's enough to quickly and easily load file-based programs though it is not as f
 ### 1551 drive simulation
 
 - DLOAD and DSAVE support
-- transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
+- standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
+- fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/)
 - device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
-  - remove file `S:<filename>`
+  - remove file `S:<filename>` (will remove only the first matching file)
   - change device number: `U0>+chr$(<devnum>)` with `<devnum>` = 8 or 9
 - limited support for full paths (when filename starts with `/`)
-  - you can DLOAD a file from root folder from anywhere in the filesystem, e.g. file browser: `DLOAD"/FB16`
+  - you can DLOAD a file from root folder from anywhere in the filesystem, e.g. file browser: `DLOAD"/FB16`; this works as long as the path is not too long
+  - disk commands will accept full paths, e.g. `S:/GAMES/D/DONALD DUCK`
 - compatible with file browsers: FileBrowser 1.6 and Directory Browser 1.2
+- case insensitve, all filenames converted to lowercase
+- wildcard matching `*` and `?`
 
 ### tcbm2sd or sd2tcbm?
 
@@ -105,6 +111,10 @@ Thanks to the improved PLA equations only 8 actually used I/O addresses are used
 // or home folder: Arduino15\packages\arduino\hardware\avr\1.8.6\boards.txt
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
+
+### Directory browser 1.2b
+
+... loader
 
 ## Credits
 
