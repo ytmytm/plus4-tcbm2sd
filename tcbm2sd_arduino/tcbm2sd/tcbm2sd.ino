@@ -670,6 +670,7 @@ void state_fastload() {
   } else {
     if (debug) { Serial.println(F("filenotfound")); }
     status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+    set_error_msg(62);
   }
   // initial state is DAV=1, ACK=1 - controller will put DAV=0 when port is switched to input, then we switch to output
   if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
@@ -680,18 +681,17 @@ void state_fastload() {
         if (status != TCBM_STATUS_OK) {   // file not found, not OK
           if (debug>1) { Serial.println(F("0D : 0D")); }
           tcbm_set_status(status); // put out status
-          tcbm_port_write(13); // anything
+//          tcbm_port_write(13); // anything
           ack ^= 1; // flip ACK
           dav ^= 1; // flip DAV
-          if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+          if (debug>1) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
           tcbm_set_ack(ack);
-          while (!(tcbm_get_dav() == dav)); // wait for confirmation
+//          while (!(tcbm_get_dav() == dav)); // wait for confirmation
           tcbm_port_input(); // return to initial state
           if (debug>1) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
           tcbm_set_ack(1);
           tcbm_set_status(TCBM_STATUS_OK);
           while (!(tcbm_get_dav() == 1)); // must return to initial state
-          set_error_msg(62);
           done = true; // exit immediately, there will be no UNTALK
         } else {
           b = aFile.read();
@@ -744,6 +744,7 @@ void state_load() {
 	} else {
 		if (debug) { Serial.println(F("filenotfound")); }
 		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+    set_error_msg(62);
 	}
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
@@ -752,7 +753,6 @@ void state_load() {
 				if (status != TCBM_STATUS_OK) {		// file not found, not OK
 //					Serial.println(F("0D : 0D"));
 					tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
-          set_error_msg(62);
 					done = true; // exit immediately, there will be no UNTALK
 				} else {
 					b = aFile.read();

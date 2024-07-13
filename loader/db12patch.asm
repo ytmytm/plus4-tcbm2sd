@@ -93,6 +93,7 @@ L0665:  jmp $867e
 .var RAM_SA = $AD
 .var RAM_FA = $AE                // ;FA      Current device number
 .var RAM_FNADR = $AF             // (2) ;FNADDR  Vector to filename
+.var RAM_FNLEN = $A8             // (1) ;FNLEN   Length of filename
 .var RAM_MEMUSS = $B4            // (2) ;MEMUSS  Load ram base
 .var a05FF = LORAM-1             // temp storagefor load address flag, can be anywhere
 .var a07DF = $07DF
@@ -108,10 +109,10 @@ L0665:  jmp $867e
 .var ITALK = $EDFA               // ;TALK
 .var ITLKSA = $EE1A              // ;TKSA
 .var IACPTR = $EC8B              // ;ACPTR (receive)
-.var ILISTEN = $EE2C             // ;LISTEN $FFB1
-.var ISECOND = $EE4D             // ;SECOND $FF93
-.var IIECOUT = $ECDF             // ;IECOUT (send) $FFA8
+.var ROM_LISTEN = $FFB1          // ; LISTEN
+.var ROM_SECOND = $FF93          // ; SECOND
 .var ROM_UNLSN = $FFAE           // ;UNLISTEN
+.var ROM_UNTALK = $FFAB          // ;UNTALK
 
 // IO
 
@@ -125,29 +126,28 @@ L0665:  jmp $867e
 b101B:	jmp $FFD5                                   // ROM load
 FastLoad:
         sta RAM_VERFCK                              // ;VERFCK  Flag:  0 = load,  1 = verify
-        lda RAM_FA                                  // ;FA      Current device number
-        cmp #$04                                    // XXX don't have to check for tape, but have to remember current dev when browser was started - it will be tcbm2sd device
-        bcc b101B                                   // ;less than 4 - tape
-        lda #RAM_FNADR                              // ;filename at ($AF/$B0)
-        sta a07DF
-        ldy #$00                                    // XXX this is not a LOAD wedge, '$' won't be loaded this way
-        jsr RAM_RLUDES                              // ;RLUDES  Indirect routine downloaded
-        cmp #'$'                                    // ;if '$' then ROM load
-        beq b101B
+//        lda RAM_FA                                  // ;FA      Current device number
+//        cmp #$04                                    // XXX don't have to check for tape, but have to remember current dev when browser was started - it will be tcbm2sd device
+//        bcc b101B                                   // ;less than 4 - tape
+//        lda #RAM_FNADR                              // ;filename at ($AF/$B0)
+//        sta a07DF
+//        ldy #$00                                    // XXX this is not a LOAD wedge, '$' won't be loaded this way
+//        jsr RAM_RLUDES                              // ;RLUDES  Indirect routine downloaded
+//        cmp #'$'                                    // ;if '$' then ROM load
+//        beq b101B
         lda RAM_FA                                  // remember device number in LA ;FA      Current device number
         sta RAM_LA                                  // ;LA      Current logical fiie number
-        jsr eF160                                   // ;print "SEARCHING" XXX but messages are disabled
+//        jsr eF160                                   // ;print "SEARCHING" XXX but messages are disabled
 
-// XXX try to read one byte from file - drive ROM will find it and report error if not found; SPEED DOS does the same thing
         jsr ICLRCHN                                 // ;ICLRCHN $FFCC
         ldx RAM_SA                                  // ;SA      Current seconda.y address
         stx a05FF                                   // ;preserve SA (LOAD address parameter (set in $B4/B5 (RAM_MEMUSS) or from file))
         lda #$60
         sta RAM_SA                                  // ;SA      Current seconda.y address
-        jsr ISENDSA                                 // ;SEND SA ; before TALK? and it's not TLKSA
+        jsr ISENDSA                                 // ;SEND SA ; send name with SA=$60
         lda RAM_FA                                  // ;FA      Current device number
         jsr ITALK                                   // ;TALK
-        lda #$70                                  // ;SA      Current seconda.y address
+        lda #$70                                    // ;SA      Fastload indicator - on channel 16 (treated as channel 0 = LOAD)
         jsr ITLKSA                                  // ;TLKSA
 
 // XXX BUG ; note: NO UNTALK after ITALK
@@ -156,53 +156,31 @@ FastLoad:
 b1060:
 //        jsr eF189                                   // ;print "LOADING" XXX but messages are disabled
 
-// XXX should switch to full ram configuratio here?
-
 // loader preparation starts here: I/O
         sei
         lda aFF06                                   // ;preserve FF06 (like $D011, before blank)
         pha
         lda #0
-//XXX   sta aFF06                                   // ;like $D011, blank screen
+        sta aFF06                                   // ;like $D011, blank screen
         sta aFEF3                                   // ;port A DDR = input first
         sta aFEF0                                   // ;port A (to clear pullups?)
         sta aFEF2                                   // ;DAV=0 - WE ARE READY
-sta $0c00
-sta $7c00
-//
-//inc $FF19
-//jmp *-3
-//
-// XXX what is the status here? DAV must be high because we wait for LOW, ACK was just set to be low, status must be set to 00 by device before setting DAV low
-//
 
         bit aFEF2                                   // ;wait for ACK low
         bmi *-3
-inc $FF19
-inc $0c00
-inc $7c00
         lda aFEF0                                   // ;1st byte = load addr low  // need to flip ACK after this
         sta tgt
-sta $0c01
-sta $7c01
         lda #$40                                    // DAV=1 confirm
         sta aFEF2
         lda aFEF1
         and #%00000011
-// enable after removing debug stuff        bne LOADEND                                 // file not found
-        beq aCont
-        jmp LOADEND
+        bne LOADEND                                 // file not found
 
 aCont:
         bit aFEF2                                   // ;wait for ACK high
         bpl *-3
-inc $FF19
-inc $0c00
-inc $7c00
         lda aFEF0                                   // ;2nd byte = load addr high // need to flip ACK after this
         sta tgt+1
-sta $0c02
-sta $7c02
         lda #$00                                    // DAV=0 confirm
         sta aFEF2
         lda aFEF1
@@ -216,14 +194,12 @@ sta $7c02
         lda RAM_MEMUSS+1
         sta tgt+1
 
-LOADSTART:  // XXX this is probably a bug - LDY #0 here is offet by (tgt) but at the end it's stored to tgt as lowbyte - it should be added to (tgt) instead
+LOADSTART:
         ldy #0
 LOADLOOP:
         lda aFEF2                                   // ;wait for ACK low
         bmi *-3
 inc $FF19
-inc $0c00
-inc $7c00
         lda aFEF0
         sta (tgt),y
         iny
@@ -237,8 +213,6 @@ inc $7c00
         lda aFEF2                                   // ;wait for DAV high
         bpl *-3
 inc $FF19
-inc $0c00
-inc $7c00
         lda aFEF0                                   // XXX need to flip ACK after this
         sta (tgt),y
         iny
@@ -251,31 +225,26 @@ inc $7c00
 
         tya
         bne LOADLOOP
-inc $0c02
-inc $7c02
         inc tgt+1
         bne LOADLOOP
 
 LOADEND:
-        lda #$ff                                    // ;port A to output
-        sta aFEF3
         lda #$40                                    // ;$40 = ACK (bit 6) to 1
         sta aFEF2
         pla
         sta aFF06                                   // ;restore FF06 (like $D011), turn off blank
         cli
-        tya
+
+        tya                                         // adjust end address (Y was already increased so just take care about low byte)
         clc
         adc tgt
         sta tgt
         bcc LOADRET
         inc tgt+1
-lda tgt
-sta $7c03
-lda tgt+1
-sta $7c04
 
 LOADRET:
+        lda #$ff                                    // ;port A to output (a bit delayed after ACK)
+        sta aFEF3
         // close channel 0
         lda RAM_FA                                  // ;FA      Current device number
         jsr $FFB1                                   // ;direct to FFB1 ROM_LISTEN
