@@ -9,7 +9,7 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
-const uint8_t debug=2; // set to value larger than one for debug messages
+const uint8_t debug=0; // set to value larger than one for debug messages
 
 #include <EEPROM.h>
 
