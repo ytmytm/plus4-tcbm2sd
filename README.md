@@ -4,7 +4,7 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 
 It's enough to quickly and easily load file-based programs though it is not as feature rich as sd2iec.
 
-It's fast - with patched Directory Browser you can load 220 blocks within 6 seconds(!).
+It's fast - with patched Directory Browser you can load 220 blocks within 6 seconds(!). That's speed comparable with [DolphinDOS](https://github.com/ytmytm/c128dcr-DolphinDOS3)
 
 Patched Directory Browser is embedded into flash and available at all times by trying to load `*` file or using `SHIFT+RUN/STOP` key combination.
 
@@ -44,14 +44,13 @@ Patched Directory Browser is embedded into flash and available at all times by t
 
 ### tcbm2sd or sd2tcbm?
 
+If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
+
 This is not a sd2iec port, just a simple 1551 simulator. There is no support for disk images.
 This is more like Tapecart - a loader for file-based programs rather than sd2iec.
 
-If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
-
-Another microcontroller must be used because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
-
-Note that for development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
+Another microcontroller must be used for sd2tcbm because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
+For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
 
 ## KiCad project
 
@@ -76,7 +75,7 @@ To be soldered:
 The first revision of PCB was meant primarily as a development platform, so it relies on cheap, ready to use modules:
 
 - AMS1117 3.3V power supply module with 3 pins
-- SD card 3.3V adapter
+- SD card 3.3V adapter (3.3V VCC, with no level shifters)
 - Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114
 
 If all you want is a paddle replacement then only the power supply module is needed.
@@ -104,27 +103,121 @@ Thanks to the improved PLA equations only 8 actually used I/O addresses are used
 
 ### CPLD source code
 
+Verilog source code can be found in [hdl](hdl/) folder. Apart from `.v` files there are also project files for [Xilinx ISE 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html).
+If you want to modify them and rebuild `.jed` file, I highly recommend using Linux version, even with Windows WSL it's much easier to install and with fewer install/startup issues than the Windows version.
+
+The code implements 4 parts:
+
+1. PLA 251641-3 logic equations, updated to activate 6523T port only within 8 bytes indicated by the device input line
+2. 8-bit, bidirectional port A of 6523T
+3. 2-bit, bidirectional port B of 6523T (bits 0 and 1 - status from the drive)
+4. 2-bit, bidirectional port C of 6523T (bit 7 (input from the drive) and bit 6 (output to the drive))
+
+The 6523T is a trimmed-down copy of [Fake6523](https://github.com/go4retro/Fake6523).
+
+The remaining, unused, bits of Ports B and C will probably behave in a different way than with a real 6323T. So far I didn't find it as an issue though.
+
 ### CPLD flashing
 
-... hdl/Fake6523.jed
+JEDEC file with CPLD fimware is here: [hdl/Fake6523.jed](hdl/Fake6523.jed).
+
+You don't need any special equipment to flash it. A Raspberry Pi and some jumper wires will be enough. If you can hold them more or less steady there is no need to solder any pin headers for JTAG connector.
+
+| Signal | GPIO Header Pin | GPIO Name |
+|--------|-----------------|-----------|
+| GND | 6 or 9 or 14... | GND |
+| TDO	| 13 | GPIO 27 |
+| TDI	| 15 | GPIO 22 |
+| TCK	| 11 | GPIO 17 |
+| TMS	| 7  | GPIO 4 |
+| 3.3V | 1 | 3.3V |
+
+Command to test the connection and list JTAG devices (our XC9572 will be most likely device 0):
+```
+xc3sprog -c matrix_creator
+```
+Command to flash the firmware to device on position 0 (`-p 0`)
+```
+xc3sprog -c matrix_creator -v -p 0 Fake6523.jed
+```
+
+There is [an excellent reference about programming XC9500XL](https://anastas.io/hardware/2020/09/29/xc9500-cpld-raspberry-pi-xc3sprog.html) via JTAG with Raspberry Pi. Please read it for more details.
+
+### Arduino source code
+
+The source code of Arduino Mini Pro sketch is in [tcbm2sd_arduino/tcbm2sd/](tcbm2sd_arduino/tcbm2sd/) folder.
+
+The only dependency (other than Arduino IDE) is [SDFat 2.2.3](https://github.com/greiman/SdFat) library (this code was developed when 2.3 was the latest available version). It's available directly from Arduino IDE library manager.
+
+In Arduino IDE settings choose board `Arduino Mini w/ Atmega328 (3.3V)`.
 
 ### Arduino flashing
 
-... tcbm2sd_arduino/tcbm2sd/tcbm2sd.ino
+A basic USB-serial dongle (CH340G or similar) with 6 pins is enough to flash the firmware. Mind the pin labels (order may be reversed), but the connection is usually one to one (without any crossings) with one of the pins left unconnected.
+This is the only time, when the 6 pins on the short side of Arduino Mini Pro board will be used.
 
-// IDE: Arduino Mini w/ ATmega328 (3.3.V)
-// in case of flashing problem change in Arduino/hardware/arduino/avr/boards.txt
-// or home folder: Arduino15\packages\arduino\hardware\avr\1.8.6\boards.txt
-// from: mini.menu.cpu.atmega328.upload.speed=115200
-//   to: mini.menu.cpu.atmega328.upload.speed=57600
+| USB dongle pin | Arduino pin |
+|----------------|-------------|
+| DTR            | DTR (next to RAW label) |
+| RXD            | TX0         |
+| TXD            | RX0         |
+| VCC            | VCC         |
+| CTS            | GND (not connected) |
+| GND            | GND         |
+
+**UPLOAD PROBLEMS**
+
+Many Ardunio Mini Pro clones are sold with old bootloader flashed. That was the case for me. (They are also unable to use 115200 serial speed, but that's another story).
+If you have trouble uploading the compiled code check if changing the upload speed from 115200 (new bootloader) to 57600 (old bootloader) helps.
+
+Close the IDE and find you Arduino `boards.txt` settings file. On Windows it will be in `C:/Users/<user name>/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.6/boards.txt`
+
+Find there a line:
+```
+mini.menu.cpu.atmega328.upload.speed=115200
+```
+and change it to
+```
+mini.menu.cpu.atmega328.upload.speed=57600
+```
+
+Reopen the Arduino IDE and try again.
+
+**WARNING**
+
+1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
+2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect VCC** line.
 
 ### Directory browser 1.2b
 
-... loader
+tcbm2sd is compatible with standard TCBM protocol as implemented by Commodore in Plus/4 ROM. However the hardware is capable with much more.
+I took [Directory Browser v1.2](https://plus4world.powweb.com/software/Directory_Browser) and I patched it to use a faster protocol, a bit similar to [Warpload 1551](https://plus4world.powweb.com/software/Warpload_1551).
+The only difference is that since Arduino Micro Pro is much faster than Plus/4 (8MHz vs 1MHz) it would be hard to rely on the timing, so in my version of the fast protocol both sides need to test if the other end has confirmend receiving the data.
+
+The source code for the patch is in [loader/](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
+
+The provided `Makefile` doesn't do much but it shows the order of commands:
+
+Assemble the patch and apply it over the binary
+```
+java -jar Kickass.jar db12patch.asm
+```
+This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
+
+But that binary can be embedded into Arduino Micro flash so that it's always available as `*` file. We need to convert it to a C-style array and put into Arduino sketch folder:
+```
+xxd -i db12b.prg ../tcbm2sd_arduino/tcbm2sd/db12b.h
+```
+
+Then the Arduino code has to be recompiled and uploaded to the device.
 
 ## Credits
 
-Open264cart
-Fake6523
-LittleSixteen
-Open264cart case
+This project wouldn't be possible without documentation provided by others:
+
+- [Commodore TCBM bus and protocol description](https://www.pagetable.com/?p=1324)
+- [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart)which were my template for PCB dimensions
+- [LitlleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
+- [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
+
+You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting slot for SD card.
