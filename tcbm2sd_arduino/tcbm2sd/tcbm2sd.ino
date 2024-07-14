@@ -458,7 +458,11 @@ void set_error_msg(uint8_t error) {
 
 void handle_command() {
   String fname;
-	if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
+  if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
+  if (!input_buf[0]) {
+    if (debug) { Serial.println(F("no command, no change")); }
+    return;
+  }
   set_error_msg(0);
 	// CD?
 	if (input_buf[0]=='C' && input_buf[1]=='D') {
