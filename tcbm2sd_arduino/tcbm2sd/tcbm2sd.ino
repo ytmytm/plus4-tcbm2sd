@@ -10,6 +10,7 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 const uint8_t debug=0; // set to value larger than one for debug messages
+//#define DISABLE_BROWSER // disable embedded db12b binary when debug is enabled (it may not fit in flash)
 
 //////////////////////////////////
 
@@ -32,8 +33,13 @@ const uint8_t PIN_SD_SS = 10;
 // created with xxd -i <input.prg> <output.h>
 // no #embed available here yet :/
 
+#ifndef DISABLE_BROWSER
 const PROGMEM
 #include "db12b.h"
+#else // dummy
+const PROGMEM unsigned char db12b_prg[] = { 0x01, 0x10, 0x00, 0x00, 0x00 };
+unsigned int db12b_prg_len = 5;
+#endif
 
 //////////////////////////////////
 
