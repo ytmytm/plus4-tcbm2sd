@@ -11,6 +11,8 @@
 
 const uint8_t debug=0; // set to value larger than one for debug messages
 
+//////////////////////////////////
+
 #include <EEPROM.h>
 
 //////////////////////////////////
@@ -21,6 +23,17 @@ SdFat32 SD;
 
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
+
+//////////////////////////////////
+
+// embedded Directory Browser 1.2 with tcbm2sd fastloader patch
+// http://plus4world.powweb.com/software/Directory_Browser
+
+// created with xxd -i <input.prg> <output.h>
+// no #embed available here yet :/
+
+const PROGMEM
+#include "db12b.h"
 
 //////////////////////////////////
 
@@ -260,6 +273,7 @@ const uint8_t STATE_SAVE = 3; // after OPEN on channel 1, after LISTEN+SECOND
 const uint8_t STATE_STAT = 4; // like STATE_LOAD but write from output_buf
 const uint8_t STATE_DIR  = 5; // like STATE_LOAD but render directory listing
 const uint8_t STATE_FASTLOAD = 6; // like STATE_LOAD but with fast transfer protocol
+const uint8_t STATE_BROWSER = 7; // like STATE_LOAD but write from db12b[] array
 
 uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
 uint8_t state = STATE_IDLE;
@@ -614,12 +628,16 @@ void state_idle() {
 							if (filename_is_dir) {
 								state = STATE_DIR;	// render and send directory data
 							} else {
-                // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
-                if ((dat & 0xF0) == 0x70) {
-                  state = STATE_FASTLOAD;
-							  } else {
-							    state = STATE_LOAD;
-							  }
+                if (filename[0]=='*') {
+                  state = STATE_BROWSER;
+                } else {
+                  // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+                  if ((dat & 0xF0) == 0x70) {
+                    state = STATE_FASTLOAD;
+			  				  } else {
+				  			    state = STATE_LOAD;
+					  		  }
+                }
 							}
 						} else {
 							if (debug) { Serial.println(F("file not open")); }
@@ -1018,23 +1036,28 @@ void state_directory() {
 	state = STATE_IDLE;
 }
 
-void state_status() { // pretty much the same as state_load but on channel 15 we write from output_buf
+void state_status(const char* buffer, uint16_t len, bool flash) {
 	// send data until UNTALK
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
 	uint8_t b;
-	uint8_t c = 0;
+	uint16_t c = 0;
 	bool done = false;
 	if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
+  if (debug) { Serial.print(F("sending ")); Serial.print(len, HEX); Serial.print(F(" bytes from ")); Serial.println(flash); }
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
- //				Serial.print(F("new character from ")); Serial.println(c, HEX);
-				b = output_buf[c];
+        if (debug>1) { Serial.print(F("new character from ")); Serial.println(c, HEX); }
+        if (flash) {
+          b = pgm_read_byte(buffer+c);
+        } else {
+          b = buffer[c];
+        }
 				c++;
-				if (output_buf[c]==0 || c==sizeof(output_buf)) {
+				if (c==len) {
 					c--;
 					status = TCBM_STATUS_EOI; // status must be set with last valid byte
 				}
@@ -1215,7 +1238,8 @@ void loop() {
 			state_save();
 			break;
 		case STATE_STAT:
-			state_status();
+      // send out output_buffer string from RAM (assuming null-terminated string)
+			state_status((const char*)output_buf, strlen((const char*)output_buf), false);
 			break;
 		case STATE_DIR:
 			state_directory();
@@ -1223,6 +1247,9 @@ void loop() {
     case STATE_FASTLOAD:
       state_fastload();
       break;
+    case STATE_BROWSER:
+      // send out directory browser from flash
+      state_status((const char*)db12b_prg, db12b_prg_len, true);
 		default:
 			if (debug) { Serial.print(F("unknown state=")); Serial.println(state, HEX); }
 			break;

@@ -9,15 +9,20 @@ SOURCES := db12patch.asm
 
 BINS := db12b.prg
 
+HEADER := ../tcbm2sd_arduino/tcbm2sd/db12b.h
+
 .PHONY: all clean test love
+
+all: $(BINS) $(HEADER)
 
 $(BINS): $(SOURCES)
 	$(JAVA) -jar $(KICKASS) $(SOURCES)
 
-all: $(BINS)
+$(HEADER): $(BINS)
+	xxd -i $(BINS) $(HEADER)
 
 clean:
-	-rm $(BINS)
+	-rm $(BINS) $(HEADER)
 
 test:
 	$(XPLUS4) $(BINS)
