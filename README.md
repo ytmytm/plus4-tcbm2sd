@@ -1,4 +1,6 @@
-# TCBM2SD by Maciej 'YTM/Elysium' Witkowiak
+# TCBM2SD 
+---------
+### by Maciej 'YTM/Elysium' Witkowiak
 
 CBM 1551 paddle replacement and/or mass storage using an SD card interfacing with the Commodore C16/116/Plus4 simulating a TCBM bus 1551 disk drive
 
