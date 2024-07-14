@@ -503,6 +503,45 @@ void handle_command() {
     if (debug) { Serial.println(pwd); }
 		return;
 	}
+  // MD / RD
+  if ((input_buf[0]=='M' || input_buf[0]=='R') && input_buf[1]=='D') {
+    input_to_filename(2);
+    fname = match_filename(true);
+    if (debug) { Serial.print(F("MKDIR/RMDIR")); Serial.println(fname); }
+    switch (input_buf[0]) {
+      case 'M':
+        if (debug) { Serial.print(F("mkdir")); }
+        if (SD.exists(fname)) {
+          if (debug) { Serial.print(F("...exists")); }
+          set_error_msg(63);
+          return;
+        }
+        if (!SD.mkdir(fname)) {
+          if (debug) { Serial.print(F("...failed")); }
+          set_error_msg(26);
+          return;
+        }
+        return;
+        break;
+      case 'R':
+        if (debug) { Serial.print(F("rmdir")); }
+        if (!SD.exists(fname)) {
+          if (debug) { Serial.print(F("...not found")); }
+          set_error_msg(62);
+          return;
+        }
+        if (!SD.rmdir(fname)) {
+          if (debug) { Serial.print(F("...failed")); }
+          set_error_msg(26);
+          return;
+        }
+        return;
+        break;
+      default:
+        break;
+    }
+    return;
+  }
 	// S?
 	if (input_buf[0]=='S') {
 		if (debug) { Serial.print(F("SCRATCH")); }
