@@ -4,7 +4,9 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 
 It's enough to quickly and easily load file-based programs though it is not as feature rich as sd2iec.
 
-It's fast - with patched Directory Browser (included) you can load 220 blocks within 6 seconds.
+It's fast - with patched Directory Browser you can load 220 blocks within 6 seconds(!).
+
+Patched Directory Browser is embedded into flash and available at all times by trying to load `*` file or using `SHIFT+RUN/STOP` key combination.
 
 <img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
 
@@ -24,6 +26,7 @@ It's fast - with patched Directory Browser (included) you can load 220 blocks wi
 - DLOAD and DSAVE support
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
 - fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/)
+- Directory Browser embedded in the flash, available at all times as `*` file
 - device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
