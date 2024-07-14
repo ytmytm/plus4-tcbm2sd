@@ -147,7 +147,7 @@ There is [an excellent reference about programming XC9500XL](https://anastas.io/
 
 The source code of Arduino Mini Pro sketch is in [tcbm2sd_arduino/tcbm2sd/](tcbm2sd_arduino/tcbm2sd/) folder.
 
-The only dependency (other than Arduino IDE) is [SDFat 2.2.3](https://github.com/greiman/SdFat) library (this code was developed when 2.3 was the latest available version). It's available directly from Arduino IDE library manager.
+The only dependency (other than Arduino IDE) is [SDFat 2.2.3](https://github.com/greiman/SdFat) library (this code was developed when 2.2.3 was the latest available version). It's available directly from Arduino IDE library manager.
 
 In Arduino IDE settings choose board `Arduino Mini w/ Atmega328 (3.3V)`.
 
