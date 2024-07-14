@@ -542,6 +542,50 @@ void handle_command() {
     }
     return;
   }
+  // R? <new>=<old>
+  if (input_buf[0]=='R') {
+    if (debug) { Serial.print(F("RENAME")); }
+    // scan for '='
+    uint8_t in=1;
+    bool found=false;
+    if (input_buf[in]=='0') { in++; }
+    if (input_buf[in]==':') { in++; }
+    // in points to next char
+    while (in<input_buf_ptr && input_buf[in] && !found) {
+      found = (input_buf[in] == '=');
+      in++;
+    }
+    if (!found) {
+      if (debug) { Serial.println(F("missing '='")); }
+      set_error_msg(30);
+      return;
+    }
+    // target
+    input_to_filename(1);
+    String tgtname = match_filename(false);
+    tgtname = tgtname.substring(0,tgtname.indexOf('='));
+    if (debug) { Serial.print(F("to:")); Serial.println(tgtname); }
+    if (SD.exists(tgtname)) {
+      if (debug) { Serial.println(F("...EXISTS")); }
+      set_error_msg(63);
+      return;
+    }
+    // source
+    input_to_filename(in);
+    String sourcename = match_filename(false);
+    if (debug) { Serial.print(F("from:")); Serial.print(sourcename); Serial.print(F(" to:")); Serial.println(tgtname); }
+    if (!SD.exists(sourcename)) {
+      if (debug) { Serial.println(F("...NOT FOUND")); }
+      set_error_msg(62);
+      return;
+    }
+    // action
+    if (!SD.rename(sourcename, tgtname)){
+      set_error_msg(26);
+    }
+    return;
+  }
+
 	// S?
 	if (input_buf[0]=='S') {
 		if (debug) { Serial.print(F("SCRATCH")); }
