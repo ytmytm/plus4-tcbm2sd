@@ -194,6 +194,8 @@ tcbm2sd is compatible with standard TCBM protocol as implemented by Commodore in
 I took [Directory Browser v1.2](https://plus4world.powweb.com/software/Directory_Browser) and I patched it to use a faster protocol, a bit similar to [Warpload 1551](https://plus4world.powweb.com/software/Warpload_1551).
 The only difference is that since Arduino Micro Pro is much faster than Plus/4 (8MHz vs 1MHz) it would be hard to rely on the timing, so in my version of the fast protocol both sides need to test if the other end has confirmed receiving the data.
 
+Fast protocol is enabled when everything is prepared like for load (OPEN channel 0 and send the filename) but after the `TALK` call as a secondary address we send `0x70` instead of `0x60` - talk on channel 16 rather than 0. There is no check if the remote device is a tcbm2sd and actually supports this protocol.
+
 The source code for the patch is in [loader/](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
 
 The provided `Makefile` doesn't do much but it shows the order of commands:
