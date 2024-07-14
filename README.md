@@ -27,7 +27,10 @@ It's fast - with patched Directory Browser (included) you can load 220 blocks wi
 - device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
-  - remove file `S:<filename>` (will remove only the first matching file)
+  - remove file `S:<filename>` (will remove only the first matching file), BASIC `SCRATCH`
+  - rename file `S:<new>=<old>`, BASIC `RENAME ... TO ...`
+  - create dir `MD<directory>`
+  - remove dir `RD<directory>`
   - change device number: `U0>+chr$(<devnum>)` with `<devnum>` = 8 or 9
 - limited support for full paths (when filename starts with `/`)
   - you can DLOAD a file from root folder from anywhere in the filesystem, e.g. file browser: `DLOAD"/FB16`; this works as long as the path is not too long
