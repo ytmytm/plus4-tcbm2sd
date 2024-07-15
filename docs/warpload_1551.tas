@@ -1,0 +1,684 @@
+;
+; **** ZP ABSOLUTE ADRESSES **** 
+;
+RAM_PORT = $01
+RAM_ZPVEC1 = $03
+a04 = $04
+RAM_ZPVEC2 = $05
+a06 = $06
+a1A = $1A
+a1B = $1B
+RAM_RESLO = $29
+RAM_TXTTAB = $2B
+a38 = $38
+RAM_DSDESC = $79
+a7A = $7A
+RAM_STATUS = $90
+RAM_VERFCK = $93
+tgtl = $9D
+tgth = $9E
+RAM_FPVERR = $A9
+RAM_LA = $AC
+RAM_SA = $AD
+RAM_FA = $AE
+RAM_MEMUSS = $B4
+RAM_MEMUSSH = $B5
+RAM_RVS = $C2
+RAM_PNT = $C8
+aC9 = $C9
+RAM_PNTR = $CA
+RAM_QTSW = $CB
+RAM_SEDT1 = $CC
+RAM_USE4DY = $F9
+RAM_XSTOP = $FA
+RAM_CURBNK = $FB
+RAM_XoN = $FC
+RAM_XoFF = $FD
+;
+; **** ZP POINTERS **** 
+;
+RAM_ZPVEC1 = $03
+tgtl = $9D
+RAM_PNT = $C8
+RAM_PNTR = $CA
+pD0 = $D0
+;
+; **** FIELDS **** 
+;
+f0600 = $0600
+f8D3B = $8D3B
+fF119 = $F119
+fF6FF = $F6FF
+fF70C = $F70C
+fF70D = $F70D
+fF70E = $F70E
+fF71C = $F71C
+fF729 = $F729
+;
+; **** ABSOLUTE ADRESSES **** 
+;
+a0111 = $0111
+a0202 = $0202
+a0203 = $0203
+a05FA = $05FA
+a05FB = $05FB
+a05FC = $05FC
+a05FE = $05FE
+a05FF = $05FF
+a07DF = $07DF
+a1FA0 = $1FA0
+a3BFE = $3BFE
+a3BFF = $3BFF
+a3D2F = $3D2F
+a3DF4 = $3DF4
+a4000 = $4000
+a4001 = $4001
+a4002 = $4002
+a4003 = $4003
+aFEF0 = $FEF0
+aFEF1 = $FEF1
+aFEF2 = $FEF2
+aFEF3 = $FEF3
+aFF06 = $FF06
+;
+; **** POINTERS **** 
+;
+p060E = $060E
+p2000 = $2000
+p3C00 = $3C00
+pFF40 = $FF40
+;
+; **** EXTERNAL JUMPS **** 
+;
+e3C09 = $3C09
+e3C53 = $3C53
+e3C61 = $3C61
+e3C8C = $3C8C
+e3CBD = $3CBD
+e3D17 = $3D17
+e3D75 = $3D75
+e3D98 = $3D98
+e3DA8 = $3DA8
+e3DC7 = $3DC7
+e3DCA = $3DCA
+e3DE0 = $3DE0
+e3DE3 = $3DE3
+e3DF5 = $3DF5
+e3E23 = $3E23
+e80C9 = $80C9
+e8703 = $8703
+eF04C = $F04C
+eF0B6 = $F0B6
+eF13D = $F13D
+eF160 = $F160
+eF189 = $F189
+eF27C = $F27C
+eF388 = $F388
+eF560 = $F560
+eFD79 = $FD79
+;
+; **** USER LABELS **** 
+;
+RAM_ILOADH = $032F
+IACPTR = $EC8B
+IIECOUT = $ECDF
+ITALK = $EDFA
+ITLKSA = $EE1A
+ILISTEN = $EE2C
+ISECOND = $EE4D
+ICLRCHN = $EF0C
+ISENDSA = $F005
+;
+; **** PREDEFINED LABELS **** 
+;
+RAM_ILOAD = $032E
+RAM_RLUDES = $07D9
+ROM_SECND = $FF93
+ROM_CIoUT = $FFA8
+ROM_UNLSN = $FFAE
+ROM_LISTN = $FFB1
+
+	* = $1010
+
+WEDGE	LDX #<p060E  ;#%00001110
+	LDY #>p060E  ;#%00000110
+	STX RAM_ILOAD ;ILOAD   
+	STY RAM_ILOADH
+	RTS 
+
+b101B	JMP eF04C    ;ROM load
+
+; p060E - LOAD wedge
+	STA RAM_VERFCK ;VERFCK  Flag:  0 = load,  1 = verify
+	LDA RAM_FA   ;FA      Current device number
+	CMP #$04     ;#%00000100
+	BCC b101B    ;less than 4 - tape
+	LDA #$AF     ;filename at ($AF/$B0)?
+	STA a07DF
+	LDY #$00     ;#%00000000
+	JSR RAM_RLUDES ;RLUDES  Indirect routine downloaded
+	CMP #$24     ;if '$' then ROM load
+	BEQ b101B
+	LDA RAM_FA   ;FA      Current device number
+	STA RAM_LA   ;LA      Current logical fiie number
+	JSR eF160    ;print "SEARCHING"
+
+; try to read one byte from file - drive ROM will find it and report error if not found; SPEED DOS does the same thing
+	JSR ICLRCHN  ;ICLRCHN
+	LDX RAM_SA   ;SA      Current seconda.y address
+	STX a05FF    ;preserve SA (LOAD address parameter (set in $B4/B5 (RAM_MEMUSS) or from file))
+	LDA #$60     ;#%01100000
+	STA RAM_SA   ;SA      Current seconda.y address
+	JSR ISENDSA  ;SEND SA ; before TALK? and it's not TLKSA
+	LDA RAM_FA   ;FA      Current device number
+	JSR ITALK    ;TALK
+	LDA RAM_SA   ;SA      Current seconda.y address
+	JSR ITLKSA   ;TLKSA
+	JSR IACPTR   ;ACPTR (input after talk)
+	LDA RAM_STATUS ;STATUS  Kernal I/O status word: ST
+	LSR 
+	LSR 
+	BCC b1060    ;no error
+
+; note: NO UNTALK after ITALK
+	JMP eF27C    ;print ERROR, ?LOAD ERROR?
+
+b1060	JSR eF189    ;print "LOADING"
+	LDA RAM_FA   ;FA      Current device number
+	JSR ILISTEN  ;direct to FFB1
+	LDA #$6F     ;second #15
+	JSR ISECOND  ;direct to FF93
+	LDA #$4D     ;M
+	JSR IIECOUT  ;direct to FFA8
+	LDA #$2D     ;-
+	JSR IIECOUT
+	LDA #$45     ;E
+	JSR IIECOUT
+	LDA #$00     ;$003C
+	JSR IIECOUT
+	LDA #$3C     ;$003C
+	JSR IIECOUT
+	JSR ROM_UNLSN ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
+	LDY #$00     ;delay
+b108B	INY 
+	BNE b108B
+
+; INC $FF19 for flashing border?
+	SEI 
+	LDA aFF06    ;preserve FF06 (like $D011, before blank)
+	PHA 
+	LDA #$00     ;#%00000000
+	STA aFF06    ;like $D011, blank screen
+	STA aFEF2    ;ACK=0
+	STA aFEF3    ;port A DDR = input
+	STA aFEF0    ;port A (to clear pullups?)
+b10A1	LDA aFEF2    ;wait for DAV low
+	BMI b10A1
+	LDA aFEF0    ;1st byte = load addr low
+	STA tgtl     ;EAL     
+b10AB	LDA aFEF2    ;wait for DAV high
+	BPL b10AB
+	LDA aFEF0    ;2nd byte = load addr high
+	STA tgth     ;EAH     
+	LDA a05FF    ;check if we load to load addr from file or from $b4/b5 (RAM_MEMUSS)
+	BNE LOADSTART
+	LDA RAM_MEMUSS ;MEMUSS  Load ram base
+	STA tgtl     ;EAL     
+	LDA RAM_MEMUSSH
+	STA tgth     ;EAH     
+LOADSTART 	LDY #$00     ;#%00000000
+LOADLOOP 	LDA aFEF2    ;wait for DAV low
+	BMI LOADLOOP
+	LDA aFEF1    ;EOI?
+	BNE LOADEND
+	LDA aFEF0
+	STA (tgtl),Y ;EAL     
+	INY 
+b10D4	LDA aFEF2    ;wait for DAV high
+	BPL b10D4
+	LDA aFEF1    ;EOI?
+	BNE LOADEND
+	LDA aFEF0
+	STA (tgtl),Y ;EAL     
+	INY 
+	BNE LOADLOOP
+	INC tgth     ;EAH     
+	BNE LOADLOOP
+LOADEND	LDA #>pFF40  ;port A to output (lda #$ff)
+	STA aFEF3
+	LDA #<pFF40  ;$40 = ACK (bit 6) to 1
+	STA aFEF2
+	PLA 
+	STA aFF06    ;restore FF06 (like $D011), turn off blank
+	CLI 
+	STY tgtl     ;adjust end address to point at the next byte
+	INC tgtl     ;EAL     
+	BNE b1101
+	INC tgth     ;EAH     
+b1101	LDX tgtl     ;return end address+1 and C=0=no error
+	LDY tgth     ;EAH     
+	CLC 
+	RTS 
+
+; install drive code and LOAD vector
+INSTALL	LDA #<DRIVECODE ;drive code from
+	LDX #>DRIVECODE ;#%00010001
+	STA RAM_ZPVEC1 ;ZPVEC1  Temp (renumber)
+	STX a04
+	LDA #<p3C00  ;drive code to
+	LDX #>p3C00  ;#%00111100
+	STA RAM_ZPVEC2 ;ZPVEC2  Temp (renumber)
+	STX a06
+b1117	LDA #$08     ;device number fixed to 8
+	JSR ROM_LISTN ;$FFB1 LISTN   Send LISTEN out serial bus or DMA disk
+	LDA #$6F     ;#%01101111
+	JSR ROM_SECND ;$FF93 SECND   Send SA after LISTEN
+	LDA #$4D     ;#%01001101
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	LDA #$2D     ;#%00101101
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	LDA #$57     ;M-W
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	LDY #$00     ;#%00000000
+	LDA RAM_ZPVEC2 ;ZPVEC2  Temp (renumber)
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	LDA a06
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	LDA #$1E     ;#%00011110
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+b1141	SEI 
+	STA $FF3F    ;RAM select
+	LDA (RAM_ZPVEC1),Y ;ZPVEC1  Temp (renumber)
+	STA $FF3E    ;ROM select
+	JSR ROM_CIoUT ;$FFA8 CIoUT   Handshake serial bus or DMA disk byte out
+	CLI 
+	INY 
+	CPY #$1E     ;#%00011110
+	BCC b1141
+	JSR ROM_UNLSN ;$FFAE UNLSN   Send UNLISTEN out serial bus or DMA disk
+	CLC 
+	LDA RAM_ZPVEC1 ;ZPVEC1  Temp (renumber)
+	ADC #$1E     ;#%00011110
+	STA RAM_ZPVEC1 ;ZPVEC1  Temp (renumber)
+	BCC b1161
+	INC a04
+b1161	CLC 
+	LDA RAM_ZPVEC2 ;ZPVEC2  Temp (renumber)
+	LDX a06
+	ADC #$1E     ;#%00011110
+	STA RAM_ZPVEC2 ;ZPVEC2  Temp (renumber)
+	BCC b116E
+	INC a06
+b116E	CPX #$3F     ;#%00111111
+	BCC b1117
+	CMP #$00     ;#%00000000
+	BCC b1117
+
+; install LOAD wedge
+	LDX #$00     ;#%00000000
+b1178	LDA WEDGE,X
+	STA f0600,X
+	INX 
+	BNE b1178
+	JMP INSTALL_VEC
+
+; drive code
+DRIVECODE 	SEI 
+	LDA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	ORA #$04     ;#%00000100
+	AND #$F7     ;#%11110111
+	STA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	JSR e3DE3
+	LDA #$FF     ;#%11111111
+	STA a4003
+	JSR eFD79
+	JSR e3D98
+	JSR e3D17
+	LDA a0202
+	STA a1A
+	LDA #$00     ;#%00000000
+	STA a1B
+	LDA a0202
+	STA a05FA
+	LDA a1A
+	JSR eF0B6
+	STA a05FB
+	STA RAM_RVS  ;RVS     field flag on
+	LDA a0203
+	STA a05FC
+	LDA #<p2000  ;#%00000000
+	STA RAM_PNT  ;PNT     Pointer: current screen line address
+	LDA #>p2000  ;#%00100000
+	STA aC9
+	JSR e3D75
+	JSR eF388
+	LDA a1B
+	STA a3BFE
+	LDA #$00     ;#%00000000
+	STA a1B
+	JMP e3C61
+
+b11D7	JSR eF560
+b11DA	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b11DA
+	LDA a4001
+	CMP #$52     ;#%01010010
+	BNE b11D7
+	JSR eF560
+b11E8	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b11E8
+	LDA a4001
+	STA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$F8     ;#%11111000
+	TAX 
+	LDA fF70C,X
+	STA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	LDA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$07     ;#%00000111
+	STA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+b11FF	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b11FF
+	LDA a4001
+	STA RAM_CURBNK ;CURBNK  Current bank configuration
+	JMP e3CBD
+
+	PHA 
+	BNE b123F
+	BEQ b123F
+b1210	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b1210
+	LDA a4001
+	STA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$F8     ;#%11111000
+	TAX 
+	LDA fF70C,X
+	STA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	LDA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$07     ;#%00000111
+	STA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+b1227	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b1227
+	LDA a4001
+	STA RAM_CURBNK ;CURBNK  Current bank configuration
+	AND #$C0     ;#%11000000
+	ORA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	TAX 
+	LDA fF70C,X
+	ORA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	STA (RAM_PNT),Y ;PNT     Pointer: current screen line address
+	INY 
+	BEQ b1298
+b123F	LDA RAM_CURBNK ;CURBNK  Current bank configuration
+	AND #$3E     ;#%00111110
+	TAX 
+	LDA fF70C,X
+	STA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	LDA RAM_CURBNK ;CURBNK  Current bank configuration
+	AND #$01     ;#%00000001
+	STA RAM_CURBNK ;CURBNK  Current bank configuration
+b124F	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b124F
+	LDA a4001
+	STA RAM_XoN  ;XoN     Char to send for a x-on (RS232)
+	AND #$F0     ;#%11110000
+	ORA RAM_CURBNK ;CURBNK  Current bank configuration
+	TAX 
+	LDA fF70E,X
+	ORA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	STA (RAM_PNT),Y ;PNT     Pointer: current screen line address
+	INY 
+	LDA RAM_XoN  ;XoN     Char to send for a x-on (RS232)
+	AND #$0F     ;#%00001111
+	STA RAM_XoN  ;XoN     Char to send for a x-on (RS232)
+b126B	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b126B
+	LDA a4001
+	STA RAM_XoFF ;XoFF    Char to send for a x-off (RS232)
+	AND #$80     ;#%10000000
+	ORA RAM_XoN  ;XoN     Char to send for a x-on (RS232)
+	TAX 
+	LDA fF71C,X
+	STA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	LDA RAM_XoFF ;XoFF    Char to send for a x-off (RS232)
+	AND #$7C     ;#%01111100
+	TAX 
+	LDA fF70D,X
+	ORA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	STA (RAM_PNT),Y ;PNT     Pointer: current screen line address
+	INY 
+	LDA RAM_XoFF ;XoFF    Char to send for a x-off (RS232)
+	AND #$03     ;#%00000011
+	STA RAM_XoFF ;XoFF    Char to send for a x-off (RS232)
+b1291	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b1291
+	JMP e3DA8
+
+b1298	JMP e3DCA
+
+	LDX #$00     ;#%00000000
+	LDA a0202
+	SEC 
+	SBC RAM_RESLO ;RESLO   
+	BEQ b12D9
+	BCS b12AD
+	EOR #$FF     ;#%11111111
+	ADC #$01     ;#%00000001
+	LDX #$01     ;#%00000001
+b12AD	STX a3D2F
+	ASL 
+	TAX 
+b12B2	LDA #$00     ;#%00000000
+	EOR RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	SEC 
+	ROL 
+	AND #$03     ;#%00000011
+	EOR RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	STA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	STX a3DF4
+	LDY #$03     ;#%00000011
+b12C3	LDX #$00     ;#%00000000
+b12C5	LDA a4000
+	LDA a4000
+	INX 
+	BNE b12C5
+	DEY 
+	BNE b12C3
+	LDX a3DF4
+	DEX 
+	BNE b12B2
+	STX a7A
+b12D9	LDA a0202
+	STA RAM_RESLO ;RESLO   
+	STA RAM_DSDESC ;DSDESC  Descriptor for DSS
+	LDX #$04     ;#%00000100
+b12E2	CMP fF119,X
+	DEX 
+	BCS b12E2
+	TXA 
+	ASL 
+	ASL 
+	ASL 
+	ASL 
+	ASL 
+	STA a38
+	LDA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	AND #$9F     ;#%10011111
+	ORA a38
+	STA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	RTS 
+
+b12F9	JSR eF560
+b12FC	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b12FC
+	LDA a4001
+	CMP #$52     ;#%01010010
+	BNE b12F9
+	STA a0111
+	LDY #$01     ;#%00000001
+b130C	BIT RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	BPL b130C
+	LDA a4001
+	STA a0111,Y
+	INY 
+	CPY #$08     ;#%00001000
+	BNE b130C
+	RTS 
+
+	JSR e3D75
+	JSR eF388
+	LDA a1A
+	STA RAM_RESLO ;RESLO   
+b1326	LDA a4002
+	BMI b1326
+	RTS 
+
+	LDA a4001
+	STA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$E0     ;#%11100000
+	ORA RAM_XoFF ;XoFF    Char to send for a x-off (RS232)
+	TAX 
+	LDA fF729,X
+	STA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	LDA RAM_XSTOP ;XSTOP   Save xreg for quick stopkey test
+	AND #$1F     ;#%00011111
+	TAX 
+	LDA fF6FF,X
+	ORA RAM_USE4DY ;USE4DY  (B.7 = 1)=> for wr, (B.6 = 1)=> for rd
+	STA (RAM_PNT),Y ;PNT     Pointer: current screen line address
+	INY 
+	JMP e3C8C
+
+	JMP e3DF5
+
+	INC aC9
+	LDA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	EOR #$08     ;#%00001000
+	STA RAM_PORT ;PORT    7501 on-chip 8-bit Input/Output register
+	INC a1B
+	LDA a1B
+	CMP RAM_RVS  ;RVS     field flag on
+	BNE b1361
+	JMP e3DE0
+
+b1361	JMP e3C53
+
+	JMP e3DC7
+
+	LDA a1A
+	STA a05FE
+	STA a0202
+	LDA a1B
+	STA a05FF
+	STA a0203
+	RTS 
+
+	BRK #$AD
+	INC f8D3B,X
+	.BYTE $FF,$3B,$A5
+	.BYTE $C2,$CD
+	.BYTE $FF,$3B,$D0
+	ORA RAM_FPVERR ;FPVERR  
+	BRK #$8D
+	.BYTE $FF,$3B,$AD
+	.BYTE $FF,$05,$CD
+	.BYTE $FF,$3B,$90
+	ASL 
+	SEC 
+	LDA a05FF
+	SBC a3BFF
+	JMP e3E23
+
+	SEC 
+	LDA RAM_RVS  ;RVS     field flag on
+	SBC a3BFF
+	CLC 
+	ADC a05FF
+	CLC 
+	ADC #$20     ;#%00100000
+	STA RAM_QTSW ;QTSW    Flag: editor in quote mode, $00 = no
+	LDA #$00     ;#%00000000
+	STA RAM_PNTR ;PNTR    Cursor column on current line
+	LDY #$00     ;#%00000000
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	BNE b13FE
+	INY 
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA RAM_SEDT1 ;SEDT1   Editor temp use
+	INY 
+b13BC	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a4000
+	LDA #$14     ;#%00010100
+	STA a4002
+	CPY RAM_SEDT1 ;SEDT1   Editor temp use
+	BEQ b13EB
+	INY 
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a4000
+	LDA #$1C     ;#%00011100
+	STA a4002
+	CPY RAM_SEDT1 ;SEDT1   Editor temp use
+	BEQ b13E8
+	INY 
+	BNE b13BC
+b13E8	LDY #$17     ;#%00010111
+b13EB	=*+$01
+	BIT a1FA0
+	STY a4002
+b13F0	LDA a4000
+	INY 
+	BNE b13F0
+	JSR eF13D
+	LDA #$00     ;#%00000000
+	STA RAM_TXTTAB ;TXTTAB  Pointer: start of BASIC text
+	RTS 
+
+b13FE	LDY #$02     ;#%00000010
+b1400	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a4000
+	LDA #$14     ;#%00010100
+	STA a4002
+	INY 
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (pD0,X)
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a4000
+	LDA #$1C     ;#%00011100
+	STA a4002
+	INY 
+	BNE b1400
+	LDY #$01     ;#%00000001
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a05FF
+	STA a0203
+	LDY #$00     ;#%00000000
+	LDA a05FE
+	CMP (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	BEQ b1445
+	LDY #$00     ;#%00000000
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a1A
+	INY 
+	LDA (RAM_PNTR),Y ;PNTR    Cursor column on current line
+	STA a1B
+	JMP e3C09
+
+b1445	JMP e3DF5
+
+INSTALL_VEC 	JSR f0600    ;install LOAD vector
+	JSR e80C9
+	JSR $FF4F    ;$FF4F JMP to PRIMM routine
+	.TEXT $0D, " ", $12, " WARPLOAD 1551 ", $92, " (C) 25/10/1990 CEEKA"
+	.TEXT "Y"
+	.BYTE $0D,$00
+	JMP e8703
+

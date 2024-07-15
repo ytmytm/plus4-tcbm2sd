@@ -1,0 +1,88 @@
+
+; copy $2601 to $05f5 and jump there
+.C:25c0  E8          INX		; copying routine, can stay unchanged
+.C:25c1  C8          INY
+.C:25c2  8E E5 25    STX $25E5
+.C:25c5  8C E6 25    STY $25E6
+.C:25c8  A0 00       LDY #$00
+.C:25ca  B1 D8       LDA ($D8),Y
+.C:25cc  91 DA       STA ($DA),Y
+.C:25ce  E6 D8       INC $D8
+.C:25d0  D0 02       BNE $25D4
+.C:25d2  E6 D9       INC $D9
+.C:25d4  E6 DA       INC $DA
+.C:25d6  D0 02       BNE $25DA
+.C:25d8  E6 DB       INC $DB
+.C:25da  CE E5 25    DEC $25E5
+.C:25dd  D0 EB       BNE $25CA
+.C:25df  CE E6 25    DEC $25E6
+.C:25e2  D0 E6       BNE $25CA
+.C:25e4  60          RTS
+.C:25e5  00          BRK
+.C:25e6  00          BRK
+.C:25e7  A9 01       LDA #$01	; <- main program calls this; after this address there is loader+code relocated to $05F5
+.C:25e9  85 D8       STA $D8
+.C:25eb  A9 26       LDA #$26
+.C:25ed  85 D9       STA $D9
+.C:25ef  A9 F5       LDA #$F5
+.C:25f1  85 DA       STA $DA
+.C:25f3  A9 05       LDA #$05
+.C:25f5  85 DB       STA $DB
+.C:25f7  A2 73       LDX #$73
+.C:25f9  A0 00       LDY #$00
+.C:25fb  20 C0 25    JSR $25C0
+.C:25fe  4C F5 05    JMP $05F5
+
+; (2601 before relocation)
+.C:05f5  78          SEI
+.C:05f6  8D 3E FF    STA $FF3E
+.C:05f9  58          CLI
+.C:05fa  A5 D5       LDA $D5
+.C:05fc  C9 00       CMP #$00
+.C:05fe  D0 07       BNE $0607
+.C:0600  A0 01       LDY #$01
+.C:0602  A9 00       LDA #$00
+.C:0604  4C 0B 06    JMP $060B
+.C:0607  A0 00       LDY #$00
+.C:0609  A9 01       LDA #$01
+.C:060b  85 DA       STA $DA
+.C:060d  A9 01       LDA #$01
+.C:060f  A6 D0       LDX $D0
+.C:0611  20 BA FF    JSR $FFBA
+.C:0614  A5 D1       LDA $D1
+.C:0616  A6 D2       LDX $D2
+.C:0618  A4 D3       LDY $D3
+.C:061a  20 BD FF    JSR $FFBD
+.C:061d  A9 00       LDA #$00
+.C:061f  20 90 FF    JSR $FF90
+.C:0622  A9 00       LDA #$00
+.C:0624  A6 2B       LDX $2B
+.C:0626  A4 2C       LDY $2C			; code until this part doesn't have to be down at $06xx
+.C:0628  20 D5 FF    JSR $FFD5	; 2634 before relocation
+.C:062b  86 2D       STX $2D			; after load
+.C:062d  84 2E       STY $2E
+.C:062f  20 88 D8    JSR $D888
+.C:0632  A9 EE       LDA #$EE
+.C:0634  8D 19 FF    STA $FF19
+.C:0637  A9 F1       LDA #$F1
+.C:0639  8D 15 FF    STA $FF15
+.C:063c  A9 C4       LDA #$C4
+.C:063e  8D 12 FF    STA $FF12
+.C:0641  A9 D0       LDA #$D0
+.C:0643  8D 13 FF    STA $FF13
+.C:0646  A9 90       LDA #$90
+.C:0648  20 D2 FF    JSR $FFD2
+.C:064b  20 8B D8    JSR $D88B
+.C:064e  A9 00       LDA #$00
+.C:0650  85 EF       STA $EF
+.C:0652  A5 DA       LDA $DA
+.C:0654  F0 03       BEQ $0659
+.C:0656  20 18 88    JSR $8818
+.C:0659  20 BE 8B    JSR $8BBE
+.C:065c  A5 D4       LDA $D4
+.C:065e  C9 00       CMP #$00
+.C:0660  D0 03       BNE $0665
+.C:0662  4C EA 8B    JMP $8BEA
+.C:0665  4C 7E 86    JMP $867E
+; 2674 is here, first free byte (end of Directory Browser actually)
+; 0668 is first free bye, free up until about $07d9

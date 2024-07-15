@@ -1,0 +1,73 @@
+OPEN1,8,2,"test123"
+result=0xD420 -- 					-- 8120 -- LISTEN?
+result=0x82F2						-- F0+02 -- OPEN 2
+result=0x8354 t
+result=0x8345 e
+result=0x8353 s
+result=0x8354 t
+result=0x8331 1
+result=0x8332 2
+result=0x8333 3
+result=0x813F						-- UNLISTEN
+
+PRINT#1,"0123"
+result=0x8120						-- LISTEN
+result=0x8262						-- SECOND 2 (incoming for channel 2 after open above)
+result=0x8330 0
+result=0x8331 1
+result=0x8332 2
+result=0x8333 3
+result=0x830D <cr>
+result=0x813F						-- UNLISTEN
+
+CLOSE#1
+result=0x9520						-- 8120 -- LISTEN?
+result=0x82E2						-- E0+02 CLOSE 2
+result=0x813F						-- UNLISTEN
+
+--
+
+OPEN15,8,15;print#15,'i0' (nothing happens at OPEN without name,only at PRINT we get LISTEN)
+result=0xD420						-- 8120 -- LISTEN?
+result=0x826F						-- 60+0F SECOND 15
+result=0x8349 i
+result=0x8330 0
+result=0x830D <cr>
+result=0x813F						-- UNLISTEN
+
+CLOSE 15
+result=0x8520						-- 8120 -- LISTEN?
+result=0x82EF						-- E0+0F CLOSE 15 
+result=0x813F						-- UNLISTEN
+
+--
+
+DLOAD"test0123
+
+result=0x8520						-- 8120 -- LISTEN?
+result=0x82F0						-- F0+00 OPEN 0 (special LOAD case)
+result=0x8330 0
+result=0x833A :
+result=0x8354 t
+result=0x8345 e
+result=0x8353 s
+result=0x8354 t
+result=0x8330 0
+result=0x8331 1
+result=0x8332 2
+result=0x8333 3
+result=0x813F						-- UNLISTEN
+-- after that returns with file not found
+
+--
+
+DIRECTORY
+
+result=0x8520						-- 8120 -- LISTEN?
+result=0x82F0						-- F0+00 OPEN 0 (special LOAD case)
+result=0x8324 $
+result=0x813F						-- UNLISTEN
+-- after that there was no request $84, so we returned wrong status
+result=0x8120						-- LISTEN
+result=0x82E0						-- E0+00 CLOSE 0
+result=0x813F						-- UNLISTEN

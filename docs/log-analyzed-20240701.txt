@@ -1,0 +1,102 @@
+
+DIRECTORY
+
+result=0x8120		LISTEN
+result=0x82F0		F0+00 OPEN 0 (special LOAD case)
+result=0x8324		$
+result=0x813F		UNLISTEN
+result=0x8140		TALK
+result=0x8260		60+00 SECOND 0 (channel 0)
+result=0x8484 -- EOI	byte request
+result=0x8400 -- EOI	byte request  -- EOI condition worked here?
+result=0x815F		UNTALK
+result=0x8120		LISTEN
+result=0x82E0		E0+00 CLOSE 0
+result=0x813F		UNLISTEN
+
+DLOAD"test0123
+
+result=0x8120		LISTEN
+result=0x82F0		F0+00 OPEN 0 (special LOAD case)
+result=0x8330		0
+result=0x833A		:
+result=0x8354		T
+result=0x8345		E
+result=0x8353		S
+result=0x8354		T
+result=0x8330		0
+result=0x8331		1
+result=0x8332		2
+result=0x8333		3
+result=0x813F		UNLISTEN
+result=0x8140		TALK
+result=0x8260		60+00 SECOND 0 (channel 0)
+result=0x8484		byte request -- EOI didn't work here
+result=0x8400		byte request -- EOI didn't work here
+result=0x8484		byte request -- EOI didn't work here
+result=0x8400		byte request -- EOI didn't work here
+result=0x8484		byte request -- EOI didn't work here
+result=0x8400		byte request -- EOI didn't work here
+result=0x815F		UNTALK
+result=0x8120		LISTEN
+result=0x82E0		E0+00 CLOSE 0
+result=0x813F		UNLISTEN
+
+OPEN1,8,2,"TEST"
+result=0x8120		LISTEN
+result=0x82F2		F0+02 OPEN 2
+result=0x8354		T
+result=0x8345		E
+result=0x8353		S
+result=0x8354		T
+result=0x813F		UNLISTEN
+
+INPUT#1,a$
+result=0x8140		TALK
+result=0x8262		60+02 SECOND 2 (channel 2)
+result=0x8484		byte request -- EOI didn't work here
+result=0x8400		byte request -- EOI didn't work here
+result=0x815F		UNTALK
+
+CLOSE#1
+result=0x8120		LISTEN
+result=0x82E2		E0+02 CLOSE 2
+result=0x813F		UNLISTEN
+
+DSAVE"TEST0123
+result=0x8120		LISTEN
+result=0x82F1		F0+01 OPEN 1 (special SAVE case)
+result=0x8330		0
+result=0x833A		:
+result=0x8354		T
+result=0x8345		E
+result=0x8353		S
+result=0x8354		T
+result=0x8330		0
+result=0x8331		1
+result=0x8332		2
+result=0x8333		3
+result=0x813F		UNLISTEN
+result=0x8120		LISTEN
+result=0x8261		60+01 SECOND 1
+result=0x8301		<data stream>
+result=0x8310
+result=0x830E
+result=0x8310
+result=0x830A
+result=0x8300
+result=0x838F
+result=0x8320
+result=0x834D
+result=0x8341
+result=0x8343
+result=0x8349
+result=0x8345
+result=0x834A
+result=0x8300
+result=0x8300
+result=0x8300
+result=0x813F		UNLISTEN
+result=0x8120		LISTEN
+result=0x82E1		E0+01 CLOSE 1
+result=0x813F		UNLISTEN
