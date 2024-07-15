@@ -27,7 +27,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
 
 - DLOAD and DSAVE support
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
-- fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/)
+- fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/); on par with DolphinDOS
 - Directory Browser embedded in the flash, available at all times as `*` file
 - device number stored permanently in EEPROM
 - disk commands:
@@ -44,15 +44,23 @@ Patched Directory Browser is embedded into flash and available at all times by t
 - case insensitve, all filenames converted to lowercase
 - wildcard matching `*` and `?`
 
+### Platform for future developments
+
+The paddle part has all TCBM bus signals exposed and can be used as the basis for future developments porting existing projects to TCBM bus, like:
+
+- sd2tcbm - sd2iec port to TCBM bus
+- Pi1551 - realtime, cycle-exact 1551 emulator
+
 ### tcbm2sd or sd2tcbm?
 
 If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
 
-This is not a sd2iec port, just a simple 1551 simulator. There is no support for disk images.
-This is more like Tapecart - a loader for file-based programs rather than sd2iec.
+This project is named tcbm2sd because it is not a sd2iec port, just a simple 1551 simulator. There is no support for disk images.
+This is more like [Tapecart](https://github.com/KimJorgensen/tapecart) - a loader for file-based programs rather than sd2iec.
 
 Another microcontroller must be used for sd2tcbm because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
 For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
+
 
 ## KiCad project
 
@@ -62,6 +70,8 @@ Project files for Kicad 6.0 are in [this folder](tcbm2sd).
 
 A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/plots/tcbm2sd.pdf) for preview.
 
+It's very simple, just connecting the modules together. Don't mind `J3` connector, it was needed for debugging only.
+
 ## PCB
 
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
@@ -70,14 +80,14 @@ Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
 To be soldered:
 
-- 1x XC9572-VQ64 CPLD
+- 1x XC9572XL-VQ64 CPLD
 - 4x 0.1uF capacitor (0805 footprint)
 - 50 pin edge connector (optional), straight or right angle
 
 The first revision of PCB was meant primarily as a development platform, so it relies on cheap, ready to use modules:
 
-- AMS1117 3.3V power supply module with 3 pins
-- SD card 3.3V adapter (3.3V VCC, with no level shifters)
+- AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg)
+- SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
 - Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114
 
 If all you want is a paddle replacement then only the power supply module is needed.
@@ -158,7 +168,7 @@ In Arduino IDE settings choose board `Arduino Mini w/ Atmega328 (3.3V)`.
 A basic USB-serial dongle (CH340G or similar) with 6 pins is enough to flash the firmware. Mind the pin labels (order may be reversed), but the connection is usually one to one (without any crossings) with one of the pins left unconnected.
 This is the only time, when the 6 pins on the short side of Arduino Mini Pro board will be used.
 
-| USB dongle pin | Arduino pin |
+| USB dongle pin | Arduino Mini pin |
 |----------------|-------------|
 | DTR            | DTR (next to RAW label) |
 | RXD            | TX0         |
@@ -219,9 +229,10 @@ Then the Arduino code has to be recompiled and uploaded to the device.
 
 This project wouldn't be possible without documentation provided by others:
 
+- [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
 - [Commodore TCBM bus and protocol description](https://www.pagetable.com/?p=1324)
 - [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart) which were my template for PCB dimensions
-- [LitlleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
-- [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
+- [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
+- [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
 
 You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting slot for SD card.
