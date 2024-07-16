@@ -61,7 +61,6 @@ This is more like [Tapecart](https://github.com/KimJorgensen/tapecart) - a loade
 Another microcontroller must be used for sd2tcbm because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
 For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
 
-
 ## KiCad project
 
 Project files for Kicad 6.0 are in [this folder](tcbm2sd).
@@ -84,7 +83,7 @@ To be soldered:
 - 4x 0.1uF capacitor (0805 footprint)
 - 50 pin edge connector (optional), straight or right angle
 
-The first revision of PCB was meant primarily as a development platform, so it relies on cheap, ready to use modules:
+The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules:
 
 - AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg)
 - SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
