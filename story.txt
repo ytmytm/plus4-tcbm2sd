@@ -1,0 +1,253 @@
+
+[20240714]
+Implemented embedded browser load when '*' file is requested. It can be started with SHIFT+RUN/STOP.
+Implemented last useful disk commands: R, MD, RD.
+Almost at the end of flash space, but everything I wanted to have is in.
+That took exactly one month.
+
+TODO:
+- handle long (>16 character) filenames like sd2iec - by falling back on 8.3 names; but then we can't use SD.exists() all over the place, we need our own wrapper for that
+- better pattern matching (does '*' mean zero or more following characters, or one or more?)
+- (low priority) LOAD, STATUS and DIR could be handled with a single procedure with some IFs here and there
+- (v. low priority) refactor and put low level code in tcbm_hw.[ch], high level in a tcbm class
+TODO-HW (PCB rev 1.1)
+- label all the MiniPro pins in case someone wants to solder there OR put a 2x16(?) connector (label with pin numbers and clear paddle/1551 signal names for dav/ack)
+- remove unused debug pads, maybe keep DEV because of hw switch to GND (or not - software control only)
+- route RESET 3.3V (pin44) to Micro /RESET through a jumper (to disconnect system reset from device reset)
+TODO-FUTURE
+- sd2iec atmegas 644/1280/2560 can't be used because they are all 5V parts
+- maybe bluepill? (but that's new stuff for me)
+- maybe ESP32 (need enough pins)
+- maybe one of RP2040 boards (v. cheap)
+
+[20240713]
+Success! 23x! (220 blocks in 6 seconds = 9300b/s = 23x 1541, almost 6x 1551)
+Wrote a new state function with fastload code. The +4 side doesn't look like Warpload at all anymore. I had to add status checking in proper place as well as ACK signaling that data was read.
+It worked already on the first try, needed only some tweaks related to +4 code and cleanups.
+Directory Browser doesn't respond well to exomizer and pucrunch - decrunched is not able to run loaded programs.
+
+TODO:
++ (if enough flash) store browser with fastload inside flash, load with '**' magic name OR just '*' - SHIFT+RUN/STOP (even better!)
+	+ convert assembled db12b.prg into C array and include into Arduino code (xxd -i db12b.prg -> db12b_prg , db12b_prg_len + trzeba do tego dodac static const PROGMEM, można w linii tuż przed #include)
+	+ pass to STATUS with pointer
++ (low priority) 'R' command
+
+[20240712]
+Disassembled parts of Directory Browser 1.2 and Warpload turboloader. Wrote a patch on DB 1.2 that should work as a turboloader. A lot of Warpload pieces are not necessary because it's a load wedge, so it has to check for status, if file is '$' and print LOADING/SEARCHING messages.
+
+TODO:
++ (if enough flash and sources to any browser are available): fastloader over parallel port with switching direction back an forth
+
+[20240711]
+Investigated how fastloaders work on Plus4. A lot of them are just turboloaders for 1541. Those for 1551 do mostly the same thing - use DAV (from drive) as handshake lines and (because there is no hardware handshake) check for level change. They don't use ACK (to drive) and rely on 1551 not pushing data too fast. Also they don't mask out unused bits from port C (STATUS), that's a risk here.
+Because of the timing thing I can't make tcbm2sd compatible with any of the existing loaders, I would have to rely on delays, sacrificing reliability or speed. 
+
+[20240710]
+Removed redundant delays when reading data. Put all uncommented debug messages within "if (debug) { }" - compiler with optimize them away and it's nicer than #ifdef. This saves about 1500 bytes of flash.
+
+[20240709]
+It's done and ready. Last few changes wee to port this code to use SdFat. It enabled long names and is much faster with directory operations. It has chdir() but it's useless without an option to go to parent directory.
+All the letters are converted to lowercase PETSCII (0x41-0x5x) for consistency. (Also Directory browser chokes on 0x61-0x7x ASCII).
+Longnames are compared up to 16 characters, but the internal buffers have 128 bytes (otherwise SdFat won't render the name).
+LOAD,CD,SCRATCH will all use absolute path if the name starts with '/'. For LOAD it works only for short names but can be useful to load something from the root folder.
+There is no hope of supporting both devices on the bus - DEV (A5) would be activated only when registers are accessed, without a latch this will be lost and we don't know what to latch.
+So instead only Micro will set DEV. The value is stored in EEPROM (with default value 8) and can be changed with standard command "U0>"+chr$(dev) (dev=8,9).
+The measured speed is about 3.1KB/s, about 7.5x 1541 (401B/s).
+Now it can be published. Published without pictures/readme. Need to credit Open264cart, LittleSixteen and Fake6523 and point to Open264cart case on thingyverse.
+
+TODO-HW
++ 5mm hole in the middle
++ comments about ACK/DAV on schematic, no signal name change
+
+[20240708]
+Back to CPLD/Verilog. I'm not sure what I'm doing but none of the changes helped except trying to replicate F7->I0 feedback. ISE now gives warning about race condition but the circuit is much more stable.
+(no, removing MUX from MUX||!MUX or leaving just Phi0&!RAS didn't help at all).
+I have updated comments and direction of DAV/ACK. This needs to be reflected as labels on schematic too.
+There is now full address decoding so we occupy only 8 I/O bytes.
+Arduino doesn't mind 5V reset but for the next PCB revision /RESET is copied to pin 44.
+I have corrected comments about device number, now it makes sense.
+I can almost release it (again). Two last things are needed: longnames and device number control.
+For publishing *I have to* follow Jim Brain's license for Fake6523: LICENSE_CC_BY_SA_4.0.txt
+
+TODO:
++ use SdFat library for long names (same interface? almost, but it has chdir() so we don't need to track pwd!) [if it works factor out pwd] [check if topetscii is needed]
++ take device number from EEPROM ($55/$AA (magic) + $00 or $01) upon reset
++ write new device to eeprom as a number after standard 1571/SD2IEC command U0>+chr$(8)/9; apply to DEV immediately
+
+[20240707]
+Completed filename pattern matching. Directory listing will show current directory name as volume label.
+Command has to be executed right after UNLISTEN, like on IEC. The CLOSE command may not come at all (it does from BASIC and from File Browser, not from Directory Browser).
+Filename pattern matching function returns filename. It's easier, besides SD.exists() is very fast, much faster than going through directory with openNextFile (this is noticeably slow).
+There are some random hangups with directory loading within Directory Browser or file loading from File Browser. Trying to add some delays may help a bit, but not 100% (unless it's big delay?). Not sure whether the problem is within Micro or CPLD/PLA code.
+Everything works fine from BASIC though.
+- PLA16 replacement for MOS 251641 https://www.freepascal.org/~daniel/c16pla/
+
+TODO-HW
++ resolve DAV/ACK issue (see discord, I think cable is straight) and paddle schematic labels are wrong (how about pagetable article table? is it also wrong?)
++ MiniPro /RESET is tied to 5V? still works, but better route it through CPLD + update logic + normally closeed pcb jumper to disconnect it?
++ correct descriptions: $FEC0-$FECF    Floppy 1551, device 9 + $FEF0-$FEFF    Floppy 1551, device 8
+  so DEV=1 means A5=1 && TCBM device 0 == #8
++ why isthere MUX || !MUX? is 'MUX' section needed at all? take logic from PLA16 replacement?
+x put fb1615 (1.5) inside flash, load it when '**' is requested; provide URL where it came from
+  (no space for that, directory browser looks nicer btw; '**' could load some predefined name)
+
+[20240706]
+Corrected and completed directory lister and current path stuff for DIRECTORY/DLOAD/DSAVE.
+Filebrowser is now completely usable. There is also 'S' command working too and status messages are handled right.
+I can almost release it. Two last things are needed: pattern matching and longnames.
+
+
+TODO:
++ write own function instead of SD.exists() that would handle filenames trimmed to 16 characters (for future long names) and pattern matching of '*' and '?'; with a shortcut to SD.exists if there is no pattern needed
++ factor out status messages to a single function that takes error number as input because of several copies of 00, OK, 00, 00
+
+[20240705]
+Got SD DLOAD/DSAVE working correctly!!!! Filebrowser works, just needs conforming '$' listing and CD command.
+Wrote code for that, untested.
+
+[20240704]
+Got DLOAD to work correctly - command bytes always have to be received with status=OK.
+All port manipulations now use direct access, much faster.
+File-not-found error turned out to be two things: a) have to return to IDLE state immediately (there is no UNTALK, nor CLOSE) and b) because of no CLOSE there was no input buf ptr reset, so the following DIRECTORY (or another DLOAD) was concatenating to current filename.
+Now I can go on with SD card stuff!
+
+TODO:
++ write some SD code so that we can finally compute speed - about 3K/s (8x 1541: 401b/s)
++ handle 'S' command (SD library doesn't have rename)
++ how to render directory
++ remove commented out stuff (only after dealing with FILE NOT FOUND - we're missing a byte or two)
+
+[20240703]
+Tested code and it mostly works!
+Wasted some time on unreliable transmissions but it was all due to non-blocking command read routine that I used within states. It can't be used outside state_idle and I think that since there are no background processes (like button presses/serial/blinking LEDs) I might use blocking version there as well.
+Before dealing with SD card basics must be resolved: LOAD ERROR and FILE NOT FOUND.
+Input buffer works: OPEN1,8,15,"I1":PRINT#1,"123":PRINT#1,"456" stores whole string I123456 in the buffer for processing command.
+DSAVE will work.
+DIRECTORY will work.
+DLOAD ends with LOAD ERROR; when trying to simulate missing file controller gets it correctly but Micro goes out of sync.
+Plus4 resets quicker than Micro is ready. If I hit DIRECTORY quickly it will return junk. Can't see how to block Plus/4 transmission until it's ready.
+
+TODO:
+x maybe plus4-too-fast-after-reset problem is also due to missing volatile? (no, it's just bootloader delay)
+x LED on/off (OFF in idle state, ON in non-idle) (can't use pin 13 - it's SCK for SD card)
++ test with SD card in slot
++ remove serial input/debug stuff, won't be used anymore
++ what about FILE EXISTS? (nothing not reported after DSAVE except disk error)
++ DSAVE+file exists - can be handled only internally by refusing to save and issuing 63, FILE EXISTS,00,00 error; controller doesn't know about it
++ problems with tcbm_read_cmd may be due to missing volatile clause - check other h/w routines for that
++ test faster port read
++ test fast port DDR change
++ test fast ack/dav/status activity
++ there is a space after first number in status: 00, OK,00,00 : 63, FILE EXISTS,00,00
++ test case for channel 15 it's possible to have LISTEN+SECOND without LISTEN+OPEN with BASIC: OPEN 1,2,15:PRINT#15,"I0"
++ trace byte by byte on emulator how 1551 handles statuses (also what about file exists)
++ why LOAD ERROR? which status is not right (must receive all commands with status=ok)
++ how to resync after file not found? or maybe it should be sent with UNLISTEN? (return immediately to IDLE state)
++ should FILE NOT FOUND be reported to following TALK command after received filename with LISTEN..OPEN? (no, it goes with 1st requested byte)
+
+
+[20240702]
+Untested code for state machine and write transmission. Maybe the state machine is overkill and should only handle directly 2-3 cases (DIRECTORY, DLOAD, DSAVE, DS$, OPEN15,8,15,"CD:xxxx" or whatever would come from DraBrowser)
+For faster i/o in the future use direct port access or https://github.com/ArminJo/digitalWriteFast
+
+[20240701]
+Updated code. Changed 'TCBM_STATUS_SEND' after data read into TCBM_STATUS_EOI (for byte request) and TCBM_STATUS_OK (for anything else) and now data requests (0x84) come. I'm not sure when/which status should be sent for file not found for DLOAD (it was TCBM_STATUS_SEND, should be _EOI, but when - at UNLISTEN?).
+Verified port input function (data from mini-pro).
+Logged full examples of DLOAD, DSAVE, DIRECTORY, OPEN+PRINT, OPEN+CLOSE.
+Added short data example of a BASIC program to be sent to device (instead of reading from SD).
+Tapecart-like functionality is 100% viable, we can go public.
+
+TODO:
+- refactor into state machine, split command and command handlers
+- possible states
+	LISTEN + OPEN + filename + UNLISTEN (channel 0 (load) or 1 (save) or 15 (command) only, no support for files)
+	LISTEN + SECOND + datastream + UNLISTEN (channel 1 (save) or 15 (command) - we won't support files)
+	LISTEN + CLOSE + UNLISTEN
+	TALK + SECOND 0 + datastream + UNTALK (channel 0 (load) only, after LISTEN+OPEN 0)
+- possible commands:
+	I - do nothing
+	CD:<folder> - SD folder change with special cases: / for root and <- ($5f?) for ..
+	S:<filename> - remove
+	R:<old>=<new> - rename
+
+[20240630]
+That mini-pro module is bricked, after reflashing everything via ISP from a new one nothing changed.
+Used a new one, the trick was to change avrdude upload speed to 57600.
+After carefully checking what happens with DAV/ACK it looks like they are crossed between paddle and 1551 because the cable pin numbers don't match: DAV is wire 13 in drive, but 11 on paddle. ACK is wire 11 in drive but 13 in paddle.
+After swapping DAV/ACK in Arduino (they don't match Kicad at the moment) and after adding INPUT_PULLUP to DAV pin config everything started working.
+Additionally set the DEV to 1, seems that is setup for device 8.
+
+This project can be published as-is when DIRECTORY+DLOAD work, so with Tapecart functionality, maybe with 'CD' command to change path. Not a lot will fit into a 328p.
+
+TODO:
++ wait for stabilized command byte
++ serial commands: 0/1/2/3 (set status bits), p <liczba> (set data port out)
++ fewer debug messages
++ reads first transaction byte wrongly - maybe should wait for stable value or check for DAV?
+	1551 just acks (ACK=0, ACK=1 and goes back to waiting for DAV=1)
++ status lines role is unclear from pagetable description, maybe should trace that in emulator
+  there is a table but examples use status 10 instead of 00 for 'OK'?
+  status0 must be pulled 0 in order for plus/4 to detect device
+  by animation: idle status is 00, goes 10 after receiving unwanted byte
+  what must happen after 'DLOAD' or 'DIRECTORY' so that controller would request data (at least then we know it must end with status=11 (EOI)
++ didn't test OPEN1,8,2,'TEST123':INPUT#1,A$:CLOSE15
+
+1551 https://github.com/mist64/cbmsrc/blob/master/DOS_1551/io.src
+; 4000 / 1 / 2
+portc    *=*+1          ;  port c
+; bit 0: status low            out -> STATUS0
+; bit 1: status high           out -> STATUS1
+; bit 2: device change port    out
+; bit 3: handshake line        out -> ACK
+; bit 4: mode read =1          out
+; bit 5: device jumper, dev8=0  in
+; bit 6: sync                   in
+; bit 7: handshake line         in <- DAV
+1551 i/o tcbm
+https://github.com/mist64/cbmsrc/blob/master/DOS_1551/it2.src
+https://github.com/mist64/cbmsrc/blob/master/DOS_1551/trp.src
+
+[20240629]
+Arduino Mini pro 3.3 still can't be flashed. Tried several bootroms. It's possible that is was working all along and now can't start due to wrong fuses (uploading blinker via hex doesn't work).
+I should have dumped everything via ISP before doing anything. Maybe will try with another one.
+Arduino 168 5v works, but it's severly limited - won't run sd card at all. It's able to check DAV=1, read $81 from the bus and then waits for DAV=0 which never happens.
+TODO:
+- need to write terminal programs for both ends to check exactly how port behaves (easier than probing)
++ maybe INPUT_PULLUP is needed
+- sometimes read $95 or $85 from the bus - is that a problem or just 3.3v vs 5v issue?
++ process may hang because ACK=0 is not recognized on plus/4 side because of missing port bits
++ try with another Mini pro 328p 3.3v, but dump blinker it via ISP first
+
+[20240628]
+Tested with just CPLD on Plus/4 - triport appears and stores values in $FEE0-E7. Didn't check if poked values appear in the output though.
+Found an arduino mini pro clone for 3.3V but can't flash it.
+
+TODO:
+~ check if logic levels appear on the arduino pins (was supposed to come from serial port)
+~ flash arduino mini pro with debug code to dump TCBM exchange for 'DIRECTORY' command
+  - maybe with TL866II+ with new bootloader? ICSP: 
+	https://github.com/blurpy/minipro (sck, miso,mosi etc.)
+	https://diychris.com/burning-the-arduino-bootloader-using-the-tl866-ii-plus/
+	https://forum.arduino.cc/t/arduino-nano-bricked/613963/5
+	https://www.dmcmillan.co.uk/blog/burning-the-arduino-bootloader-to-an-atmega328-with-a-tl866ii
+https://docs.arduino.cc/retired/hacking/software/MiniBootloader/
+
+[20240627]
+PCBs came. I managed to solder that VQ64 package and 0805 capacitors. Not too easy, not too hard.
+Managed to flash CPLD via JTAG from Rpi3
+
+[20240619]
+Sent for fabrication. In this setup DEV line is CPLD input (from arduino to indicate which device talks).
+In principle arduino can use DEV as input and CPLD can just pass through it from A5.
+Ordered also cases (thingiverse 6309306) but the internal post will be for 5mm hole while I reduced it to 4mm due to clearance violations.
+
+[20240617]
+Initial git import of tcbm2sd idea.
+First development board with ready to use modules: power 3.3v, arduino pro mini to debug bus, sdcard module (passive, based on 3.3v)
+hdl code from Fake6523 by Jim Brain
+- narrowed down triport to port A (8 bit) port B (2 bit 0-1) and port C (2 bit 6-7)
+- integrated PLA 251641-3 equations, except feedback - doesn't seem necessary
+
+[20240614]
+Start of the project. Based off a PCB footprint for C264-magic-cart converted from Eagle.
+Verified that I can use jtag from Rpi3 (RetroPie)
