@@ -16,14 +16,14 @@ Patched Directory Browser is embedded into flash and available at all times by t
 
 ### Basic operations
 
-<a href="https://www.youtube.com/embed/6DOctO64GS4" target="_blank">
+<a href="https://www.youtube.com/watch?v=6DOctO64GS4" target="_blank">
  <img src="https://img.youtube.com/vi/6DOctO64GS4/mqdefault.jpg" alt="Basic operation" />
  <p><small>Click for video</small></p>
 </a>
 
 ### Fastloader
 
-<a href="https://www.youtube.com/embed/Cf42Z9H2JiA" target="_blank">
+<a href="https://www.youtube.com/watch?v=Cf42Z9H2JiA" target="_blank">
  <img src="https://img.youtube.com/vi/Cf42Z9H2JiA/mqdefault.jpg" alt="Fastloader demo" />
  <p><small>Click for video</small></p>
 </a>
