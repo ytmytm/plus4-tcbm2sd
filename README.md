@@ -4,15 +4,18 @@
 
 CBM 1551 paddle replacement and/or mass storage using an SD card interfacing with the Commodore C16/116/Plus4 simulating a TCBM bus 1551 disk drive
 
+<img src="media/81.toscale.jpg" width=640 alt="tcbm2sd PCB and Plus/4 to scale">
+<img src="media/82.installed.jpg" width=640 alt="tcbm2sd installed in Plus/4 expansion port">
+
 It's enough to quickly and easily load file-based programs though it is not as feature rich as sd2iec.
 
 It's fast - with patched Directory Browser you can load 220 blocks within 6 seconds(!). That's speed comparable with [DolphinDOS](https://github.com/ytmytm/c128dcr-DolphinDOS3)
 
 Patched Directory Browser is embedded into flash and available at all times by trying to load `*` file or using `SHIFT+RUN/STOP` key combination.
 
-<img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
-
 ## Media
+
+<img src="media/80.topview.jpg" width=640 alt="tcbm2sd populated PCB">
 
 ### Basic operations
 
@@ -32,7 +35,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
 
 ### Paddle replacement
 
-** NOTE: I don't own a 1551. This circuit should be able to replace original 1551 paddle, but it's untested ***
+**NOTE: I don't own a 1551. This circuit should be able to replace original 1551 paddle and work with a real 1551 drive, but it's untested**
 
 - PLA 251641-3 and 6523T (28 pin triport) integrated into a single CPLD
 - low part count: CPLD, 3.3V voltage regulator and four capacitors
@@ -91,17 +94,21 @@ It's very simple, just connecting the modules together. Don't mind `J3` connecto
 
 ## PCB
 
+The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules
+
+<img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
+
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
 ## Parts
 
-To be soldered:
+Parts to be soldered directly:
 
 - 1x XC9572XL-VQ64 CPLD
 - 4x 0.1uF capacitor (0805 footprint)
-- 50 pin edge connector (optional), straight or right angle
+- (optional) 50 pin edge connector, straight or right angle
 
-The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules:
+Modules:
 
 - AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg)
 - SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
@@ -165,6 +172,9 @@ Command to test the connection and list JTAG devices (our XC9572 will be most li
 ```
 xc3sprog -c matrix_creator
 ```
+
+<img src="media/90.detect-jtag.jpg" width=640 alt="CPLD detected">
+
 Command to flash the firmware to device on position 0 (`-p 0`)
 ```
 xc3sprog -c matrix_creator -v -p 0 Fake6523.jed
