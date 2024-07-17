@@ -12,9 +12,27 @@ Patched Directory Browser is embedded into flash and available at all times by t
 
 <img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
 
+## Media
+
+### Basic operations
+
+<a href="https://www.youtube.com/embed/Cf42Z9H2JiA" target="_blank">
+ <img src="https://img.youtube.com/vi/Cf42Z9H2JiA/mqdefault.jpg" alt="Basic operation" />
+ <p><small>Click for video</small></p>
+</a>
+
+### Fastloader
+
+<a href="https://www.youtube.com/embed/6DOctO64GS4" target="_blank">
+ <img src="https://img.youtube.com/vi/6DOctO64GS4/mqdefault.jpg" alt="Fastloader demo" />
+ <p><small>Click for video</small></p>
+</a>
+
 ## Features
 
 ### Paddle replacement
+
+** NOTE: I don't own a 1551. This circuit should be able to replace original 1551 paddle, but it's untested ***
 
 - PLA 251641-3 and 6523T (28 pin triport) integrated into a single CPLD
 - low part count: CPLD, 3.3V voltage regulator and four capacitors
