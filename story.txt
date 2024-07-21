@@ -1,5 +1,6 @@
 [20240721]
 Merged standard transfer procedures: LOAD/STAT/DIR/BROWER into a single function, removed code duplication.
+Implemented fastload protocol for DIR, with a test program. Later can be incorporated into DirectoryBrowser.
 
 [20240720]
 Manufactured another unit. SMD caps are easy, but soldering CPLD by hand is still annoyingly slow.
