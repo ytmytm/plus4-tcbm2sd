@@ -394,10 +394,10 @@ String match_filename(bool onlyDir) {
       match = true;
       entry.getName(entryname_c,sizeof(entryname_c));
       entryname = String(entryname_c);
-//      Serial.println(entryname);
+      if (debug) { Serial.println(entryname); }
       while (i<16 && i<fname.length() && i<entryname.length() && match) {
         c = fname.charAt(i);
-//        Serial.print(i); Serial.print(":"); Serial.println(c); 
+        if (debug>1) { Serial.print(i); Serial.print(":"); Serial.println(c); }
         switch (c) {
           case '?':
             break;  // skip to next one
@@ -405,13 +405,12 @@ String match_filename(bool onlyDir) {
             fullfname = pwd + entryname;
             entry.close();
             dir.close();
-            return fullfname; // have match
+            return fullfname; // we have match
             break;
           default:
             match = match && (to_petscii(c) == to_petscii(entryname.charAt(i)));
             break;
         }
-//        Serial.println(i);
         i++;
       }
       if (match && ((i==16 && entryname.length()>16) || (i<=16 && entryname.length()==fname.length()))) {
@@ -962,10 +961,10 @@ void state_fastload() {
 			fname = match_filename(false); // search only for files
 			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 			if (SD.exists(fname)) {
-				if (debug) { Serial.println(F("filefound")); }
+				if (debug) { Serial.println(F(" filefound")); }
 				aFile = SD.open(fname, FILE_READ);
 				if (!aFile) {
-					if (debug) { Serial.println(F("file open error")); }
+					if (debug) { Serial.println(F("...file open error")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					state_init(); // called this to reset input buf ptr and set file_opened flag to false
 					ret = 23;
@@ -1091,10 +1090,10 @@ void state_standard_load() {
 			fname = match_filename(false); // search only for files
 			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 			if (SD.exists(fname)) {
-				if (debug) { Serial.println(F("filefound")); }
+				if (debug) { Serial.println(F(" filefound")); }
 				aFile = SD.open(fname, FILE_READ);
 				if (!aFile) {
-					if (debug) { Serial.println(F("file open error")); }
+					if (debug) { Serial.println(F("...file open error")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					state_init(); // called this to reset input buf ptr and set file_opened flag to false
 					ret = 23;
@@ -1237,7 +1236,7 @@ void state_save() {
 		if (debug) { Serial.println(F("filefound")); }
 		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
-    set_error_msg(63);
+		set_error_msg(63);
 	} else {
 		if (debug) { Serial.println(F("filenotfound")); }
 		aFile = SD.open(fname, FILE_WRITE);
@@ -1245,7 +1244,7 @@ void state_save() {
 			if (debug) { Serial.println(F("file open error")); }
 			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
-      set_error_msg(26);
+			set_error_msg(26);
 		}
 	}
 	while (!done) {
@@ -1328,11 +1327,11 @@ void state_open() {
 	if (channel == 1) {
 		// prepare for SAVE
 	}
-  if (channel == 15) {
-    // Directory browser doesn't call CLOSE, only unlisten
-    handle_command();
-    state_init(); // reset input buffer
-  }
+	if (channel == 15) {
+		// Directory browser doesn't call CLOSE, only unlisten
+		handle_command();
+		state_init(); // reset input buffer
+	}
 	state = STATE_IDLE;
 }
 
