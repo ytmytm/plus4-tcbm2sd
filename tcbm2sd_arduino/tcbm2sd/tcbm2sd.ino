@@ -970,7 +970,7 @@ void state_fastload() {
 					ret = 23;
 				}
 			} else {
-				if (debug) { Serial.println(F("filenotfound")); }
+				if (debug) { Serial.println(F(" filenotfound")); }
 				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 				ret = 62;
 			}
@@ -1011,8 +1011,8 @@ void state_fastload() {
 			tcbm_port_input(); // return to initial state
 			if (debug>1) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
 			tcbm_set_ack(1);
-			tcbm_set_status(TCBM_STATUS_OK);
 			while (!(tcbm_get_dav() == 1)); // must return to initial state
+			tcbm_set_status(TCBM_STATUS_OK);
 			done = true; // exit immediately, there will be no UNTALK
         } else {
 			switch (state) {

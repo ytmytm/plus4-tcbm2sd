@@ -109,6 +109,7 @@ L0665:  jmp $867e
 .var ISENDSA = $F005             // ;SEND SA ; before TALK? and it's not TLKSA
 .var ITALK = $EDFA               // ;TALK
 .var ITLKSA = $EE1A              // ;TKSA
+.var aFFFA = $FFFA		 // ;RESET
 
 // IO
 
@@ -147,13 +148,15 @@ FastLoad:
         bmi *-3
         lda aFEF0                                   // ;1st byte = load addr low  // need to flip ACK after this
         sta tgt
+        ldx aFEF1                                   // STATUS
         lda #$40                                    // DAV=1 confirm
         sta aFEF2
-        lda aFEF1                                   // STATUS
+	txa
         and #%00000011
-        bne LOADEND                                 // file not found
+        beq cont1
+	jmp (aFFFA)				    // file not found -> reset
 
-        bit aFEF2                                   // ;wait for ACK high
+cont1:  bit aFEF2                                   // ;wait for ACK high
         bpl *-3
         lda aFEF0                                   // ;2nd byte = load addr high // need to flip ACK after this
         sta tgt+1
