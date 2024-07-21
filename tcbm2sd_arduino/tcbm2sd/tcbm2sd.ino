@@ -884,7 +884,9 @@ void dir_render_footer() {
 	// BASIC link 0x0101
 	output_buf[i++] = 1;
 	output_buf[i++] = 1;
-	// 999
+	// 9999 BLOCKS FREE.
+	output_buf[i++] = (uint8_t)( 9999 & 0x00FF);
+	output_buf[i++] = (uint8_t)((9999 & 0xFF00) >> 8);
 	strcpy_P((char*)(output_buf+i), (const char*)F("BLOCKS FREE."));
 	i += 12;
 	output_buf[i++] = 0; // end of line
