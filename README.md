@@ -50,7 +50,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
 - fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/); on par with DolphinDOS
 - fastload booter embedded in the flash, available at all times as `*` file will load and run `BOOT.T2SD` file from root directory
-- Directory Browser patched with fastload protocol, save it as `BOOT.T2SD` on your SD card
+- [Directory Browser patched with fastload protocol](loader/db12b.prg), save it as `BOOT.T2SD` on your SD card
 - device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
