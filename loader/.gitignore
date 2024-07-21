@@ -1,2 +1,4 @@
-db12patch.sym
-db12b.prg
+*.sym
+loader.prg
+fastdir.prg
+tools
