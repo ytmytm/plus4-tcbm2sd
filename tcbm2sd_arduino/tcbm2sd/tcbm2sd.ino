@@ -27,7 +27,8 @@ const uint8_t PIN_SD_SS = 10;
 
 //////////////////////////////////
 
-// embedded Directory Browser 1.2 with tcbm2sd fastloader patch
+// embedded loader w/ fastload protocol to load user-chosen '/BOOT.T2SD' file
+// use e.g. Directory Browser 1.2 with tcbm2sd fastloader patch
 // http://plus4world.powweb.com/software/Directory_Browser
 
 // created with xxd -i <input.prg> <output.h>
@@ -35,7 +36,7 @@ const uint8_t PIN_SD_SS = 10;
 
 #ifndef DISABLE_BROWSER
 const PROGMEM
-#include "db12b.h"
+#include "loader.h"
 #else // dummy
 const PROGMEM unsigned char db12b_prg[] = { 0x01, 0x10, 0x00, 0x00, 0x00 };
 unsigned int db12b_prg_len = 5;
@@ -1356,8 +1357,8 @@ void loop() {
 			break;
 		case STATE_BROWSER:
 			// send out directory browser from flash
-			status_buffer = (char*)db12b_prg;
-			status_len = db12b_prg_len;
+			status_buffer = (char*)loader_prg;
+			status_len = loader_prg_len;
 			status_flash = true;
 			state_standard_load();
 			break;

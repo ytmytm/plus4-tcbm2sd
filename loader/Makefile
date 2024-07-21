@@ -5,11 +5,11 @@ XPLUS4 := xplus4
 
 KICKASSLAGS := 
 
-SOURCES := db12patch.asm
+SOURCES := loader.asm
 
-BINS := db12b.prg
+BINS := loader.prg
 
-HEADER := ../tcbm2sd_arduino/tcbm2sd/db12b.h
+HEADER := ../tcbm2sd_arduino/tcbm2sd/loader.h
 
 .PHONY: all clean test love
 

@@ -1,6 +1,8 @@
 [20240721]
 Merged standard transfer procedures: LOAD/STAT/DIR/BROWER into a single function, removed code duplication.
 Implemented fastload protocol for DIR, with a test program. Later can be incorporated into DirectoryBrowser.
+Replaced embedded browser with a short embedded loader that will fastload '/BOOT.T2SD' from root directory. This way browser can be loaded much faster and users can choose on their own what they want to run for '*' (shift+run/stop).
+It's faster and frees up over 5K for (possible) disk image support (r/o).
 
 [20240720]
 Manufactured another unit. SMD caps are easy, but soldering CPLD by hand is still annoyingly slow.
