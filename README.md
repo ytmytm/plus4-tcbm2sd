@@ -59,11 +59,13 @@ Patched Directory Browser is embedded into flash and available at all times by t
   - create dir `MD<directory>`
   - remove dir `RD<directory>`
   - change device number: `U0>+chr$(<devnum>)` with `<devnum>` = 8 or 9
+  - initialize disk: `I` (reinitialize SD interface after card eject/insert)
 - limited support for full paths (when filename starts with `/`)
   - you can DLOAD a file from root folder from anywhere in the filesystem, e.g. file browser: `DLOAD"/FB16`; this works as long as the path is not too long
   - disk commands will accept full paths, e.g. `S:/GAMES/D/DONALD DUCK`
 - compatible with file browsers: FileBrowser 1.6 and Directory Browser 1.2
 - case insensitve, all filenames converted to lowercase
+- fallback to DOS 8.3 filename for entries with names longer than 16 characters
 - wildcard matching `*` and `?`
 
 ### Platform for future developments
