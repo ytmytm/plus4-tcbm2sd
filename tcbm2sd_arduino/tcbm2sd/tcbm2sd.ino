@@ -1032,6 +1032,7 @@ void state_standard_load() {
 			dir_render_header();
 			break;
 		case STATE_STAT:
+		case STATE_BROWSER:
 			if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
 			if (debug) { Serial.print(F("sending ")); Serial.print(status_len, HEX); Serial.print(F(" bytes from ")); Serial.println(status_flash); }
 			break;
@@ -1084,6 +1085,7 @@ void state_standard_load() {
 						tcbm_write_data(b, status);
 						break;
 					case STATE_STAT:
+					case STATE_BROWSER:
 						if (debug>1) { Serial.print(F("new character from ")); Serial.println(c, HEX); }
 						if (status_flash) {
 							b = pgm_read_byte(status_buffer+c);
