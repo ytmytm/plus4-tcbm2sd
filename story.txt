@@ -1,24 +1,28 @@
+[20240720]
+Manufactured another unit. SMD caps are easy, but soldering CPLD by hand is still annoyingly slow.
+In the cartridge shell there is no space for any socket under Arduino, it has to be soldered in - even for testing (connection is not reliable). On the other hand, JTAG connector doesn't have to be soldered at all - just pushing it in is enough for flashing JED.
+I have solved the problem of flashing Arduino by soldering in female pins from precision socket.
+Butchered one cartridge shell to cut a slot on the side for SD card. It extends just enough to grab it with nails or push it in (once I have sockets with eject spring).
+
+[20240719]
+People over plus4world.powweb.com make a fair point that sd2tcbm is not that important.
+I tend to agree. I was thinking about sd2tcbm because:
+- it already handles too long filenames (I can do that)
+- it handles SD partitions (meh)
+- it probably better handles pattern matching (?)
+- it handles disk images (I can do read only)
+- fastloaders from 1541 don't matter
+Perhaps sd2tcbm is not the right way and I shouldn't spend time on it - a Pi1551 would be more benefit for someone looking for a 1551.
+I'm pretty sure I can still stuff in read-only disk image support (for all of them) even if it comes with a cost of not having browser.
+
+[20240718]
+Géza Eperjessy kindly shared the source code of DirectoryBrowser! I can't publish it, but I would spin my code into an include file that can remain public reference.
 
 [20240714]
 Implemented embedded browser load when '*' file is requested. It can be started with SHIFT+RUN/STOP.
 Implemented last useful disk commands: R, MD, RD.
 Almost at the end of flash space, but everything I wanted to have is in.
 That took exactly one month.
-
-TODO:
-- handle long (>16 character) filenames like sd2iec - by falling back on 8.3 names; but then we can't use SD.exists() all over the place, we need our own wrapper for that
-- better pattern matching (does '*' mean zero or more following characters, or one or more?)
-- (low priority) LOAD, STATUS and DIR could be handled with a single procedure with some IFs here and there
-- (v. low priority) refactor and put low level code in tcbm_hw.[ch], high level in a tcbm class
-TODO-HW (PCB rev 1.1)
-- label all the MiniPro pins in case someone wants to solder there OR put a 2x16(?) connector (label with pin numbers and clear paddle/1551 signal names for dav/ack)
-- remove unused debug pads, maybe keep DEV because of hw switch to GND (or not - software control only)
-- route RESET 3.3V (pin44) to Micro /RESET through a jumper (to disconnect system reset from device reset)
-TODO-FUTURE
-- sd2iec atmegas 644/1280/2560 can't be used because they are all 5V parts
-- maybe bluepill? (but that's new stuff for me)
-- maybe ESP32 (need enough pins)
-- maybe one of RP2040 boards (v. cheap)
 
 [20240713]
 Success! 23x! (220 blocks in 6 seconds = 9300b/s = 23x 1541, almost 6x 1551)
