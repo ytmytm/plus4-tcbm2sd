@@ -707,9 +707,9 @@ void state_idle() {
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
 		switch (dat & 0xF0) {
-      case 0x70: // SECOND (fastload on channel 0)
-        if (debug) { Serial.print(F("[FASTLOAD]")); }
-        // fall through
+			case 0x70: // SECOND (fastload on channel 0)
+				if (debug) { Serial.print(F("[FASTLOAD]")); }
+				// fall through
 			case 0x60: // SECOND
 				if (debug) { Serial.print(F("second chn=")); }
 				if (debug) { Serial.println(chn); }
@@ -719,18 +719,26 @@ void state_idle() {
 						if (file_opened) {
 							input_to_filename(0);
 							if (filename_is_dir) {
-								state = STATE_DIR;	// render and send directory data
+								// render and send directory data
+								if ((dat & 0xF0) == 0x70) {
+									state = STATE_DIR; // XXX STATE_FASTDIR
+								} else {
+									state = STATE_DIR;
+								}
 							} else {
-                if (filename[0]=='*') {
-                  state = STATE_BROWSER;
-                } else {
-                  // send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
-                  if ((dat & 0xF0) == 0x70) {
-                    state = STATE_FASTLOAD;
-			  				  } else {
-				  			    state = STATE_LOAD;
-					  		  }
-                }
+								// not directory, a file instead
+								if (filename[0]=='*') {
+									// send data stream from embedded browser
+									state = STATE_BROWSER;
+									// XXX if there is no space in flash for embedded browser just remap path to '/BROWSER.PRG' or sth
+								} else {
+									// send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
+									if ((dat & 0xF0) == 0x70) {
+										state = STATE_FASTLOAD;
+									} else {
+										state = STATE_LOAD;
+									}
+								}
 							}
 						} else {
 							if (debug) { Serial.println(F("file not open")); }
@@ -918,24 +926,24 @@ void dir_render_header() {
 	output_buf[i++] = 0x12; // REV ON?
 	output_buf[i++] = '"';
 	// volume name -- last part of path
-  String p(pwd);
+	String p(pwd);
 //  Serial.println(p);
-  if (p.length()>1) {
-    p=p.substring(0,p.length()-1);
+	if (p.length()>1) {
+		p = p.substring(0,p.length()-1);
 //    Serial.println(p);
-    int idx = p.lastIndexOf('/');
+		int idx = p.lastIndexOf('/');
 //    Serial.println(i);
-    if (idx>=0) {
-      p = p.substring(idx,p.length());
-    }
-  }
+		if (idx>=0) {
+			p = p.substring(idx,p.length());
+		}
+	}
 //  Serial.println(p);
 	for (uint8_t j=0; j<16; j++) {
-    if (j<p.length()) {
-      output_buf[i++]=to_petscii(p.charAt(j));
-    } else {
-		  output_buf[i++]=' ';
-    }
+		if (j<p.length()) {
+			output_buf[i++]=to_petscii(p.charAt(j));
+		} else {
+			output_buf[i++]=' ';
+		}
 	}
 	output_buf[i++] = '"';
 	output_buf[i++] = ' ';
@@ -977,27 +985,26 @@ void dir_render_footer() {
 }
 
 bool dir_render_file(File32 *dir) {
-//    File32 entry =  dir->openNextFile();
-  File32 entry;
-  entry.openNext(dir,O_RDONLY);
+	File32 entry;
+	entry.openNext(dir,O_RDONLY);
+
 	output_buf_ptr = 0;
 	char name[128];
 	uint32_t size;
 
 	if (!entry) { return false; } // no more files
-/*
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println("DIR");
-    } else {
-      // files have sizes, directories do not
-      Serial.print("\t\t");
-      Serial.println(entry.size(), DEC);
-	}
-*/
-  memset(name, 0, sizeof(name));
+	memset(name, 0, sizeof(name));
 	entry.getName(name,sizeof(name));
-//  Serial.println(name);
+	if (debug) {
+		Serial.println(name);
+		if (entry.isDirectory()) {
+			Serial.println("DIR");
+		} else {
+			// files have sizes, directories do not
+			Serial.print("\t\t");
+			Serial.println(entry.size(), DEC);
+		}
+	}
 	size = 1 + entry.size() / 254;
 
 	memset(output_buf, 0, sizeof(output_buf));
@@ -1025,14 +1032,14 @@ bool dir_render_file(File32 *dir) {
 	// pad to 16
 	while (c<16) {
 		output_buf[i++] = ' ';
-    c++;
+		c++;
 	}
 	// space or splat
-  if (entry.isHidden()) {
-    output_buf[i++] = '*';
-  } else {
-	  output_buf[i++] = ' ';
-  }
+	if (entry.isHidden()) {
+		output_buf[i++] = '*';
+	} else {
+		output_buf[i++] = ' ';
+	}
 	// filetype
     if (entry.isDir()) {
 		output_buf[i++] = 'D';
@@ -1044,18 +1051,18 @@ bool dir_render_file(File32 *dir) {
 		output_buf[i++] = 'G';
 	}
 	// space or <
-  if (entry.attrib() & (FS_ATTRIB_READ_ONLY | FS_ATTRIB_SYSTEM)) {
-    output_buf[i++] = '<';
-  } else {
-  	output_buf[i++] = ' ';
-  }
+	if (entry.attrib() & (FS_ATTRIB_READ_ONLY | FS_ATTRIB_SYSTEM)) {
+		output_buf[i++] = '<';
+	} else {
+		output_buf[i++] = ' ';
+	}
 	// last space
 	output_buf[i++] = ' ';
 	// end of line
 	output_buf[i++] = 0; // end of line
 	//
 	output_buf_ptr = i;
-  entry.close();
+	entry.close();
 	return true;
 }
 
@@ -1187,9 +1194,9 @@ void state_save() {
 	bool done = false;
 	File aFile;
 
-  String fname = pwd + String((const char*)filename);
+	String fname = pwd + String((const char*)filename);
 
-  set_error_msg(0);
+	set_error_msg(0);
 	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
 	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 	if (SD.exists(fname)) {
@@ -1212,7 +1219,7 @@ void state_save() {
 		dat = tcbm_read_data(status);
 		switch (cmd) {
 			case TCBM_CODE_RECV:
-//				Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX);
+				if (debug>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(dat, HEX); }
 				if (aFile) {
 					aFile.write(dat);
 				}
