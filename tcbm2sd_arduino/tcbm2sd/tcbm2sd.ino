@@ -872,13 +872,8 @@ void dir_render_header() {
 			output_buf[i++]=' ';
 		}
 	}
-	output_buf[i++] = '"';
-	output_buf[i++] = ' ';
-	output_buf[i++] = '0';
-	output_buf[i++] = '0';
-	output_buf[i++] = ' ';
-	output_buf[i++] = '2';
-	output_buf[i++] = 'A';
+	strcpy_P((char*)(output_buf+i), (const char*)F("\" 00 2A"));
+	i += 7;
 	output_buf[i++] = 0; // end of line
 	output_buf_ptr = i;
 }
@@ -890,20 +885,8 @@ void dir_render_footer() {
 	output_buf[i++] = 1;
 	output_buf[i++] = 1;
 	// 999
-	output_buf[i++] = 0xe7;
-	output_buf[i++] = 0x03;
-	output_buf[i++] = 'B';
-	output_buf[i++] = 'L';
-	output_buf[i++] = 'O';
-	output_buf[i++] = 'C';
-	output_buf[i++] = 'K';
-	output_buf[i++] = 'S';
-	output_buf[i++] = ' ';
-	output_buf[i++] = 'F';
-	output_buf[i++] = 'R';
-	output_buf[i++] = 'E';
-	output_buf[i++] = 'E';
-	output_buf[i++] = '.';
+	strcpy_P((char*)(output_buf+i), (const char*)F("BLOCKS FREE."));
+	i += 12;
 	output_buf[i++] = 0; // end of line
 	// end of program
 	output_buf[i++] = 0;
