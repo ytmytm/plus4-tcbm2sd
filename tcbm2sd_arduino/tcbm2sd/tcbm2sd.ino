@@ -462,10 +462,23 @@ void set_error_msg(uint8_t error) {
     case 73:
       strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,00"));
       break;
+    case 74:
+      strcpy_P((char*)output_buf, (const char*)F("74, DRIVE NOT READY,00,00"));
+      break;
     default:
       strcpy_P((char*)output_buf, (const char*)F("99, UNKNOWN,00,00"));
       break;
   }
+}
+
+// called after 'I', 'UI' and 'UJ' commands to refresh SD card status
+void reload_sd_card() {
+// XXX close any opened files (d64/d71/d81 image? but they would be read-only anyway)
+	SD.end(); // reload SD card
+	if (!SD.begin(PIN_SD_SS)) { // CS pin
+		if (debug) { Serial.println(F("SD init failed!")); }
+		set_error_msg(74);
+	}
 }
 
 void handle_command() {
@@ -623,15 +636,17 @@ void handle_command() {
     }
 		return;
 	}
-	// I
+	// I - reset SD card interface after SD eject/insert event (not detectable)
 	if (input_buf[0]=='I') {
 		if (debug) { Serial.println(F("INIT")); }
+		reload_sd_card();
 		return;
 	}
 	// UI / UJ
 	if (input_buf[0]=='U' && (input_buf[1]=='I' || input_buf[1]=='J')) {
 		if (debug) { Serial.println(F("RESET")); }
-    set_error_msg(73);
+		reload_sd_card();
+		set_error_msg(73);
 		return;
 	}
 	// U0><devnum+8>
