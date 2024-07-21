@@ -377,7 +377,10 @@ String match_filename(bool onlyDir) {
   entry = dir.openNextFile();
   String entryname;
   if (entry) {
-    entry.getName(entryname_c,sizeof(entryname_c));
+    size_t len = entry.getName(entryname_c,sizeof(entryname_c));
+	if (len>16) { // fall back on short 8.3 filename if we can't handle it
+	  entry.getSFN(entryname_c,sizeof(entryname_c));
+	}
     entryname = String(entryname_c);
   }
   while (entry) {
@@ -838,7 +841,16 @@ bool dir_render_file(File32 *dir) {
 
 	if (!entry) { return false; } // no more files
 	memset(name, 0, sizeof(name));
-	entry.getName(name,sizeof(name));
+	size_t len = entry.getName(name, sizeof(name));
+	if (len>16) { // fall back on short 8.3 filename if we can't handle it
+		entry.getSFN(name, sizeof(name));
+		if (debug>1) {
+			uint8_t n = strlen(name);
+			for (uint8_t i=0; i<n; i++) {
+				Serial.print(i); Serial.print(":"); Serial.print(name[i]); Serial.print(":"); Serial.println(name[i], HEX);
+			}
+		}
+	}
 	if (debug) {
 		Serial.println(name);
 		if (entry.isDirectory()) {
