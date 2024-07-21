@@ -837,79 +837,6 @@ void state_fastload() {
   state = STATE_IDLE;
 }
 
-void state_load() {
-	// send data until UNTALK
-	uint8_t cmd;
-	uint8_t dat;
-	uint8_t status = TCBM_STATUS_OK;
-	uint8_t b;
-	uint16_t c = 0;
-	bool done = false;
-	File aFile;
-  set_error_msg(0);
-  String fname = match_filename(false); // only files
-
-	if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
-	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
-	if (SD.exists(fname)) {
-		if (debug) { Serial.println(F("filefound")); }
-		aFile = SD.open(fname, FILE_READ);
-		if (!aFile) {
-			if (debug) { Serial.println(F("file open error")); }
-			status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-			state_init(); // called this to reset input buf ptr and set file_opened flag to false
-      set_error_msg(23);
-		}
-	} else {
-		if (debug) { Serial.println(F("filenotfound")); }
-		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-    set_error_msg(62);
-	}
-	while (!done) {
-		cmd = tcbm_read_cmd_block();
-		switch (cmd) {
-			case TCBM_CODE_SEND:
-				if (status != TCBM_STATUS_OK) {		// file not found, not OK
-//					Serial.println(F("0D : 0D"));
-					tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
-					done = true; // exit immediately, there will be no UNTALK
-				} else {
-					b = aFile.read();
-					if (!aFile.available()) {		// was that last byte?
-						status = TCBM_STATUS_EOI;	// status must be set with last valid byte
-					}
-					c++;
-//					Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
-					tcbm_write_data(b, status);
-				}
-				break;
-			case TCBM_CODE_COMMAND:
-				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
-				dat = tcbm_read_data(status);
-				if (dat == 0x5F) { // UNTALK
-					if (debug) { Serial.println(F("[UNTALK]")); }
-				} else {
-					if (debug) { Serial.print(F("unk LOAD CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
-					status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
-				}
-				done = true;
-				break;
-			default:
-				dat = tcbm_read_data(status);
-				if (debug) { Serial.print(F("unk LOAD state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
-				status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
-				done = true;
-				break;
-		}
-	}
-  state_init(); // called this to reset input buf ptr and set file_opened flag to false
-	if (aFile) {
-		aFile.close();
-	}
-	if (debug) { Serial.print(F("loaded bytes:")); Serial.println(c, HEX); }
-	state = STATE_IDLE;
-}
-
 // render volume header to the buffer, incl. load address
 void dir_render_header() {
 	uint8_t i=0, j=0;
@@ -1066,51 +993,131 @@ bool dir_render_file(File32 *dir) {
 	return true;
 }
 
-void state_directory() {
+// parameters, valid only for STATE_STAT, used to send status (RAM) or directory browser (FLASH)
+
+char* status_buffer; // data pointer
+uint16_t status_len; // data length
+bool status_flash; // true (from flash), false (from RAM)
+
+void state_standard_load() {
 	// send data until UNTALK
 	uint8_t cmd;
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
-	uint8_t b, i;
+	uint8_t b; // current value
+	uint8_t i = 0; // output_buffer offset
+	uint16_t c = 0; // total byte counter
+	uint8_t ret = 0; // final status code
 	bool done = false;
-	bool footer = false; // footer && end of buffer means end of transmission
-  set_error_msg(0);
+	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
 
+	String fname;
 	File32 aFile;
-	aFile = SD.open(pwd); // current dir
-	if (!aFile) {
-		if (debug) { Serial.println(F("directory open error")); }
-		status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-		state_init(); // called this to reset input buf ptr and set file_opened flag to false
-    set_error_msg(23);
+	ret = 0; // everything is going to be fine
+
+	switch (state) {
+		case STATE_LOAD:
+			if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
+			fname = match_filename(false); // search only for files
+			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
+			if (SD.exists(fname)) {
+				if (debug) { Serial.println(F("filefound")); }
+				aFile = SD.open(fname, FILE_READ);
+				if (!aFile) {
+					if (debug) { Serial.println(F("file open error")); }
+					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+					state_init(); // called this to reset input buf ptr and set file_opened flag to false
+					ret = 23;
+				}
+			} else {
+				if (debug) { Serial.println(F("filenotfound")); }
+				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+				ret = 62;
+			}
+			break;
+		case STATE_DIR:
+			if (debug) { Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX); }
+			aFile = SD.open(pwd); // current dir
+			if (!aFile) {
+				if (debug) { Serial.println(F("directory open error")); }
+				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+				state_init(); // called this to reset input buf ptr and set file_opened flag to false
+				ret = 23;
+			}
+			dir_render_header();
+			break;
+		case STATE_STAT:
+			if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
+			if (debug) { Serial.print(F("sending ")); Serial.print(status_len, HEX); Serial.print(F(" bytes from ")); Serial.println(status_flash); }
+			break;
+		default:
+			if (debug) { Serial.println(F("unknown state, we shouldnt be here")); };
+			status = TCBM_STATUS_SEND; // nothing to send
+			ret = 23;
+			break;
 	}
 
-	if (debug) { Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX); }
-	dir_render_header();
-  i = 0;
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
 			case TCBM_CODE_SEND:
-				b = output_buf[i];
-//				Serial.print(i,HEX); Serial.print(F(" : ")); Serial.println(b, HEX);
-				i++;
-				if (i == output_buf_ptr) {
-//					Serial.print(F("..end of buffer:"));
-					i = 0;
-					if (footer) {
-//						Serial.print(F("..EOI"));
-						status = TCBM_STATUS_EOI; // status must be set with last valid byte, STATUS_RECV/SEND won't work here - will not stop; but we get LOAD ERROR
-					} else {
-//						Serial.print(F("..next file"));
-						footer = !dir_render_file(&aFile);
-						if (footer) {
-//							Serial.print(F("..no more files, footer"));
-							dir_render_footer();
+				switch (state) {
+					case STATE_LOAD:
+						if (status != TCBM_STATUS_OK) {		// file not found, not OK
+							if (debug>1) { Serial.println(F("0D : 0D")); }
+							tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
+							done = true; // exit immediately, there will be no UNTALK
+						} else {
+							b = aFile.read();
+							if (!aFile.available()) {		// was that last byte?
+								status = TCBM_STATUS_EOI;	// status must be set with last valid byte
+							}
+							c++;
+							if (debug>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
+							tcbm_write_data(b, status);
 						}
-					}
+						break;
+					case STATE_DIR:
+						b = output_buf[i];
+						if (debug>1) { Serial.print(i,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
+						i++;
+						if (i == output_buf_ptr) {
+							if (debug) { Serial.print(F("..end of buffer:")); }
+							i = 0;
+							if (footer) {
+								if (debug) { Serial.print(F("..EOI")); }
+								status = TCBM_STATUS_EOI; // status must be set with last valid byte
+							} else {
+								if (debug) { Serial.print(F("..next file")); }
+								footer = !dir_render_file(&aFile);
+								if (footer) {
+									if (debug) { Serial.print(F("..no more files, footer")); }
+									dir_render_footer();
+								}
+							}
+						}
+						tcbm_write_data(b, status);
+						break;
+					case STATE_STAT:
+						if (debug>1) { Serial.print(F("new character from ")); Serial.println(c, HEX); }
+						if (status_flash) {
+							b = pgm_read_byte(status_buffer+c);
+						} else {
+							b = status_buffer[c];
+						}
+						c++;
+						if (c==status_len) {
+							c--;
+							status = TCBM_STATUS_EOI; // status must be set with last valid byte
+						}
+						tcbm_write_data(b, status);
+						break;
+					default:
+						if (debug) { Serial.println(F("unknown state (2), we shouldnt be here")); };
+						status = TCBM_STATUS_EOI;
+						tcbm_write_data(13, status);
+						done = true;
 				}
-				tcbm_write_data(b, status);
 				break;
 			case TCBM_CODE_COMMAND:
 				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
@@ -1118,70 +1125,25 @@ void state_directory() {
 				if (dat == 0x5F) { // UNTALK
 					if (debug) { Serial.println(F("[UNTALK]")); }
 				} else {
-					if (debug) { Serial.print(F("unk DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+					if (debug) { Serial.print(F("unk LOAD/STAT/DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+					status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				}
 				done = true;
 				break;
 			default:
 				dat = tcbm_read_data(status);
-				if (debug) { Serial.print(F("unk DIR state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+				if (debug) { Serial.print(F("unk LOAD/STAT/DIR state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+				status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				done = true;
 				break;
 		}
 	}
-  if (aFile) {
-    aFile.close();
-  }
-  set_error_msg(0);
-	state = STATE_IDLE;
-}
-
-void state_status(const char* buffer, uint16_t len, bool flash) {
-	// send data until UNTALK
-	uint8_t cmd;
-	uint8_t dat;
-	uint8_t status = TCBM_STATUS_OK;
-	uint8_t b;
-	uint16_t c = 0;
-	bool done = false;
-	if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
-  if (debug) { Serial.print(F("sending ")); Serial.print(len, HEX); Serial.print(F(" bytes from ")); Serial.println(flash); }
-	while (!done) {
-		cmd = tcbm_read_cmd_block();
-		switch (cmd) {
-			case TCBM_CODE_SEND:
-        if (debug>1) { Serial.print(F("new character from ")); Serial.println(c, HEX); }
-        if (flash) {
-          b = pgm_read_byte(buffer+c);
-        } else {
-          b = buffer[c];
-        }
-				c++;
-				if (c==len) {
-					c--;
-					status = TCBM_STATUS_EOI; // status must be set with last valid byte
-				}
-				tcbm_write_data(b, status);
-				break;
-			case TCBM_CODE_COMMAND:
-				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
-				dat = tcbm_read_data(status);
-				if (dat == 0x5F) { // UNTALK
-					if (debug) { Serial.println(F("[UNTALK]")); }
-				} else {
-					if (debug) { Serial.print(F("unk DS CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
-				}
-				done = true;
-				break;
-			default:
-				dat = tcbm_read_data(status);
-				if (debug) { Serial.print(F("unk DS state cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
-				done = true;
-				break;
-		}
+	state_init();	// called this to reset input buf ptr and set file_opened flag to false
+	if (aFile) {	// close whatever was opened
+		aFile.close();
 	}
-	// reset any error
-  set_error_msg(0);
+	set_error_msg(ret);
+	if (debug) { Serial.print(F("sent bytes:")); Serial.println(c, HEX); }
 	state = STATE_IDLE;
 }
 
@@ -1332,24 +1294,30 @@ void loop() {
 			state_open();
 			break;
 		case STATE_LOAD:
-			state_load();
+			state_standard_load();
 			break;
 		case STATE_SAVE:
 			state_save();
 			break;
 		case STATE_STAT:
-      // send out output_buffer string from RAM (assuming null-terminated string)
-			state_status((const char*)output_buf, strlen((const char*)output_buf), false);
+			// send out output_buffer string from RAM (assuming null-terminated string)
+			status_buffer = (char*)output_buf;
+			status_len = strlen((const char*)output_buf);
+			status_flash = false;
+			state_standard_load();
 			break;
 		case STATE_DIR:
-			state_directory();
+			state_standard_load();
 			break;
-    case STATE_FASTLOAD:
-      state_fastload();
-      break;
-    case STATE_BROWSER:
-      // send out directory browser from flash
-      state_status((const char*)db12b_prg, db12b_prg_len, true);
+		case STATE_FASTLOAD:
+			state_fastload();
+			break;
+		case STATE_BROWSER:
+			// send out directory browser from flash
+			status_buffer = (char*)db12b_prg;
+			status_len = db12b_prg_len;
+			status_flash = true;
+			state_standard_load();
 		default:
 			if (debug) { Serial.print(F("unknown state=")); Serial.println(state, HEX); }
 			break;
