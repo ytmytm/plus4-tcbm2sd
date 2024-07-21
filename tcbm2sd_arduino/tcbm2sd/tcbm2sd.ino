@@ -9,7 +9,7 @@
 // from: mini.menu.cpu.atmega328.upload.speed=115200
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
-const uint8_t debug=0; // set to value larger than one for debug messages
+const uint8_t debug=0; // set to value larger than zero for debug messages
 //#define DISABLE_BROWSER // disable embedded db12b binary when debug is enabled (it may not fit in flash)
 
 //////////////////////////////////
