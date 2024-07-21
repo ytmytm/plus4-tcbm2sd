@@ -49,7 +49,8 @@ Patched Directory Browser is embedded into flash and available at all times by t
 - DLOAD and DSAVE support
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
 - fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/); on par with DolphinDOS
-- Directory Browser embedded in the flash, available at all times as `*` file
+- fastload booter embedded in the flash, available at all times as `*` file will load and run `BOOT.T2SD` file from root directory
+- Directory Browser patched with fastload protocol, save it as `BOOT.T2SD` on your SD card
 - device number stored permanently in EEPROM
 - disk commands:
   - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
@@ -227,6 +228,26 @@ Reopen the Arduino IDE and try again.
 1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
 2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect VCC** line.
 
+### Autostart/boot feature
+
+If the filename is a single '*' (like after pressing `SHIFT+RUN/STOP`) then a small loader will be sent to the computer. This loader will try to load and run file `BOOT.T2SD` from the SD card's root folder.
+You can put there anything you like, but I recommend Directory Browser 1.2b patched for fast loading of the files.
+
+The source code for the loader is in [loader/loader.asm](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
+
+The provided `Makefile` doesn't do much but it shows the order of commands:
+
+Assemble the code:
+```
+java -jar Kickass.jar loader.asm
+```
+This saves `loader.prg`. To embed that binary into Arduino Micro flash we need to convert it to a C-style array and put into Arduino sketch folder:
+```
+xxd -i loader.prg ../tcbm2sd_arduino/tcbm2sd/loader.h
+```
+
+Then the Arduino code has to be recompiled and uploaded to the device.
+
 ### Directory browser 1.2b
 
 tcbm2sd is compatible with standard TCBM protocol as implemented by Commodore in Plus/4 ROM. However the hardware is capable with much more.
@@ -245,12 +266,7 @@ java -jar Kickass.jar db12patch.asm
 ```
 This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
 
-But that binary can be embedded into Arduino Micro flash so that it's always available as `*` file. We need to convert it to a C-style array and put into Arduino sketch folder:
-```
-xxd -i db12b.prg ../tcbm2sd_arduino/tcbm2sd/db12b.h
-```
-
-Then the Arduino code has to be recompiled and uploaded to the device.
+To make that file your default browser that will startup every time you load and run `*` file save it on the SD card's root folder as 'BOOT.T2SD`.
 
 ## Credits
 
