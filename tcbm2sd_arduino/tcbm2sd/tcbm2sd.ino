@@ -369,7 +369,7 @@ String match_filename(bool onlyDir) {
 
   File dir;
   File entry;
-  char entryname_c[128];
+  char entryname_c[256];
   dir = SD.open(cwd); // current dir
   if (!dir) {
     return fullfname; // this will fail later on open
@@ -833,7 +833,7 @@ bool dir_render_file(File32 *dir) {
 	entry.openNext(dir,O_RDONLY);
 
 	output_buf_ptr = 0;
-	char name[128];
+	char name[256];
 	uint32_t size;
 
 	if (!entry) { return false; } // no more files
