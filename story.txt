@@ -1,7 +1,7 @@
 [20240721]
 Merged standard transfer procedures: LOAD/STAT/DIR/BROWER into a single function, removed code duplication.
 Implemented fastload protocol for DIR, with a test program. Later can be incorporated into DirectoryBrowser.
-Replaced embedded browser with a short embedded loader that will fastload '/BOOT.T2SD' from root directory. This way browser can be loaded much faster and users can choose on their own what they want to run for '*' (shift+run/stop).
+Replaced embedded browser with a short embedded loader that will fastload '/BOOT.T2SD' from root directory. This way browser can be loaded much faster and users can choose on their own what they want to run for '*' (shift+run/stop). Machine will reset if that file is not found.
 It's faster and frees up over 5K for (possible) disk image support (r/o).
 Changed the file listing and mapping to mimic sd2iec: if FAT filename is longer than 16 characters then fall back on DOS 8.3 filename with character ~ swapped to <-
 Command 'I' reinitializes SD card, so it's possible to handle eject/insert. It can't be detected from the software though. If SD card is missing then 'DRIVE NOT READY' will be reported.
