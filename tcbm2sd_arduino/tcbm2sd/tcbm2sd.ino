@@ -307,6 +307,8 @@ bool filename_is_dir = false;
 
 // convert everything to lowercase petscii
 static char to_petscii(unsigned char c) {
+  if (c == 0x5f) return 0x7e;  // convert short filename marker
+  if (c == 0x7e) return 0x5f;  // convert short filename marker
   if (c >= 0x80+'a' && c <= 0x80+'z') {
     c -= 0xa0;
   }
@@ -482,7 +484,7 @@ void handle_command() {
 			if (debug) { Serial.println(F("...no dirname")); }
 			return;
 		}
-		if ((filename[0]==0x5f) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
+		if ((filename[0]==0x5f) || (filename[0]==0x7e) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
 			if (debug) { Serial.println(F("...parent")); }
 //      Serial.println(pwd);
       if (pwd.length()>1) {
