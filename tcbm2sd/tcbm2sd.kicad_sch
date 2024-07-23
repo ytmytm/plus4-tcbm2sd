@@ -6,8 +6,8 @@
 
   (title_block
     (title "tcbm2sd")
-    (date "2024-06-14")
-    (rev "1")
+    (date "2024-07-23")
+    (rev "1.1")
     (company "YTM Enterprises")
     (comment 1 "Maciej Witkowiak <ytm@elysium.pl>")
   )
