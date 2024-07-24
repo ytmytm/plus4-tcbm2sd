@@ -33,7 +33,7 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 4.0,
+          "drill": 5.0,
           "height": 5.0,
           "width": 5.0
         },
@@ -55,7 +55,9 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "courtyards_overlap|131522502|79983001|a185fea3-bf20-4aa3-b391-baacb87e0c66|cc4af233-ad34-4c22-ba97-1349badc8c8a"
+      ],
       "meta": {
         "filename": "board_design_settings.json",
         "version": 2
