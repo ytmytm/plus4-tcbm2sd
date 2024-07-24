@@ -335,7 +335,7 @@ bool input_to_filename(uint8_t start) {
 	uint8_t in=start;
 	uint8_t out=0;
 	filename_is_dir = false;
-	if (input_buf[in]=='0') { in++; }
+	if (input_buf[in]=='0' && input_buf[in+1]==':') { in++; }
 	if (input_buf[in]==':') { in++; }
 	while (out<sizeof(filename) && in<input_buf_ptr && !filename_is_dir && input_buf[in]) {
 		if (input_buf[in]!=0x0d) {
@@ -572,7 +572,7 @@ void handle_command() {
     // scan for '='
     uint8_t in=1;
     bool found=false;
-    if (input_buf[in]=='0') { in++; }
+    if (input_buf[in]=='0' && input_buf[in+1]==':') { in++; }
     if (input_buf[in]==':') { in++; }
     // in points to next char
     while (in<input_buf_ptr && input_buf[in] && !found) {
