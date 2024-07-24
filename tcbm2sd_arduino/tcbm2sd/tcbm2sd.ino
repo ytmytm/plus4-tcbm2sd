@@ -16,6 +16,10 @@ const uint8_t debug=0; // set to value larger than zero for debug messages
 
 // buffer size for long file names (256 by FAT standard)
 #define LONGNAME_SIZE 64
+// buffer size for current working directory path (32K by FAT32)
+#define PATH_SIZE 128
+// buffer size for selected file full path (32K by FAT32)
+#define PATH_FILE_SIZE 128
 
 //////////////////////////////////
 
@@ -304,9 +308,11 @@ uint16_t status_len; // data length
 bool status_flash; // true (from flash), false (from RAM)
 
 // filesystem
-String pwd = "/";
-uint8_t filename[17];
+char pwd[PATH_SIZE] = { "/" };
+char filename[17];
 bool filename_is_dir = false;
+// global: result of pattern matching: pwd+real filename
+char fullfname[PATH_SIZE] = { "\0" };
 
 //////////////////////////////////
 
@@ -358,84 +364,104 @@ bool input_to_filename(uint8_t start) {
 }
 
 // match filename[] to directory entry, return matched filename (if not matched it can be wrong - then SD.exists(fname) fails with file-not-found error
-String fullfname; // global to pass result
-String match_filename(bool onlyDir) {
-  String fname = String((const char*)filename);
-  String cwd = String(pwd); // local directory or root
-  if (filename[0]=='/') {
-    cwd = '/'; // absolute path
-  }
-  fullfname = cwd + fname;
+char *match_filename(bool onlyDir) {
 
-//  Serial.print(F(" searching for:")); Serial.println(fullfname);
-  if (fname.indexOf('*')<0 && fname.indexOf('?')<0) {
-//    Serial.println(F(" no globs"));
-    return fullfname;
-  }
-//  Serial.print(F(" matching...")); Serial.println(fname);
-
-  File dir;
-  File entry;
-  char entryname_c[LONGNAME_SIZE];
-  dir = SD.open(cwd); // current dir
-  if (!dir) {
-    return fullfname; // this will fail later on open
-  }
-  entry = dir.openNextFile();
-  String entryname;
-  if (entry) {
-    size_t len = entry.getName(entryname_c,sizeof(entryname_c));
-	if (len>16) { // fall back on short 8.3 filename if we can't handle it
-	  entry.getSFN(entryname_c,sizeof(entryname_c));
+	if (filename[0]=='/') {
+		// absolute path
+		fullfname[0] = '/';
+		fullfname[1] = '\0';
+	} else {
+		// relative path
+		strcpy(fullfname, pwd);
 	}
-    entryname = String(entryname_c);
-  }
-  while (entry) {
-    uint8_t i=0;
-    bool match;
-    char c;
-    if ((onlyDir && entry.isDirectory()) || (!onlyDir && !entry.isDirectory())) {
-      i=0;
-      match = true;
-      entry.getName(entryname_c,sizeof(entryname_c));
-      entryname = String(entryname_c);
-      if (debug) { Serial.println(entryname); }
-      while (i<16 && i<fname.length() && i<entryname.length() && match) {
-        c = fname.charAt(i);
-        if (debug>1) { Serial.print(i); Serial.print(":"); Serial.println(c); }
-        switch (c) {
-          case '?':
-            break;  // skip to next one
-          case '*':
-            fullfname = pwd + entryname;
-            entry.close();
-            dir.close();
-            return fullfname; // we have match
-            break;
-          default:
-            match = match && (to_petscii(c) == to_petscii(entryname.charAt(i)));
-            break;
-        }
-        i++;
-      }
-      if (match && ((i==16 && entryname.length()>16) || (i<=16 && entryname.length()==fname.length()))) {
-//        Serial.println(F("..matched/first 16 chars to longentry "));
-        fullfname = pwd + entryname;
-        entry.close();
-        dir.close();
-        return fullfname;
-      }
-    }
-    entry.close();
-    entry = dir.openNextFile();
-  }
-  if (entry) {
-    entry.close();
-  }
-  if (dir) {
-    dir.close();
-  }
-  return fullfname; // this will fail
+	File dir;
+	dir = SD.open(fullfname); // current dir (we don't care if this open succeeded or not yet)
+	if (!dir) {
+		return fullfname; // this will fail later on open
+	}
+
+	// is there enough space?
+	if (strlen(fullfname)+strlen(filename) > sizeof(fullfname)) {
+		if (debug) { Serial.print(F("ovflow")); };
+		fullfname[0] = '\0';
+		return fullfname; // this will fail later on open
+	}
+	strcat(fullfname, filename); // append filename to cwd
+	if (debug) { Serial.print(F(" searching for:")); Serial.println(fullfname); };
+	if (strchr(filename, '*') == nullptr && strchr(filename, '?') == nullptr) {
+		if (debug) { Serial.println(F(" no globs")); }
+		if (dir) { dir.close(); }
+		return fullfname;
+	}
+	if (debug) { Serial.print(F(" matching...")); Serial.println(filename); }
+
+	File entry;
+	char entryname_c[LONGNAME_SIZE]; // XXX can reuse output_buf for that?
+
+	entry = dir.openNextFile();
+	while (entry) {
+		uint8_t i=0;
+		bool match;
+		char c;
+		size_t len;
+		if ((onlyDir && entry.isDirectory()) || (!onlyDir && !entry.isDirectory())) {
+			i=0;
+			match = true;
+			len = entry.getName(entryname_c,sizeof(entryname_c));
+			if (len>16) { // fall back on short 8.3 filename if we can't handle it
+				entry.getSFN(entryname_c,sizeof(entryname_c));
+			}
+			if (debug) { Serial.println(entryname_c); }
+
+			while (i<16 && i<strlen(filename) && i<strlen(entryname_c) && match) {
+				c = filename[i];
+				if (debug>1) { Serial.print(i); Serial.print(":"); Serial.println(c); }
+				switch (c) {
+					case '?':
+						break;  // skip to next one
+					case '*':
+						if (strlen(fullfname)+strlen(entryname_c) > sizeof(fullfname)) {
+							if (debug) { Serial.print(F("ovflow2")); };
+							fullfname[0] = '\0';
+						} else {
+							strcat(fullfname, entryname_c);
+						}
+						entry.close();
+						dir.close();
+						return fullfname; // we have match
+						break;
+					default:
+						match = match && (to_petscii(c) == to_petscii(entryname_c[i]));
+						break;
+				}
+				i++;
+			}
+
+			if (match && ((i==16 && strlen(entryname_c)>16) || (i<=16 && strlen(entryname_c)==strlen(filename)))) {
+				if (debug) { Serial.println(F("..matched/first 16 chars to longentry ")); }
+				if (strlen(fullfname)+strlen(entryname_c) > sizeof(fullfname)) {
+					if (debug) { Serial.print(F("ovflow3")); };
+					fullfname[0] = '\0';
+				} else {
+					strcat(fullfname, entryname_c);
+				}
+				entry.close();
+				dir.close();
+				return fullfname;
+			}
+		}
+		entry.close();
+		entry = dir.openNextFile();
+	}
+	// no match, cleanup
+	if (entry) {
+		entry.close();
+	}
+	if (dir) {
+		dir.close();
+	}
+	fullfname[0] = '\0';
+	return fullfname; // this will fail
 }
 
 void set_error_msg(uint8_t error) {
@@ -485,15 +511,54 @@ void reload_sd_card() {
 	}
 }
 
+// helper functions for CD operations
+// go to root
+void pwd_root() {
+	pwd[0] = '/';
+	pwd[1] = '\0';
+}
+// go to parent (cut off last path item)
+void pwd_goto_parent() {
+    uint8_t len = strlen(pwd);
+    if (len > 1) {  // Only if not already at root
+        pwd[len-1] = '\0'; // cut trailing '/'
+        // Find the (formerly second) to last '/'
+        char* lastSlash = strrchr(pwd, '/')+1;
+        if (lastSlash != pwd) {  // Ensure it's not the root '/'
+            *lastSlash = '\0';  // Cut the string here
+        } else {
+            pwd[1] = '\0';  // Only root '/'
+        }
+    }
+}
+// return last path item with leading slash without trailing slash (/home/user/ -> /user)
+void pwd_get_current_dir(char * buffer) {
+    uint8_t len = strlen(pwd);
+    char *lastSlash;
+    if (len > 1) {  // Only if not already at root
+        pwd[len-1] = '\0'; // cut trailing '/'
+        // Find the (formerly second) to last '/'
+        lastSlash = strrchr(pwd, '/');
+    } else {
+        lastSlash = pwd; // there is only root slash
+    }
+    strcpy(buffer, lastSlash);
+    if (len > 1) {
+        pwd[len-1] = '/'; // restore trailing '/'
+    }
+}
+
+
+
 void handle_command() {
-  String fname;
-  if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
-  if (!input_buf[0]) {
-    if (debug) { Serial.println(F("no command, no change")); }
-    return;
-  }
-  set_error_msg(0);
-	// CD?
+	char *fname;
+	if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
+	if (!input_buf[0]) {
+		if (debug) { Serial.println(F("no command, no change")); }
+		return;
+	}
+	set_error_msg(0);
+	// CD
 	if (input_buf[0]=='C' && input_buf[1]=='D') {
 		input_to_filename(2);
 		if (debug) { Serial.print(F("CD")); }
@@ -503,117 +568,114 @@ void handle_command() {
 		}
 		if ((filename[0]==0x5f) || (filename[0]==0x7e) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
 			if (debug) { Serial.println(F("...parent")); }
-//      Serial.println(pwd);
-      if (pwd.length()>1) {
-        pwd = pwd.substring(0,pwd.length()-1);
-//        Serial.println(pwd);
-        int i = pwd.lastIndexOf('/');
-//        Serial.println(i);
-        if (i>=0) {
-          pwd = pwd.substring(0,i+1);
-        }
-      }
-      if (debug) { Serial.println(pwd); }
+			pwd_goto_parent();
+			if (debug) { Serial.println(pwd); }
 			return;
 		}
 		if (filename[0]=='/' && filename[1]=='/' && filename[2]==0) {
 			if (debug) { Serial.println(F("...root")); }
-      pwd = "/";
+			pwd_root();
 			return;
 		}
-    fname = match_filename(true);
-    if (SD.exists(fname)) {
-      pwd = fname + String("/");
-    } else {
-      if (debug) { Serial.println(F("...NOT FOUND")); }
-      set_error_msg(62);
-    }
+		fname = match_filename(true);
+		if (SD.exists(fname)) {
+			// copy matched directory name and add trailing '/'
+			strcpy(pwd, fname);
+			uint8_t len = strlen(pwd);
+			pwd[len] = '/';
+			pwd[len+1] = '\0';
+		} else {
+			if (debug) { Serial.println(F("...NOT FOUND")); }
+			set_error_msg(62);
+		}
 		if (debug) { Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]")); }
-    if (debug) { Serial.println(pwd); }
+		if (debug) { Serial.println(pwd); }
 		return;
 	}
-  // MD / RD
-  if ((input_buf[0]=='M' || input_buf[0]=='R') && input_buf[1]=='D') {
-    input_to_filename(2);
-    fname = match_filename(true);
-    if (debug) { Serial.print(F("MKDIR/RMDIR")); Serial.println(fname); }
-    switch (input_buf[0]) {
-      case 'M':
-        if (debug) { Serial.print(F("mkdir")); }
-        if (SD.exists(fname)) {
-          if (debug) { Serial.print(F("...exists")); }
-          set_error_msg(63);
-          return;
-        }
-        if (!SD.mkdir(fname)) {
-          if (debug) { Serial.print(F("...failed")); }
-          set_error_msg(26);
-          return;
-        }
-        return;
-        break;
-      case 'R':
-        if (debug) { Serial.print(F("rmdir")); }
-        if (!SD.exists(fname)) {
-          if (debug) { Serial.print(F("...not found")); }
-          set_error_msg(62);
-          return;
-        }
-        if (!SD.rmdir(fname)) {
-          if (debug) { Serial.print(F("...failed")); }
-          set_error_msg(26);
-          return;
-        }
-        return;
-        break;
-      default:
-        break;
-    }
-    return;
-  }
-  // R? <new>=<old>
-  if (input_buf[0]=='R') {
-    if (debug) { Serial.print(F("RENAME")); }
-    // scan for '='
-    uint8_t in=1;
-    bool found=false;
-    if (input_buf[in]=='0' && input_buf[in+1]==':') { in++; }
-    if (input_buf[in]==':') { in++; }
-    // in points to next char
-    while (in<input_buf_ptr && input_buf[in] && !found) {
-      found = (input_buf[in] == '=');
-      in++;
-    }
-    if (!found) {
-      if (debug) { Serial.println(F("missing '='")); }
-      set_error_msg(30);
-      return;
-    }
-    // target
-    input_to_filename(1);
-    String tgtname = match_filename(false);
-    tgtname = tgtname.substring(0,tgtname.indexOf('='));
-    if (debug) { Serial.print(F("to:")); Serial.println(tgtname); }
-    if (SD.exists(tgtname)) {
-      if (debug) { Serial.println(F("...EXISTS")); }
-      set_error_msg(63);
-      return;
-    }
-    // source
-    input_to_filename(in);
-    String sourcename = match_filename(false);
-    if (debug) { Serial.print(F("from:")); Serial.print(sourcename); Serial.print(F(" to:")); Serial.println(tgtname); }
-    if (!SD.exists(sourcename)) {
-      if (debug) { Serial.println(F("...NOT FOUND")); }
-      set_error_msg(62);
-      return;
-    }
-    // action
-    if (!SD.rename(sourcename, tgtname)){
-      set_error_msg(26);
-    }
-    return;
-  }
+	// MD / RD
+	if ((input_buf[0]=='M' || input_buf[0]=='R') && input_buf[1]=='D') {
+		input_to_filename(2);
+		fname = match_filename(true);
+		if (debug) { Serial.print(F("MKDIR/RMDIR")); Serial.println(fname); }
+		switch (input_buf[0]) {
+			case 'M':
+				if (debug) { Serial.print(F("mkdir")); }
+				if (SD.exists(fname)) {
+					if (debug) { Serial.print(F("...exists")); }
+					set_error_msg(63);
+					return;
+				}
+				if (!SD.mkdir(fname)) {
+					if (debug) { Serial.print(F("...failed")); }
+					set_error_msg(26);
+					return;
+				}
+				return;
+				break;
+			case 'R':
+				if (debug) { Serial.print(F("rmdir")); }
+				if (!SD.exists(fname)) {
+					if (debug) { Serial.print(F("...not found")); }
+					set_error_msg(62);
+					return;
+				}
+				if (!SD.rmdir(fname)) {
+					if (debug) { Serial.print(F("...failed")); }
+					set_error_msg(26);
+					return;
+				}
+				return;
+				break;
+			default:
+				break;
+		}
+		return;
+	}
+	// R? <new>=<old>
+	if (input_buf[0]=='R') {
+		if (debug) { Serial.print(F("RENAME")); }
+		// scan for '='
+		uint8_t in=1;
+		bool found=false;
+		if (input_buf[in]=='0' && input_buf[in+1]==':') { in++; }
+		if (input_buf[in]==':') { in++; }
+		// in points to next char
+		while (in<input_buf_ptr && input_buf[in] && !found) {
+		  found = (input_buf[in] == '=');
+		  in++;
+		}
+		if (!found) {
+		  if (debug) { Serial.println(F("missing '='")); }
+		  set_error_msg(30);
+		  return;
+		}
+		// target
+		input_buf[in-1] = '\0'; // replace '=' with '\0' to cut the string
+		input_to_filename(1);
+		char *tgtname = match_filename(false);
+		// remember in output_buf as next match_filename will overwrite fullfname buffer
+		tgtname = strcpy((char*)output_buf, tgtname);
+		if (debug) { Serial.print(F("to:")); Serial.println(tgtname); }
+		if (SD.exists(tgtname)) {
+		  if (debug) { Serial.println(F("...EXISTS")); }
+		  set_error_msg(63);
+		  return;
+		}
+		// source
+		input_to_filename(in);
+		char *sourcename = match_filename(false);
+		if (debug) { Serial.print(F("from:")); Serial.print(sourcename); Serial.print(F(" to:")); Serial.println(tgtname); }
+		if (!SD.exists(sourcename)) {
+		  if (debug) { Serial.println(F("...NOT FOUND")); }
+		  set_error_msg(62);
+		  return;
+		}
+		// action
+		if (!SD.rename(sourcename, tgtname)){
+		  set_error_msg(26);
+		}
+		return;
+	}
 
 	// S?
 	if (input_buf[0]=='S') {
@@ -621,23 +683,23 @@ void handle_command() {
 		input_to_filename(1);
 		if (!filename[0]) {
 			Serial.println(F("...no name"));
-      set_error_msg(62);
+			set_error_msg(62);
 			return;
 		}
 		if (debug) { Serial.print(F("... [")); Serial.print((const char*)filename); Serial.println(F("]")); }
-    fname = match_filename(false);
-    if (SD.exists(fname)) { // will remove only first matching file
-      if (SD.remove(fname)) {
-        if (debug) { Serial.println(F("...deleted")); }
-        set_error_msg(1);
-      } else {
-        if (debug) { Serial.println(F("...not deleted")); }
-        set_error_msg(26);
-      }
-    } else {
-      if (debug) { Serial.println(F("...NOT FOUND")); }
-      set_error_msg(62);
-    }
+		fname = match_filename(false);
+		if (SD.exists(fname)) { // will remove only first matching file
+			if (SD.remove(fname)) {
+				if (debug) { Serial.println(F("...deleted")); }
+				set_error_msg(1);
+			} else {
+				if (debug) { Serial.println(F("...not deleted")); }
+				set_error_msg(26);
+			}
+		} else {
+			if (debug) { Serial.println(F("...NOT FOUND")); }
+			set_error_msg(62);
+		}
 		return;
 	}
 	// I - reset SD card interface after SD eject/insert event (not detectable)
@@ -809,21 +871,14 @@ void dir_render_header() {
 	output_buf[i++] = 0x12; // REV ON?
 	output_buf[i++] = '"';
 	// volume name -- last part of path
-	String p(pwd);
-//  Serial.println(p);
-	if (p.length()>1) {
-		p = p.substring(0,p.length()-1);
-//    Serial.println(p);
-		int idx = p.lastIndexOf('/');
-//    Serial.println(i);
-		if (idx>=0) {
-			p = p.substring(idx,p.length());
-		}
-	}
-//  Serial.println(p);
+	pwd_get_current_dir((char*)(output_buf+i));
+	// keep track how many characters were copied
+	uint8_t len = strlen((char*)(output_buf+i));
+	// convert to petscii / fill with spaces
 	for (uint8_t j=0; j<16; j++) {
-		if (j<p.length()) {
-			output_buf[i++]=to_petscii(p.charAt(j));
+		if (j<len) {
+			output_buf[i]=to_petscii(output_buf[i]);
+			i++;
 		} else {
 			output_buf[i++]=' ';
 		}
@@ -875,10 +930,10 @@ bool dir_render_file(File32 *dir) {
 	if (debug) {
 		Serial.println(name);
 		if (entry.isDirectory()) {
-			Serial.println("DIR");
+			Serial.println(F("DIR"));
 		} else {
 			// files have sizes, directories do not
-			Serial.print("\t\t");
+			Serial.print(F("\t\t"));
 			Serial.println(entry.size(), DEC);
 		}
 	}
@@ -955,7 +1010,7 @@ void state_fastload() {
 	bool done = false;
 	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
 
-	String fname;
+	char *fname;
 	File32 aFile;
 	ret = 0; // everything is going to be fine
 
@@ -1085,7 +1140,7 @@ void state_standard_load() {
 	bool done = false;
 	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
 
-	String fname;
+	char *fname;
 	File32 aFile;
 	ret = 0; // everything is going to be fine
 
@@ -1231,10 +1286,22 @@ void state_save() {
 	uint16_t c = 0;
 	bool done = false;
 	File aFile;
-
-	String fname = pwd + String((const char*)filename);
+	char fname[PATH_FILE_SIZE];
+	uint8_t len = strlen(pwd); // remember path length
 
 	set_error_msg(0);
+
+	// concat filename to path
+	if (strlen(pwd)+strlen(filename) < sizeof(pwd)) {
+		strcat(pwd, filename);
+	} else {
+		// path size overflow
+		if (debug) { Serial.println(F("path too long")); }
+		status = TCBM_STATUS_RECV;
+		state_init();
+		set_error_msg(23);
+	}
+
 	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
 	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 	if (SD.exists(fname)) {
@@ -1277,6 +1344,8 @@ void state_save() {
 				break;
 		}
 	}
+	// restore pwd
+	pwd[len] = '\0';
 	if (aFile) {
 		aFile.close();
 	}
