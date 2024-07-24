@@ -1,0 +1,6 @@
+﻿pos_x,pos_y,rotation,side,designator,mpn,pack,footprint,value,mount_type,place
+139.7,-113.284,-135.0,top,C1,,,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,0.1uF,smt,True
+139.7,-130.556,-45.0,top,C2,,,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,0.1uF,smt,True
+156.972,-130.556,-135.0,top,C3,,,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,0.1uF,smt,True
+156.972,-113.284,135.0,top,C4,,,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,0.1uF,smt,True
+148.336,-121.92,45.0,top,U1,,,TQFP-64_10x10mm_P0.5mm,XC9572XL-VQ64,smt,True

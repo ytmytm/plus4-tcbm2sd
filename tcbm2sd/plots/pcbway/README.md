@@ -1,0 +1,1 @@
+files for PCBWay, generated with their plugin, with manual changes in bom
