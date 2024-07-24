@@ -14,6 +14,11 @@ const uint8_t debug=0; // set to value larger than zero for debug messages
 
 //////////////////////////////////
 
+// buffer size for long file names (256 by FAT standard)
+#define LONGNAME_SIZE 64
+
+//////////////////////////////////
+
 #include <EEPROM.h>
 
 //////////////////////////////////
@@ -371,7 +376,7 @@ String match_filename(bool onlyDir) {
 
   File dir;
   File entry;
-  char entryname_c[256];
+  char entryname_c[LONGNAME_SIZE];
   dir = SD.open(cwd); // current dir
   if (!dir) {
     return fullfname; // this will fail later on open
@@ -852,7 +857,7 @@ bool dir_render_file(File32 *dir) {
 	entry.openNext(dir,O_RDONLY);
 
 	output_buf_ptr = 0;
-	char name[256];
+	char name[LONGNAME_SIZE];
 	uint32_t size;
 
 	if (!entry) { return false; } // no more files
