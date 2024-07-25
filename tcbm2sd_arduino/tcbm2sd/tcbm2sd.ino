@@ -319,7 +319,6 @@ bool status_flash; // true (from flash), false (from RAM)
 char pwd[PATH_SIZE] = { "/" };
 char filename[17];
 bool filename_is_dir = false;
-//char entryname_c[LONGNAME_SIZE]; // used within match_filename. can't reuse input/output_buf because of 'R' command
 char entryname_c[17]; // used within match_filename and dir_render_file, can't reuse input/output_buf because of 'R' command
 // global: result of pattern matching: pwd+real filename
 char fullfname[PATH_SIZE] = { "\0" }; // result of match_filename
@@ -904,7 +903,6 @@ void state_idle() {
 								if (filename[0]=='*') {
 									// send data stream from embedded browser
 									state = STATE_BROWSER;
-									// XXX if there is no space in flash for embedded browser just remap path to '/BROWSER.PRG' or sth
 								} else {
 									// send data stream from opened file, set TCBM_STATUS_EOI or TCBM_STATUS_SEND when end of file, keep sending data until UNTALK
 									if ((dat & 0xF0) == 0x70) {
