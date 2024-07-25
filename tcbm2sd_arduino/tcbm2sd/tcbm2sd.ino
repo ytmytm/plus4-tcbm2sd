@@ -386,17 +386,18 @@ char *match_filename(bool onlyDir) {
 		fullfname[0] = '\0';
 		return fullfname; // this will fail later on open
 	}
-	strcat(fullfname, filename); // append filename to cwd
-	if (debug) { Serial.print(F(" searching for:")); Serial.println(fullfname); };
+
+	if (debug) { Serial.print(F(" searching for:")); Serial.println(filename); };
 	if (strchr(filename, '*') == nullptr && strchr(filename, '?') == nullptr) {
 		if (debug) { Serial.println(F(" no globs")); }
 		if (dir) { dir.close(); }
+		strcat(fullfname, filename); // append filename to cwd
 		return fullfname;
 	}
 	if (debug) { Serial.print(F(" matching...")); Serial.println(filename); }
 
 	File entry;
-	char entryname_c[LONGNAME_SIZE]; // XXX can reuse output_buf for that?
+	char entryname_c[LONGNAME_SIZE]; // XXX can reuse output_buf for that? (no b/c of 'R' command)
 
 	entry = dir.openNextFile();
 	while (entry) {
@@ -652,6 +653,11 @@ void handle_command() {
 		// target
 		input_buf[in-1] = '\0'; // replace '=' with '\0' to cut the string
 		input_to_filename(1);
+		if ((strlen(filename))==0) {
+			if (debug) { Serial.print(F("missing tgtname")); }
+			set_error_msg(30);
+			return;
+		}
 		char *tgtname = match_filename(false);
 		// remember in output_buf as next match_filename will overwrite fullfname buffer
 		tgtname = strcpy((char*)output_buf, tgtname);
@@ -663,6 +669,11 @@ void handle_command() {
 		}
 		// source
 		input_to_filename(in);
+		if ((strlen(filename))==0) {
+			if (debug) { Serial.print(F("missing srcname")); }
+			set_error_msg(30);
+			return;
+		}
 		char *sourcename = match_filename(false);
 		if (debug) { Serial.print(F("from:")); Serial.print(sourcename); Serial.print(F(" to:")); Serial.println(tgtname); }
 		if (!SD.exists(sourcename)) {
@@ -1286,7 +1297,6 @@ void state_save() {
 	uint16_t c = 0;
 	bool done = false;
 	File aFile;
-	char fname[PATH_FILE_SIZE];
 	uint8_t len = strlen(pwd); // remember path length
 
 	set_error_msg(0);
@@ -1301,17 +1311,23 @@ void state_save() {
 		state_init();
 		set_error_msg(23);
 	}
+	if (strchr(filename, '*') != nullptr || strchr(filename, '?') != nullptr) {
+		if (debug) { Serial.println(F(" illegal characters")); }
+		status = TCBM_STATUS_RECV;
+		state_init();
+		set_error_msg(23);
+	}
 
 	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
-	if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
-	if (SD.exists(fname)) {
+	if (debug) { Serial.print(F(" searching for:")); Serial.print(pwd); }
+	if (SD.exists(pwd)) {
 		if (debug) { Serial.println(F("filefound")); }
 		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 		state_init(); // called this to reset input buf ptr and set file_opened flag to false
 		set_error_msg(63);
 	} else {
 		if (debug) { Serial.println(F("filenotfound")); }
-		aFile = SD.open(fname, FILE_WRITE);
+		aFile = SD.open(pwd, FILE_WRITE);
 		if (!aFile) {
 			if (debug) { Serial.println(F("file open error")); }
 			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
