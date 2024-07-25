@@ -1,3 +1,31 @@
+[20240725]
+DISK IMAGES! THEY WORK!
+One can enter disk images with a CD (or with Directory Browser/File Browser too)!
+Bumped firmware version to 00,01 because of that.
+
+Restarted work on disk image stuff. Replaced all occurences of String class by plain character arrays.
+Removed some unnecessary buffers and replaced local buffers by reusing global ones.
+This time it worked correctly.
+Still, had to go down with pwd/fullfname buffers from 256 to 72 characters because at least 600 free RAM bytes are needed for stack/heap. Debug will work, but only when buffers are minimal at 24 bytes each.
+Would be good to know what takes up most of that RAM.
+
+[20240724]
+Reworked PCB to revision 1.1:
+- added solder jumpers to choose DEV from +3.3V/GND (hardware control: fixed #8 or #9) or A4 or D1 (serial Rx when A4 is not available)
+- TCBM connector as an option, under Arduino because they can't be used at the same time
+- removed debug pads
+- routed RESET 3.3V from CPLD to Arduino through solder jumper to make it possible to break connection
+- removed connection to Arduino pin 3 (some clones have GND there)
+- VCC routed with wider trace
+- central hole set to 5mm
+Prepared manufacturing files for JLCPCB and PCBWay. The one for JLCPCB had to have CPLD chip rotation corrected. I can't find such preview on PCBWay page. But I used their plugin so hopefully everything is fine.
+Published project in PCBWay too.
+
+[20240722]
+Spent afternoon porting diskimage library from CGTerm. It was not difficult to convert it to read-only operation and to keep only one sector in memory.
+Trouble started when this was combined with tcbm2sd code. After adding support for CD (in/out) of image and directory listing (it doesn't skip deleted entries yet) the filename matching procedure doesn't work anymore. I suspect it runs out of RAM. It has to be rewritten.
+It's promising - directory listing works and adding support for find&load shouldn't take much flash. But it's disappointing at the same time - these RAM problems will manifest in weird ways in unexpected places. Apart from path handling with Strings everything else is static (I think). It's also possible that debug stuff will break program.
+
 [20240721]
 Merged standard transfer procedures: LOAD/STAT/DIR/BROWER into a single function, removed code duplication.
 Implemented fastload protocol for DIR, with a test program. Later can be incorporated into DirectoryBrowser.
