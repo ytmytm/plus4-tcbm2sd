@@ -377,7 +377,19 @@ bool input_to_filename(uint8_t start) {
 char *match_filename(bool onlyDir) {
 	File dir;
 	File entry;
-
+	if (in_image) {
+		di_rawname_from_name(fullfname, filename);
+		dinfile = di_open(di, fullfname, T_PRG);
+		if (dinfile) {
+			if (debug) { Serial.println(F("found in img")); }
+			di_close(dinfile);
+			return fullfname;
+		} else {
+			if (debug) { Serial.println(F("NOT found in img")); }
+			fullfname[0]='\0';
+			return fullfname; // this will fail later on open
+		}
+	}
 	if (filename[0]=='/') {
 		// absolute path
 		fullfname[0] = '/';
@@ -1154,19 +1166,29 @@ void state_fastload() {
 			if (debug) { Serial.print(F("[FASTLOAD] on channel=")); Serial.print(channel, HEX); }
 			fname = match_filename(false); // search only for files
 			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
-			if (SD.exists(fname)) {
-				if (debug) { Serial.println(F(" filefound")); }
-				aFile = SD.open(fname, FILE_READ);
-				if (!aFile) {
-					if (debug) { Serial.println(F("...file open error")); }
+			if (in_image) {
+				if (debug) { Serial.println(F("image")); }
+				dinfile = di_open(di, fname, T_PRG);
+				if (!dinfile) {
+					if (debug) { Serial.println(F("filenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-					state_init(); // called this to reset input buf ptr and set file_opened flag to false
-					ret = 23;
+					ret = 62;
 				}
 			} else {
-				if (debug) { Serial.println(F(" filenotfound")); }
-				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-				ret = 62;
+				if (SD.exists(fname)) {
+					if (debug) { Serial.println(F(" filefound")); }
+					aFile = SD.open(fname, FILE_READ);
+					if (!aFile) {
+						if (debug) { Serial.println(F("...file open error")); }
+						status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+						state_init(); // called this to reset input buf ptr and set file_opened flag to false
+						ret = 23;
+					}
+				} else {
+					if (debug) { Serial.println(F(" filenotfound")); }
+					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+					ret = 62;
+				}
 			}
 			break;
 		case STATE_FASTDIR:
@@ -1211,10 +1233,18 @@ void state_fastload() {
         } else {
 			switch (state) {
 				case STATE_FASTLOAD:
-					b = aFile.read();
-					if (!aFile.available()) {   // was that last byte?
-						status = TCBM_STATUS_EOI; // status must be set with last valid byte
-						if (debug>1) { Serial.println(F("EOF")); }
+					if (in_image) {
+						uint32_t size;
+						size = di_read(dinfile, (uint8_t*)&b, 1);
+						if (size==0) {	// will read one byte too much?
+							status = TCBM_STATUS_EOI;
+						}
+					} else {
+						b = aFile.read();
+						if (!aFile.available()) {   // was that last byte?
+							status = TCBM_STATUS_EOI; // status must be set with last valid byte
+							if (debug>1) { Serial.println(F("EOF")); }
+						}
 					}
 					break;
 				case STATE_FASTDIR:
@@ -1257,6 +1287,9 @@ void state_fastload() {
 	if (aFile) {	// close whatever was opened
 		aFile.close();
 	}
+	if (dinfile) {
+		di_close(dinfile);
+	}
 	set_error_msg(ret);
 	if (debug) { Serial.print(F("sent bytes:")); Serial.println(c, HEX); }
 	state = STATE_IDLE;
@@ -1283,19 +1316,29 @@ void state_standard_load() {
 			if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
 			fname = match_filename(false); // search only for files
 			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
-			if (SD.exists(fname)) {
-				if (debug) { Serial.println(F(" filefound")); }
-				aFile = SD.open(fname, FILE_READ);
-				if (!aFile) {
-					if (debug) { Serial.println(F("...file open error")); }
+			if (in_image) {
+				if (debug) { Serial.println(F("image")); }
+				dinfile = di_open(di, fname, T_PRG);
+				if (!dinfile) {
+					if (debug) { Serial.println(F("imfilenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-					state_init(); // called this to reset input buf ptr and set file_opened flag to false
-					ret = 23;
+					ret = 62;
 				}
 			} else {
-				if (debug) { Serial.println(F("filenotfound")); }
-				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-				ret = 62;
+				if (SD.exists(fname)) {
+					if (debug) { Serial.println(F(" filefound")); }
+					aFile = SD.open(fname, FILE_READ);
+					if (!aFile) {
+						if (debug) { Serial.println(F("...file open error")); }
+						status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+						state_init(); // called this to reset input buf ptr and set file_opened flag to false
+						ret = 23;
+					}
+				} else {
+					if (debug) { Serial.println(F("filenotfound")); }
+					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+					ret = 62;
+				}
 			}
 			break;
 		case STATE_DIR:
@@ -1332,9 +1375,17 @@ void state_standard_load() {
 							tcbm_write_data(13, status);	// file not found but 1551 will send <CR>
 							done = true; // exit immediately, there will be no UNTALK
 						} else {
-							b = aFile.read();
-							if (!aFile.available()) {		// was that last byte?
-								status = TCBM_STATUS_EOI;	// status must be set with last valid byte
+							if (in_image) {
+								uint32_t size;
+								size = di_read(dinfile, (uint8_t*)&b, 1);
+								if (size==0) {	// will read one byte too much?
+									status = TCBM_STATUS_EOI;
+								}
+							} else {
+								b = aFile.read();
+								if (!aFile.available()) {		// was that last byte?
+									status = TCBM_STATUS_EOI;	// status must be set with last valid byte
+								}
 							}
 							c++;
 							if (debug>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
@@ -1407,6 +1458,9 @@ void state_standard_load() {
 	if (aFile) {	// close whatever was opened
 		aFile.close();
 	}
+	if (dinfile) {
+		di_close(dinfile);
+	}
 	set_error_msg(ret);
 	if (debug) { Serial.print(F("sent bytes:")); Serial.println(c, HEX); }
 	state = STATE_IDLE;
@@ -1436,6 +1490,12 @@ void state_save() {
 	}
 	if (strchr(filename, '*') != nullptr || strchr(filename, '?') != nullptr) {
 		if (debug) { Serial.println(F(" illegal characters")); }
+		status = TCBM_STATUS_RECV;
+		state_init();
+		set_error_msg(23);
+	}
+	if (in_image) {
+		if (debug) { Serial.println(F(" image")); }
 		status = TCBM_STATUS_RECV;
 		state_init();
 		set_error_msg(23);
