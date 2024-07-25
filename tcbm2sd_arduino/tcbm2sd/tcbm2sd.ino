@@ -519,7 +519,7 @@ void set_error_msg(uint8_t error) {
       strcpy_P((char*)output_buf, (const char*)F("63, FILE EXISTS,00,00"));
       break;
     case 73:
-      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,01"));
       break;
     case 74:
       strcpy_P((char*)output_buf, (const char*)F("74, DRIVE NOT READY,00,00"));
