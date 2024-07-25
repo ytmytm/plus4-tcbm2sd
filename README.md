@@ -54,7 +54,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
 - [Directory Browser patched with fastload protocol](loader/db12b.prg), save it as `BOOT.T2SD` on your SD card
 - device number stored permanently in EEPROM
 - disk commands:
-  - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
+  - change dir `CD<directory>`, `CD<disk.d64>`, `CD<leftarrow>` or `CD..`, `CD/`
   - remove file `S:<filename>` (will remove only the first matching file), BASIC `SCRATCH`
   - rename file `S:<new>=<old>`, BASIC `RENAME ... TO ...`
   - create dir `MD<directory>`
@@ -78,7 +78,7 @@ The paddle part has all TCBM bus signals exposed and can be used as the basis fo
 
 ### Availability
 
-If you want a completed unit for yourself - drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm). I might have some units to sell. Please include your country name.
+If you want a completed unit for yourself - drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm)). I might have some units to sell. Please include your country name.
 
 The information published here has everything required to manufacture PCB (gerber files) and program firmware.
 
