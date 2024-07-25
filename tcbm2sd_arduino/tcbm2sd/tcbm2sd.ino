@@ -1016,16 +1016,15 @@ void dir_render_footer() {
 	output_buf_ptr = i;
 }
 
-const char *ftype[] = {
-  "DEL",
-  "SEQ",
-  "PRG",
-  "USR",
-  "REL",
-  "CBM",
-  "DIR",
-  "???"
-};
+const char ftype_0[] PROGMEM = { "DEL" };
+const char ftype_1[] PROGMEM = { "SEQ" };
+const char ftype_2[] PROGMEM = { "PRG" };
+const char ftype_3[] PROGMEM = { "USR" };
+const char ftype_4[] PROGMEM = { "REL" };
+const char ftype_5[] PROGMEM = { "CBM" };
+const char ftype_6[] PROGMEM = { "DIR" };
+const char ftype_7[] PROGMEM = { "???" };
+const char *const ftype[] PROGMEM = { ftype_0, ftype_1, ftype_2, ftype_3, ftype_4, ftype_5, ftype_6, ftype_7 };
 
 bool dir_render_file(File32 *dir) {
 
@@ -1120,7 +1119,7 @@ bool dir_render_file(File32 *dir) {
 	// space or splat
 	output_buf[i++] = unclosed ? '*' : ' ';
 	// filetype
-	memcpy(output_buf+i, ftype[type], 3);
+	strcpy_P((char*)(output_buf+i), (const char*)(pgm_read_ptr(&(ftype[type]))));
 	i += 3;
 	// space or <
 	output_buf[i++] = locked ? '<' : ' ';
