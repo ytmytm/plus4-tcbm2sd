@@ -15,11 +15,11 @@ const uint8_t debug=0; // set to value larger than zero for debug messages
 //////////////////////////////////
 
 // buffer size for long file names (256 by FAT standard)
-#define LONGNAME_SIZE 64
+#define LONGNAME_SIZE 32
 // buffer size for current working directory path (32K by FAT32)
-#define PATH_SIZE 128
+#define PATH_SIZE 32
 // buffer size for selected file full path (32K by FAT32)
-#define PATH_FILE_SIZE 128
+#define PATH_FILE_SIZE 32
 
 //////////////////////////////////
 
@@ -33,6 +33,14 @@ SdFat32 SD;
 
 // SD card setup
 const uint8_t PIN_SD_SS = 10;
+
+//////////////////////////////////
+
+#include "diskimage.h"
+bool in_image = false;
+File32 disk_img;
+DiskImage *di;
+ImageFile *dinfile;
 
 //////////////////////////////////
 
@@ -311,8 +319,10 @@ bool status_flash; // true (from flash), false (from RAM)
 char pwd[PATH_SIZE] = { "/" };
 char filename[17];
 bool filename_is_dir = false;
+//char entryname_c[LONGNAME_SIZE]; // used within match_filename. can't reuse input/output_buf because of 'R' command
+char entryname_c[17]; // used within match_filename and dir_render_file, can't reuse input/output_buf because of 'R' command
 // global: result of pattern matching: pwd+real filename
-char fullfname[PATH_SIZE] = { "\0" };
+char fullfname[PATH_SIZE] = { "\0" }; // result of match_filename
 
 //////////////////////////////////
 
@@ -365,6 +375,8 @@ bool input_to_filename(uint8_t start) {
 
 // match filename[] to directory entry, return matched filename (if not matched it can be wrong - then SD.exists(fname) fails with file-not-found error
 char *match_filename(bool onlyDir) {
+	File dir;
+	File entry;
 
 	if (filename[0]=='/') {
 		// absolute path
@@ -374,9 +386,9 @@ char *match_filename(bool onlyDir) {
 		// relative path
 		strcpy(fullfname, pwd);
 	}
-	File dir;
 	dir = SD.open(fullfname); // current dir (we don't care if this open succeeded or not yet)
 	if (!dir) {
+		fullfname[0] = '\0';
 		return fullfname; // this will fail later on open
 	}
 
@@ -388,16 +400,21 @@ char *match_filename(bool onlyDir) {
 	}
 
 	if (debug) { Serial.print(F(" searching for:")); Serial.println(filename); };
+
 	if (strchr(filename, '*') == nullptr && strchr(filename, '?') == nullptr) {
 		if (debug) { Serial.println(F(" no globs")); }
-		if (dir) { dir.close(); }
 		strcat(fullfname, filename); // append filename to cwd
+		entry = SD.open(fullfname); // check if it's dir when dir was requested and file if file was requested
+		if (entry) {
+			if ((onlyDir && !entry.isDirectory()) || (!onlyDir && entry.isDirectory())) {
+				fullfname[0] = '\0';
+			}
+			entry.close();
+		}
+		if (dir) { dir.close(); }
 		return fullfname;
 	}
 	if (debug) { Serial.print(F(" matching...")); Serial.println(filename); }
-
-	File entry;
-	char entryname_c[LONGNAME_SIZE]; // XXX can reuse output_buf for that? (no b/c of 'R' command)
 
 	entry = dir.openNextFile();
 	while (entry) {
@@ -409,7 +426,7 @@ char *match_filename(bool onlyDir) {
 			i=0;
 			match = true;
 			len = entry.getName(entryname_c,sizeof(entryname_c));
-			if (len>16) { // fall back on short 8.3 filename if we can't handle it
+			if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
 				entry.getSFN(entryname_c,sizeof(entryname_c));
 			}
 			if (debug) { Serial.println(entryname_c); }
@@ -504,7 +521,11 @@ void set_error_msg(uint8_t error) {
 
 // called after 'I', 'UI' and 'UJ' commands to refresh SD card status
 void reload_sd_card() {
-// XXX close any opened files (d64/d71/d81 image? but they would be read-only anyway)
+	// close any opened files (d64/d71/d81 image? but they would be read-only anyway)
+	if (in_image) {
+		disk_img.close();
+		in_image = false;
+	}
 	SD.end(); // reload SD card
 	if (!SD.begin(PIN_SD_SS)) { // CS pin
 		if (debug) { Serial.println(F("SD init failed!")); }
@@ -569,13 +590,25 @@ void handle_command() {
 		}
 		if ((filename[0]==0x5f) || (filename[0]==0x7e) || (filename[0]=='.' && filename[1]=='.' && filename[2]==0)) {
 			if (debug) { Serial.println(F("...parent")); }
-			pwd_goto_parent();
+			if (in_image) {
+				if (debug) { Serial.println(F("out of image")); }
+				disk_img.close();
+				in_image = false;
+			} else {
+				pwd_goto_parent();
+			}
 			if (debug) { Serial.println(pwd); }
 			return;
 		}
 		if (filename[0]=='/' && filename[1]=='/' && filename[2]==0) {
 			if (debug) { Serial.println(F("...root")); }
-			pwd_root();
+			if (in_image) { // XYX I think SD2IEC goes to root of image file, not out of image
+				if (debug) { Serial.println(F("out of image<root>")); }
+				disk_img.close();
+				in_image = false;
+			} else {
+				pwd_root();
+			}
 			return;
 		}
 		fname = match_filename(true);
@@ -586,8 +619,21 @@ void handle_command() {
 			pwd[len] = '/';
 			pwd[len+1] = '\0';
 		} else {
-			if (debug) { Serial.println(F("...NOT FOUND")); }
-			set_error_msg(62);
+			if (debug) { Serial.print(F("...NOT FOUND ")); Serial.println((char*)filename); }
+			fname = match_filename(false);
+			if (debug) { Serial.print(F("...IMAGE? ")); Serial.println(fname); }
+			disk_img = SD.open(fname);
+			if (debug) { Serial.println(F("...SUCC?")); }
+			if (disk_img) {
+				if (debug) { Serial.println(F("...SUCC")); }
+				di = di_load_image(&disk_img);
+				if (di) {
+					if (debug) { Serial.println(F("...SUCC2")); Serial.print(F("type=")); Serial.println(di->type); Serial.print(F("free=")); Serial.println(di->blocksfree); }
+					in_image = true;
+				}
+			} else {
+				set_error_msg(62);
+			}
 		}
 		if (debug) { Serial.print(F("...[")); Serial.print((const char*)filename); Serial.println(F("]")); }
 		if (debug) { Serial.println(pwd); }
@@ -595,6 +641,10 @@ void handle_command() {
 	}
 	// MD / RD
 	if ((input_buf[0]=='M' || input_buf[0]=='R') && input_buf[1]=='D') {
+		if (in_image) {
+			set_error_msg(26);
+			return;
+		}
 		input_to_filename(2);
 		fname = match_filename(true);
 		if (debug) { Serial.print(F("MKDIR/RMDIR")); Serial.println(fname); }
@@ -634,6 +684,10 @@ void handle_command() {
 	}
 	// R? <new>=<old>
 	if (input_buf[0]=='R') {
+		if (in_image) {
+			set_error_msg(26);
+			return;
+		}
 		if (debug) { Serial.print(F("RENAME")); }
 		// scan for '='
 		uint8_t in=1;
@@ -690,6 +744,10 @@ void handle_command() {
 
 	// S?
 	if (input_buf[0]=='S') {
+		if (in_image) {
+			set_error_msg(26);
+			return;
+		}
 		if (debug) { Serial.print(F("SCRATCH")); }
 		input_to_filename(1);
 		if (!filename[0]) {
@@ -866,9 +924,21 @@ void state_idle() {
 	}
 }
 
+// every 8th file in image reads 30 bytes, not 32
+uint8_t in_image_file_count;
+
 // render volume header to the buffer, incl. load address
 void dir_render_header() {
 	uint8_t i=0, j=0;
+
+	if (in_image) {
+		in_image_file_count = 0;
+		dinfile = di_open(di, "$", T_PRG);
+		if (!dinfile) {
+			if (debug) { Serial.println("cant open $ on disk image"); };
+		}
+	}
+
 	output_buf_ptr = 0;
 	// load address 0x0401 (PET)
 	output_buf[i++] = 1;
@@ -881,21 +951,42 @@ void dir_render_header() {
 	output_buf[i++] = 0;
 	output_buf[i++] = 0x12; // REV ON?
 	output_buf[i++] = '"';
-	// volume name -- last part of path
-	pwd_get_current_dir((char*)(output_buf+i));
-	// keep track how many characters were copied
-	uint8_t len = strlen((char*)(output_buf+i));
-	// convert to petscii / fill with spaces
-	for (uint8_t j=0; j<16; j++) {
-		if (j<len) {
-			output_buf[i]=to_petscii(output_buf[i]);
-			i++;
-		} else {
-			output_buf[i++]=' ';
+	if (in_image) {
+		uint8_t j=i;
+		unsigned char *t = di_title(di);
+		memcpy(output_buf+i, t, 16);
+		i += 16;
+		output_buf[i++] = '"';
+		output_buf[i++] = ' ';
+		memcpy(output_buf+i, t+18, 5); // disk ID
+		i += 5;
+		// cleanup
+		while (j<i) {
+			if (output_buf[j] == 0xa0) { output_buf[j]=' '; };
+			j++;
 		}
+		// read 254 bytes of the 1st sector
+		char c;
+		for (uint8_t k=0; k<254; k++) {
+			di_read(dinfile, &c, 1);
+		}
+	} else {
+		// volume name -- last part of path
+		pwd_get_current_dir((char*)(output_buf+i));
+		// keep track how many characters were copied
+		uint8_t len = strlen((char*)(output_buf+i));
+		// convert to petscii / fill with spaces
+		for (uint8_t j=0; j<16; j++) {
+			if (j<len) {
+				output_buf[i]=to_petscii(output_buf[i]);
+				i++;
+			} else {
+				output_buf[i++]=' ';
+			}
+		}
+		strcpy_P((char*)(output_buf+i), (const char*)F("\" 00 2A"));
+		i += 7;
 	}
-	strcpy_P((char*)(output_buf+i), (const char*)F("\" 00 2A"));
-	i += 7;
 	output_buf[i++] = 0; // end of line
 	output_buf_ptr = i;
 }
@@ -906,9 +997,16 @@ void dir_render_footer() {
 	// BASIC link 0x0101
 	output_buf[i++] = 1;
 	output_buf[i++] = 1;
-	// 9999 BLOCKS FREE.
-	output_buf[i++] = (uint8_t)( 9999 & 0x00FF);
-	output_buf[i++] = (uint8_t)((9999 & 0xFF00) >> 8);
+	if (in_image) {
+		if (debug) { Serial.print("bfree:"); Serial.println(di->blocksfree); }
+		output_buf[i++] = (uint8_t)( di->blocksfree & 0x00FF);
+		output_buf[i++] = (uint8_t)((di->blocksfree & 0xFF00) >> 8);
+		di_close(dinfile);
+	} else {
+		// 9999 BLOCKS FREE.
+		output_buf[i++] = (uint8_t)( 9999 & 0x00FF);
+		output_buf[i++] = (uint8_t)((9999 & 0xFF00) >> 8);
+	}
 	strcpy_P((char*)(output_buf+i), (const char*)F("BLOCKS FREE."));
 	i += 12;
 	output_buf[i++] = 0; // end of line
@@ -918,38 +1016,80 @@ void dir_render_footer() {
 	output_buf_ptr = i;
 }
 
+const char *ftype[] = {
+  "DEL",
+  "SEQ",
+  "PRG",
+  "USR",
+  "REL",
+  "CBM",
+  "DIR",
+  "???"
+};
+
 bool dir_render_file(File32 *dir) {
-	File32 entry;
-	entry.openNext(dir,O_RDONLY);
 
-	output_buf_ptr = 0;
-	char name[LONGNAME_SIZE];
 	uint32_t size;
+	uint8_t type;
+	bool unclosed;
+	bool locked;
 
-	if (!entry) { return false; } // no more files
-	memset(name, 0, sizeof(name));
-	size_t len = entry.getName(name, sizeof(name));
-	if (len>16) { // fall back on short 8.3 filename if we can't handle it
-		entry.getSFN(name, sizeof(name));
-		if (debug>1) {
-			uint8_t n = strlen(name);
-			for (uint8_t i=0; i<n; i++) {
-				Serial.print(i); Serial.print(":"); Serial.print(name[i]); Serial.print(":"); Serial.println(name[i], HEX);
+	if (in_image) {
+		uint8_t fentry[32];
+		uint8_t fsize = 32;
+		do {
+			in_image_file_count++;
+			if (in_image_file_count==8) { fsize=30; in_image_file_count=0; };
+			size = di_read(dinfile, fentry, fsize);
+			if (size < 30) { return false; }; // no more files
+		} while (fentry[0]==0); // keep looping over deleted files
+		type = fentry[0] & 7;
+		unclosed = !(fentry[0] & 0x80);
+		locked = fentry[0] & 0x40;
+		size = (fentry[29] << 8) | fentry[28];
+		di_name_from_rawname(entryname_c, fentry+3);
+		if (debug) { Serial.println(entryname_c); };
+	} else {
+
+		File32 entry;
+		entry.openNext(dir,O_RDONLY);
+
+		if (!entry) { return false; } // no more files
+		memset(entryname_c, 0, sizeof(entryname_c));
+		size_t len = entry.getName(entryname_c, sizeof(entryname_c));
+		if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
+			entry.getSFN(entryname_c, sizeof(entryname_c));
+			if (debug>1) {
+				uint8_t n = strlen(entryname_c);
+				for (uint8_t i=0; i<n; i++) {
+					Serial.print(i); Serial.print(":"); Serial.print(entryname_c[i]); Serial.print(":"); Serial.println(entryname_c[i], HEX);
+				}
 			}
 		}
-	}
-	if (debug) {
-		Serial.println(name);
-		if (entry.isDirectory()) {
-			Serial.println(F("DIR"));
+		size = 1 + entry.size() / 254;
+		unclosed = entry.isHidden();
+		if (entry.isDir()) {
+			type = 6; // DIR
 		} else {
-			// files have sizes, directories do not
-			Serial.print(F("\t\t"));
-			Serial.println(entry.size(), DEC);
+			type = 2; // PRG
 		}
-	}
-	size = 1 + entry.size() / 254;
+		locked = (entry.attrib() & (FS_ATTRIB_READ_ONLY | FS_ATTRIB_SYSTEM));
 
+		if (debug) {
+			Serial.println(entryname_c);
+			if (entry.isDirectory()) {
+				Serial.println(F("DIR"));
+			} else {
+				// files have sizes, directories do not
+				Serial.print(F("\t\t"));
+				Serial.println(entry.size(), DEC);
+			}
+		}
+
+		entry.close();
+	}
+
+	output_buf_ptr = 0;
 	memset(output_buf, 0, sizeof(output_buf));
 	uint8_t i=0, c=0;
 
@@ -967,8 +1107,8 @@ bool dir_render_file(File32 *dir) {
 	// quote
 	output_buf[i++] = '"';
 	// name
-	while (name[c] && c<16) {
-		output_buf[i++] = to_petscii(name[c++]);
+	while (entryname_c[c] && c<16) {
+		output_buf[i++] = to_petscii(entryname_c[c++]);
 	}
 	// endquote
 	output_buf[i++] = '"';
@@ -978,34 +1118,18 @@ bool dir_render_file(File32 *dir) {
 		c++;
 	}
 	// space or splat
-	if (entry.isHidden()) {
-		output_buf[i++] = '*';
-	} else {
-		output_buf[i++] = ' ';
-	}
+	output_buf[i++] = unclosed ? '*' : ' ';
 	// filetype
-    if (entry.isDir()) {
-		output_buf[i++] = 'D';
-		output_buf[i++] = 'I';
-		output_buf[i++] = 'R';
-	} else {
-		output_buf[i++] = 'P';
-		output_buf[i++] = 'R';
-		output_buf[i++] = 'G';
-	}
+	memcpy(output_buf+i, ftype[type], 3);
+	i += 3;
 	// space or <
-	if (entry.attrib() & (FS_ATTRIB_READ_ONLY | FS_ATTRIB_SYSTEM)) {
-		output_buf[i++] = '<';
-	} else {
-		output_buf[i++] = ' ';
-	}
+	output_buf[i++] = locked ? '<' : ' ';
 	// last space
 	output_buf[i++] = ' ';
 	// end of line
 	output_buf[i++] = 0; // end of line
 	//
 	output_buf_ptr = i;
-	entry.close();
 	return true;
 }
 
