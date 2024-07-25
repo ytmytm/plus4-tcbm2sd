@@ -1046,19 +1046,18 @@ bool dir_render_file(File32 *dir) {
 	bool locked;
 
 	if (in_image) {
-		uint8_t fentry[32];
 		uint8_t fsize = 32;
 		do {
 			in_image_file_count++;
 			if (in_image_file_count==8) { fsize=30; in_image_file_count=0; };
-			size = di_read(dinfile, fentry, fsize);
+			size = di_read(dinfile, input_buf, fsize);
 			if (size < 30) { return false; }; // no more files
-		} while (fentry[0]==0); // keep looping over deleted files
-		type = fentry[0] & 7;
-		unclosed = !(fentry[0] & 0x80);
-		locked = fentry[0] & 0x40;
-		size = (fentry[29] << 8) | fentry[28];
-		di_name_from_rawname(entryname_c, fentry+3);
+		} while (input_buf[0]==0); // keep looping over deleted files
+		type = input_buf[0] & 7;
+		unclosed = !(input_buf[0] & 0x80);
+		locked = input_buf[0] & 0x40;
+		size = (input_buf[29] << 8) | input_buf[28];
+		di_name_from_rawname(entryname_c, input_buf+3);
 		if (debug) { Serial.println(entryname_c); };
 	} else {
 
