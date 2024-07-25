@@ -378,7 +378,7 @@ char *match_filename(bool onlyDir) {
 	File dir;
 	File entry;
 	if (in_image) {
-		di_rawname_from_name(fullfname, filename);
+		di_rawname_from_name((unsigned char*)fullfname, filename);
 		dinfile = di_open(di, fullfname, T_PRG);
 		if (dinfile) {
 			if (debug) { Serial.println(F("found in img")); }
@@ -980,7 +980,7 @@ void dir_render_header() {
 		// read 254 bytes of the 1st sector
 		char c;
 		for (uint8_t k=0; k<254; k++) {
-			di_read(dinfile, &c, 1);
+			di_read(dinfile, (unsigned char*)&c, 1);
 		}
 	} else {
 		// volume name -- last part of path
