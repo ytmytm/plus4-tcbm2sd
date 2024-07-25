@@ -14,12 +14,11 @@ const uint8_t debug=0; // set to value larger than zero for debug messages
 
 //////////////////////////////////
 
-// buffer size for long file names (256 by FAT standard)
-#define LONGNAME_SIZE 32
 // buffer size for current working directory path (32K by FAT32)
-#define PATH_SIZE 32
-// buffer size for selected file full path (32K by FAT32)
-#define PATH_FILE_SIZE 32
+// need about 600 RAM bytes free (check out Ardunio IDE messages)
+// when debug=1 set to low value: 24 (must be more than 17)
+
+#define PATH_SIZE 72
 
 //////////////////////////////////
 
