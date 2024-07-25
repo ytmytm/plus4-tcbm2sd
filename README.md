@@ -47,6 +47,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
 ### 1551 drive simulation
 
 - DLOAD and DSAVE support
+- read-only support for disk images (D64, D71, D81) as subdirectories
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
 - fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/); on par with DolphinDOS
 - fastload booter embedded in the flash, available at all times as `*` file will load and run `BOOT.T2SD` file from root directory
