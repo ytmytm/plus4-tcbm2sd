@@ -76,6 +76,16 @@ The paddle part has all TCBM bus signals exposed and can be used as the basis fo
 - sd2tcbm - sd2iec port to TCBM bus
 - Pi1551 - realtime, cycle-exact 1551 emulator
 
+### Availability
+
+If you want a completed unit for yourself - drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm). I might have some units to sell. Please include your country name.
+
+The information published here has everything required to manufacture PCB (gerber files) and program firmware.
+
+You can also order completed hardware part of the project from PCBWay. This is PCB only, it still requires flashing CPLD and soldering Arduino Mini Pro (or TCBM connector) and voltage regulator:
+
+<a href="https://www.pcbway.com/project/shareproject/tcbm2sd_1551_disk_drive_simulator_8b13bbf7.html"><img src="https://www.pcbway.com/project/img/images/frompcbway-1220.png" alt="PCB from PCBWay" /></a>
+
 ### tcbm2sd or sd2tcbm?
 
 If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
