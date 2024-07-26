@@ -690,6 +690,7 @@ void handle_command() {
 			default:
 				break;
 		}
+		set_error_msg(0); // have to reset status b/c output_buf was destroyed
 		return;
 	}
 	// R? <new>=<old>
@@ -748,6 +749,8 @@ void handle_command() {
 		// action
 		if (!SD.rename(sourcename, tgtname)){
 		  set_error_msg(26);
+		} else {
+			set_error_msg(0); // have to reset status b/c output_buf was destroyed
 		}
 		return;
 	}
