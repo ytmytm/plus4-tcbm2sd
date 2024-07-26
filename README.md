@@ -47,13 +47,14 @@ Patched Directory Browser is embedded into flash and available at all times by t
 ### 1551 drive simulation
 
 - DLOAD and DSAVE support
+- read-only support for disk images (D64, D71, D81) as subdirectories
 - standard Kernal transfer at about 3100b/s (a little bit less than JiffyDOS 1541, twice as fast as 1551 (1600b/s))
 - fastload at about 9300b/s (**23x** as fast as 1541, about **6x** as fast as 1551), with [patched Directory Browser v1.2](loader/); on par with DolphinDOS
 - fastload booter embedded in the flash, available at all times as `*` file will load and run `BOOT.T2SD` file from root directory
 - [Directory Browser patched with fastload protocol](loader/db12b.prg), save it as `BOOT.T2SD` on your SD card
 - device number stored permanently in EEPROM
 - disk commands:
-  - change dir `CD<directory>`, `CD<leftarrow>` or `CD..`, `CD/`
+  - change dir `CD<directory>`, `CD<disk.d64>`, `CD<leftarrow>` or `CD..`, `CD/`
   - remove file `S:<filename>` (will remove only the first matching file), BASIC `SCRATCH`
   - rename file `S:<new>=<old>`, BASIC `RENAME ... TO ...`
   - create dir `MD<directory>`
@@ -74,6 +75,16 @@ The paddle part has all TCBM bus signals exposed and can be used as the basis fo
 
 - sd2tcbm - sd2iec port to TCBM bus
 - Pi1551 - realtime, cycle-exact 1551 emulator
+
+### Availability
+
+If you want a completed unit for yourself - drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm)). I might have some units to sell. Please include your country name.
+
+The information published here has everything required to manufacture PCB (gerber files) and program firmware.
+
+You can also order completed hardware part of the project from PCBWay. This is PCB only, it still requires flashing CPLD and soldering Arduino Mini Pro (or TCBM connector) and voltage regulator:
+
+<a href="https://www.pcbway.com/project/shareproject/tcbm2sd_1551_disk_drive_simulator_8b13bbf7.html"><img src="https://www.pcbway.com/project/img/images/frompcbway-1220.png" alt="PCB from PCBWay" /></a>
 
 ### tcbm2sd or sd2tcbm?
 
