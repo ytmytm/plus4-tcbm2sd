@@ -1144,6 +1144,7 @@ void state_fastload() {
 	// send data on altering DAV level, confirm by ACK
 	uint8_t status = TCBM_STATUS_OK;
 	uint8_t b; // current value
+	uint8_t nb; // next value (for reading from image)
 	uint8_t i = 0; // output_buffer offset
 	uint16_t c = 0; // total byte counter
 	uint8_t ack = 1; // initial ACK state is 1
@@ -1169,6 +1170,8 @@ void state_fastload() {
 					if (debug) { Serial.println(F("filenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					ret = 62;
+				} else { // read the very first byte of the file
+					di_read(dinfile, (uint8_t*)&nb, 1);
 				}
 			} else {
 				if (SD.exists(fname)) {
@@ -1231,9 +1234,11 @@ void state_fastload() {
 				case STATE_FASTLOAD:
 					if (in_image) {
 						uint32_t size;
-						size = di_read(dinfile, (uint8_t*)&b, 1);
-						if (size==0) {	// will read one byte too much?
-							status = TCBM_STATUS_EOI;
+						b = nb; // pass value read last time as the current one
+						size = di_read(dinfile, (uint8_t*)&nb, 1); // try to read next one
+						if (size==0) {
+							status = TCBM_STATUS_EOI; // status must be set with last valid byte
+							if (debug>1) { Serial.println(F("EOF")); }
 						}
 					} else {
 						b = aFile.read();
@@ -1297,6 +1302,7 @@ void state_standard_load() {
 	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
 	uint8_t b; // current value
+	uint8_t nb; // next value (for reading from image)
 	uint8_t i = 0; // output_buffer offset
 	uint16_t c = 0; // total byte counter
 	uint8_t ret = 0; // final status code
@@ -1319,6 +1325,8 @@ void state_standard_load() {
 					if (debug) { Serial.println(F("imfilenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					ret = 62;
+				} else { // read the very first byte of the file
+					di_read(dinfile, (uint8_t*)&nb, 1);
 				}
 			} else {
 				if (SD.exists(fname)) {
@@ -1373,9 +1381,11 @@ void state_standard_load() {
 						} else {
 							if (in_image) {
 								uint32_t size;
-								size = di_read(dinfile, (uint8_t*)&b, 1);
-								if (size==0) {	// will read one byte too much?
-									status = TCBM_STATUS_EOI;
+								b = nb; // pass value read last time as the current one
+								size = di_read(dinfile, (uint8_t*)&nb, 1); // try to read next one
+								if (size==0) {
+									status = TCBM_STATUS_EOI; // status must be set with last valid byte
+									if (debug>1) { Serial.println(F("EOF")); }
 								}
 							} else {
 								b = aFile.read();
