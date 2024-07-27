@@ -306,4 +306,12 @@ This project wouldn't be possible without documentation provided by others:
 - [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
 - [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
 
+## Case
+
 You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting a slot for SD card.
+
+<img src="media/70.case.jpg" width=640 alt="General view">
+
+<img src="media/71.case.jpg" width=640 alt="Side view">
+
+<img src="media/72.case.jpg" width=640 alt="Opened case">
