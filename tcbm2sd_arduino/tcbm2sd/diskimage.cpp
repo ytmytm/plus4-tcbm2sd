@@ -366,7 +366,7 @@ RawDirEntry *find_file_entry(DiskImage *di, unsigned char *rawpattern, FileType 
   RawDirEntry *rde;
   int offset;
 
-  ts = next_ts_in_chain(di, di->bam);
+  ts = next_ts_in_chain(di, di->dir);
   while (ts.track) {
     buffer = get_ts_addr(di, ts);
     for (offset = 0; offset < 256; offset += 32) {
