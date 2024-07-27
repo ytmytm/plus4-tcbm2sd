@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef enum imagetype {
   D64 = 1,
+  D64_40,
+  D64_42,
   D71,
   D81
 } ImageType;

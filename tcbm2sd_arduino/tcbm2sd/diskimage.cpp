@@ -95,6 +95,12 @@ int di_tracks(ImageType type) {
   case D64:
     return(35);
     break;
+  case D64_40:
+    return(40);
+    break;
+  case D64_42:
+    return(42);
+    break;
   case D71:
     return(70);
     break;
@@ -115,6 +121,8 @@ int di_sectors_per_track(ImageType type, int track) {
     }
     // fall through
   case D64:
+  case D64_40:
+  case D64_42:
     if (track < 18) {
       return(21);
     } else if (track < 25) {
@@ -138,6 +146,8 @@ uint32_t get_block_num(ImageType type, TrackSector ts) {
 
   switch (type) {
   case D64:
+  case D64_40:
+  case D64_42:
     if (ts.track < 18) {
       block = (ts.track - 1) * 21;
     } else if (ts.track < 25) {
@@ -208,6 +218,8 @@ unsigned char *di_title(DiskImage *di) {
   switch (di->type) {
   default:
   case D64:
+  case D64_40:
+  case D64_42:
   case D71:
     return(get_ts_addr(di, di->dir) + 144);
     break;
@@ -225,6 +237,8 @@ int di_track_blocks_free(DiskImage *di, int track) {
   switch (di->type) {
   default:
   case D64:
+  case D64_40: // not quite right
+  case D64_42: // not quite right
     bam = get_ts_addr(di, di->bam);
     break;
   case D71:
@@ -279,7 +293,22 @@ DiskImage *di_load_image(File32 *file) {
     di->bam.sector = 0;
     di->dir = di->bam;
     break;
-  case 349696:
+  case 196608: // standard D64 / 40 tracks
+  case 197376: // D64 / 40 tracks with error info (which we just ignore)
+    di->type = D64_40;
+    di->bam.track = 18;
+    di->bam.sector = 0;
+    di->dir = di->bam;
+    break;
+  case 205312: // standard D64 / 42 tracks
+  case 206114: // D64 / 42 tracks with error info (which we just ignore)
+    di->type = D64_42;
+    di->bam.track = 18;
+    di->bam.sector = 0;
+    di->dir = di->bam;
+    break;
+  case 349696: // standard D71
+  case 351062: // D71 with error info (which we just ignore)
     di->type = D71;
     di->bam.track = 18;
     di->bam.sector = 0;
@@ -287,7 +316,8 @@ DiskImage *di_load_image(File32 *file) {
     di->bam2.sector = 0;
     di->dir = di->bam;
     break;
-  case 819200:
+  case 819200: // standard D81
+  case 822400: // D81 with error info (which we just ignore)
     di->type = D81;
     di->bam.track = 40;
     di->bam.sector = 1;
