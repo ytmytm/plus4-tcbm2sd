@@ -319,3 +319,5 @@ This project wouldn't be possible without documentation provided by others:
 - [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart) which were my template for PCB dimensions
 - [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
 - [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
+- @eper973 for Directory Browser source code
+- Per Olofsson for `diskimage.c` D64/71/81 handling code
