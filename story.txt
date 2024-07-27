@@ -1,3 +1,7 @@
+[20240726]
+Patched Directory Browser 1.2 to detect TCBM device (from UI status string) and apply fast protocol if TCBM2SD is detected.
+Also implemented fast directory loader. It was only necessary to change a bit the open/close section and redirect CHRIN vector to my routine, nothing else.
+
 [20240725]
 DISK IMAGES! THEY WORK!
 One can enter disk images with a CD (or with Directory Browser/File Browser too)!
