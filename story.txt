@@ -1,3 +1,7 @@
+[20240727]
+Corrected disk image code to handle reading from D81 images, that was a bug in the original code.
+Changed directory listing code to show disk image files as 'DIR' filetype too.
+
 [20240726]
 Patched Directory Browser 1.2 to detect TCBM device (from UI status string) and apply fast protocol if TCBM2SD is detected.
 Also implemented fast directory loader. It was only necessary to change a bit the open/close section and redirect CHRIN vector to my routine, nothing else.

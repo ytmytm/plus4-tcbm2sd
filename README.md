@@ -66,6 +66,7 @@ Patched Directory Browser is embedded into flash and available at all times by t
   - disk commands will accept full paths, e.g. `S:/GAMES/D/DONALD DUCK`
 - compatible with file browsers: FileBrowser 1.6 and Directory Browser 1.2
 - case insensitve, all filenames converted to lowercase
+- paths up to 72 characters long
 - fallback to DOS 8.3 filename for entries with names longer than 16 characters
 - wildcard matching `*` and `?`
 
@@ -78,9 +79,9 @@ The paddle part has all TCBM bus signals exposed and can be used as the basis fo
 
 ### Availability
 
-If you want a completed unit for yourself - drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm)). I might have some units to sell. Please include your country name.
+The information published here has everything required to manufacture PCB (gerber files) and program firmware. Check out the 'Releases' section on the right.
 
-The information published here has everything required to manufacture PCB (gerber files) and program firmware.
+If you want a completed unit for yourself please drop me a message (you will find email on top of [loader/loader.asm](loader/loader.asm)). I might have some units to sell. Please include your country name.
 
 You can also order completed hardware part of the project from PCBWay. This is PCB only, it still requires flashing CPLD and soldering Arduino Mini Pro (or TCBM connector) and voltage regulator:
 
@@ -140,12 +141,11 @@ If A4/A5 pins were moved from the inside row to a different place then solder a 
 
 ### Edge connector
 
-This cartridge has a passthrough connector. All 50 pins are connected, even three normally unused ones.
-You can solder a 50-pin edge connector.
+This cartridge has a passthrough connector. All 50 pins are connected, even the three normally unused ones. You can solder a 50-pin edge connector.
 
 If it's a right-angle one then the next cartridge is positioned normally with label on the top.
 
-If it's a straight one, then the next cartridge label must point towards computer (so that you see it).
+If it's a straight one, then the next cartridge label must point towards computer (so that you can see it).
 
 Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
 
@@ -200,9 +200,11 @@ There is [an excellent reference about programming XC9500XL](https://anastas.io/
 
 The source code of Arduino Mini Pro sketch is in [tcbm2sd_arduino/tcbm2sd/](tcbm2sd_arduino/tcbm2sd/) folder.
 
+In Arduino IDE settings choose board `Arduino Mini w/ Atmega328 (3.3V)`.
+
 The only dependency (other than Arduino IDE) is [SDFat 2.2.3](https://github.com/greiman/SdFat) library (this code was developed when 2.2.3 was the latest available version). It's available directly from Arduino IDE library manager.
 
-In Arduino IDE settings choose board `Arduino Mini w/ Atmega328 (3.3V)`.
+The disk image handling code is a trimmed down 'diskimage' library from CGTerm, by Per Olofsson.
 
 ### Arduino flashing
 
@@ -239,14 +241,17 @@ Reopen the Arduino IDE and try again.
 **WARNING**
 
 1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
-2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect VCC** line.
+2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect the VCC** line.
 
 ### Autostart/boot feature
 
 If the filename is a single '*' (like after pressing `SHIFT+RUN/STOP`) then a small loader will be sent to the computer. This loader will try to load and run file `BOOT.T2SD` from the SD card's root folder.
-You can put there anything you like, but I recommend Directory Browser 1.2b patched for fast loading of the files.
+
+I recommend [loader/boot.t2sd](Directory Browser 1.2 (TCBM2SD)) patched for fast loading of the files.
 
 The source code for the loader is in [loader/loader.asm](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
+
+This code also serves as an example how to handle fastloader protocol.
 
 The provided `Makefile` doesn't do much but it shows the order of commands:
 
@@ -261,7 +266,15 @@ xxd -i loader.prg ../tcbm2sd_arduino/tcbm2sd/loader.h
 
 Then the Arduino code has to be recompiled and uploaded to the device.
 
-### Directory browser 1.2b
+### Directory browser 1.2 (TCBM2SD)
+
+Thanks to Géza Eperjessy, the author of 'Directory browser', I got access to its source code and I could change the code directly to support fast protocol when TCBM2SD is detected in response to `UI` command.
+
+The fast protocol is used for loading the directory listing and the files.
+
+The binary is here [loader/boot.t2sd](boot.t2sd).
+
+To make that file your default browser that will startup every time you load and run `*` file save it on the SD card's root folder as 'BOOT.T2SD`.
 
 tcbm2sd is compatible with standard TCBM protocol as implemented by Commodore in Plus/4 ROM. However the hardware is capable with much more.
 I took [Directory Browser v1.2](https://plus4world.powweb.com/software/Directory_Browser) and I patched it to use a faster protocol, a bit similar to [Warpload 1551](https://plus4world.powweb.com/software/Warpload_1551).
@@ -269,17 +282,19 @@ The only difference is that since Arduino Micro Pro is much faster than Plus/4 (
 
 Fast protocol is enabled when everything is prepared like for load (OPEN channel 0 and send the filename) but after the `TALK` call as a secondary address we send `0x70` instead of `0x60` - talk on channel 16 rather than 0. There is no check if the remote device is a tcbm2sd and actually supports this protocol.
 
-The source code for the patch is in [loader/](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
+Check out also the other files from [loader/](loader/) folder. I can't publish full source code (it's not mine), but you will find pieces of code I altered in 't2s-...' files.
 
-The provided `Makefile` doesn't do much but it shows the order of commands:
+### Directory browser 1.2b
+
+*(This serves as an example of directly patching a binary file)*
+
+The source code for the patch is in [loader/db12patch.asm](loader/db12patch.asm) file. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
 
 Assemble the patch and apply it over the binary
 ```
 java -jar Kickass.jar db12patch.asm
 ```
 This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
-
-To make that file your default browser that will startup every time you load and run `*` file save it on the SD card's root folder as 'BOOT.T2SD`.
 
 ## Credits
 
@@ -291,4 +306,4 @@ This project wouldn't be possible without documentation provided by others:
 - [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
 - [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
 
-You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting slot for SD card.
+You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting a slot for SD card.
