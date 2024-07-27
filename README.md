@@ -149,7 +149,7 @@ If it's a straight one, then the next cartridge label must point towards compute
 
 Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
 
-## Firmware
+## CPLD Firmware
 
 ### CPLD source code
 
@@ -195,6 +195,8 @@ xc3sprog -c matrix_creator -v -p 0 Fake6523.jed
 ```
 
 There is [an excellent reference about programming XC9500XL](https://anastas.io/hardware/2020/09/29/xc9500-cpld-raspberry-pi-xc3sprog.html) via JTAG with Raspberry Pi. Please read it for more details.
+
+## Arduino firmware
 
 ### Arduino source code
 
@@ -242,6 +244,8 @@ Reopen the Arduino IDE and try again.
 
 1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
 2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect the VCC** line.
+
+## C16, C116, Plus/4 firmware
 
 ### Autostart/boot feature
 
@@ -296,16 +300,6 @@ java -jar Kickass.jar db12patch.asm
 ```
 This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
 
-## Credits
-
-This project wouldn't be possible without documentation provided by others:
-
-- [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
-- [Commodore TCBM bus and protocol description](https://www.pagetable.com/?p=1324)
-- [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart) which were my template for PCB dimensions
-- [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
-- [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
-
 ## Case
 
 You might be also interested in a cartridge case. It should [fit inside this one](https://www.thingiverse.com/thing:6309306) although would require cutting a slot for SD card.
@@ -315,3 +309,13 @@ You might be also interested in a cartridge case. It should [fit inside this one
 <img src="media/71.case.jpg" width=640 alt="Side view">
 
 <img src="media/72.case.jpg" width=640 alt="Opened case">
+
+## Credits
+
+This project wouldn't be possible without documentation provided by others:
+
+- [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
+- [Commodore TCBM bus and protocol description](https://www.pagetable.com/?p=1324)
+- [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart) which were my template for PCB dimensions
+- [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
+- [kicad-lib-arduino](https://github.com/g200kg/kicad-lib-arduino)
