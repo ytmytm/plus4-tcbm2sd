@@ -1507,36 +1507,36 @@ void state_save() {
 		if (debug) { Serial.println(F("path too long")); }
 		status = TCBM_STATUS_RECV;
 		state_init();
-		set_error_msg(23);
+		set_error_msg(26);
 	}
 	if (strchr(filename, '*') != nullptr || strchr(filename, '?') != nullptr) {
 		if (debug) { Serial.println(F(" illegal characters")); }
 		status = TCBM_STATUS_RECV;
 		state_init();
-		set_error_msg(23);
+		set_error_msg(26);
 	}
+	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
+	if (debug) { Serial.print(F(" searching for:")); Serial.print(pwd); }
 	if (in_image) {
 		if (debug) { Serial.println(F(" image")); }
 		status = TCBM_STATUS_RECV;
 		state_init();
-		set_error_msg(23);
-	}
-
-	if (debug) { Serial.print(F("[SAVE] on channel=")); Serial.println(channel, HEX); }
-	if (debug) { Serial.print(F(" searching for:")); Serial.print(pwd); }
-	if (SD.exists(pwd)) {
-		if (debug) { Serial.println(F("filefound")); }
-		status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
-		state_init(); // called this to reset input buf ptr and set file_opened flag to false
-		set_error_msg(63);
+		set_error_msg(26);
 	} else {
-		if (debug) { Serial.println(F("filenotfound")); }
-		aFile = SD.open(pwd, FILE_WRITE);
-		if (!aFile) {
-			if (debug) { Serial.println(F("file open error")); }
-			status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
+		if (SD.exists(pwd)) {
+			if (debug) { Serial.println(F("filefound")); }
+			status = TCBM_STATUS_RECV; // FILE EXISTS == nothing to receive
 			state_init(); // called this to reset input buf ptr and set file_opened flag to false
-			set_error_msg(26);
+			set_error_msg(63);
+		} else {
+			if (debug) { Serial.println(F("filenotfound")); }
+			aFile = SD.open(pwd, FILE_WRITE);
+			if (!aFile) {
+				if (debug) { Serial.println(F("file open error")); }
+				status = TCBM_STATUS_RECV; // FILE NOT OPEN FOR WRITE == nothing to receive
+				state_init(); // called this to reset input buf ptr and set file_opened flag to false
+				set_error_msg(26);
+			}
 		}
 	}
 	while (!done) {
