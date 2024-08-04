@@ -401,7 +401,7 @@ ImageFile *di_open(DiskImage *di, const char *rawname, FileType type) {
       imgfile->buflen = 254;
       rde = NULL;
     } else {
-      if ((rde = find_file_entry(di, rawname, type)) == NULL) {
+      if ((rde = find_file_entry(di, (unsigned char*)rawname, type)) == NULL) {
 	set_status(di, 62, 0, 0);
 	return(NULL);
       }
