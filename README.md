@@ -105,8 +105,6 @@ Project files for Kicad 6.0 are in [this folder](tcbm2sd).
 
 A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/plots/tcbm2sd.pdf) for preview.
 
-It's very simple, just connecting the modules together. Don't mind `J3` connector, it was needed for debugging only.
-
 ## PCB
 
 The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules
@@ -124,19 +122,23 @@ Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 | JP3 | (1-2) | choose software device number from Arduino A4 (1-2) or RXD/D1 (2-3) |
 | JP4 | (1-2) | choose device number in software (1-2) or hardware (2-3) |
 
+JP1, JP3 and JP4 default values are shorted by a thin trace under soldermask. If you want to change any of these settings you have to cut between the pads until connection is gone.
+
+JP3 is meant for Arduino Mini Pro clones that would have A4 line missing or in a completely different place. Note that you have to change the definitions on the top of the sketch code too.
+
 ## Parts
 
 Parts to be soldered directly:
 
 - 1x XC9572XL-VQ64 CPLD
 - 4x 0.1uF capacitor (0805 footprint)
-- (optional) 50 pin edge connector, straight or right angle
+- (optional) 50 pin edge connector, with 2.0mm pitch, straight or right angle (this part is unobtanium)
 
 Modules:
 
-- AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg)
+- AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg) often labeled as HW764; it usually comes with soldered angled pins, you need to replace them with straight ones
 - SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
-- Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114
+- Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask
 
 If all you want is a paddle replacement then only the power supply module is needed.
 
@@ -146,7 +148,11 @@ Clones of Arduino Mini Pro may have different placement of A4/A5/A6/A7 pins. We 
 
 On some clones `A4` may be labeled as `SDA` (then `A5` is `SCL`). This is fine.
 
-If A4/A5 pins were moved from the inside row to a different place then solder a short piece of wire between module's `A4` and PCB pad marked `DEV` (next one to `A5`). A4 is the only one used.
+If A4/A5 pins were moved from the inside row to a different place then solder a short piece of wire between module's `A4` and PCB pad marked `DEV` (next one to `A5`). `A4` is the only one used.
+
+If `A4` is not available at all then you can modify the sketch to use `D1` (`RXD`) instead for DEV line and change JP3 jumper.
+
+If you don't need software device number setting, you can premanently set the device number using JP2 and JP4.
 
 ### Edge connector
 
@@ -155,6 +161,8 @@ This cartridge has a passthrough connector. All 50 pins are connected, even the 
 If it's a right-angle one then the next cartridge is positioned normally with label on the top.
 
 If it's a straight one, then the next cartridge label must point towards computer (so that you can see it).
+
+This is purely theoretical as I couldn't find any source of supply that would sell edge connectors with 2.00mm pitch.
 
 Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
 
