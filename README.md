@@ -115,6 +115,15 @@ The first revision of PCB was meant primarily as a MVP demonstration and a devel
 
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
+### Jumpers
+
+| Jumper | default | Description |
+|--------|-----------------|-----------|
+| JP1 | closed | if closed, then pass computer reset to Arduino |
+| JP2 | n/c | choose hardware device number by shorting (2-3) for #8 or (1-2) for #9 |
+| JP3 | (1-2) | choose software device number from Arduino A4 (1-2) or RXD/D1 (2-3) |
+| JP4 | (1-2) | choose device number in software (1-2) or hardware (2-3) |
+
 ## Parts
 
 Parts to be soldered directly:
