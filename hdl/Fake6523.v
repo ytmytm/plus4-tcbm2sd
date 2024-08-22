@@ -155,11 +155,11 @@ begin
    rs_r = rs;
 	case(rs_r)
       0: data_out = port_a;
-      1: begin data_out[1:0] = port_b[1:0]; data_out[7:2] = 6'bz; end
-      2: begin data_out[7:6] = port_c[7:6]; data_out[5:0] = 6'bz; end
+      1: begin data_out[1:0] = port_b[1:0]; data_out[7:2] = 0; end
+      2: begin data_out[7:6] = port_c[7:6]; data_out[5:0] = 0; end
       3: data_out = data_ddr_a;
-      4: begin data_out[1:0] = data_ddr_b[1:0]; data_out[7:2] = 6'bz; end
-      5: begin data_out[7:6] = data_ddr_c[7:6]; data_out[5:0] = 6'bz; end
+      4: begin data_out[1:0] = data_ddr_b[1:0]; data_out[7:2] = 0; end
+      5: begin data_out[7:6] = data_ddr_c[7:6]; data_out[5:0] = 0; end
       default: data_out = 8'bz;
    endcase
 end
