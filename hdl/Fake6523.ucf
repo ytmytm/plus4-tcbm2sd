@@ -28,8 +28,12 @@ NET "rs<2>"			LOC = "P16"  ; # A2 exp. W
 # /CS from PLA (18) F0
 
 # PLA outputs
-NET "_cs"			LOC = "P34"  ;	# PLA F0 (18) -> 6523 /CS (12)
-NET "pla_f7" 		LOC = "P33"  ; # PLA F7 (10) -> I0 (2)
+#NET "_cs"			LOC = "P34"  ;	# PLA F0 (18) -> 6523 /CS (12)
+#NET "pla_f7" 		LOC = "P33"  ; # PLA F7 (10) -> I0 (2)
+NET "phi2"			LOC = "P34"  ;	# Phi2 exp. 24
+NET "aec" 		LOC = "P33"  ; # AEC exp. 22
+NET "_cas"		LOC = "P42"  ; # /CAS exp. 11
+NET "ba"		LOC = "P43"  ; # BA exp. 13
 # PLA inputs
 # PLA I0 (9) <- PLA F7 (10) (wired back)
 NET "pla_i<1>"		LOC = "P6"	 ; # PLA I1 (8)   <- A11 exp. L
