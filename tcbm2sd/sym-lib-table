@@ -2,4 +2,5 @@
   (lib (name "tcbm2sd")(type "KiCad")(uri "${KIPRJMOD}/tcbm2sd.kicad_sym")(options "")(descr ""))
   (lib (name "Arduino")(type "KiCad")(uri "${KIPRJMOD}/kicad-lib-arduino/Arduino.kicad_sym")(options "")(descr ""))
   (lib (name "Exp-Port")(type "KiCad")(uri "${KIPRJMOD}/LittleSixteen/Exp-Port.kicad_sym")(options "")(descr ""))
+  (lib (name "uSD_push-push_ebay")(type "KiCad")(uri "${KIPRJMOD}/SD2IECplug/uSD_push-push_ebay.kicad_sym")(options "")(descr ""))
 )
