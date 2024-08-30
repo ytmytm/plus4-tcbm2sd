@@ -11,7 +11,7 @@
     (via_costs 1)
     (plane_via_costs 1)
     (start_ripup_costs 50)
-    (start_pass_no 5722)
+    (start_pass_no 15361)
     (layer_rule F.Cu
       (active on)
       (preferred_direction vertical)
@@ -72,7 +72,7 @@
     "/SD_MISO" "/SD_SCK" /~{IRQ} /C1HI /C2LO /C2HI /~{CS1} /~{CS0}
     /~{CAS} /BA /AEC "/EXT_AUDIO" /PHI2 /NC2 /C1LO /NC3
     /NC1 "unconnected-(U2-Pad1)" "/SD_CD" "Net-(C5-Pad1)" "Net-(J3-Pad2)" "unconnected-(U2-Pad3)" "Net-(J3-Pad3)" "Net-(J3-Pad4)"
-    "Net-(J3-Pad5)" "Net-(JP3-Pad2)" "/ALT_A7" "/ALT_A6" "/ALT_A4"
+    "Net-(J3-Pad5)" "Net-(JP3-Pad2)" "/ALT_A7" "/ALT_A6" "/ALT_A4" /~{ROMCS} "Net-(U4-Pad1)"
     (clearance_class default)
     (via_rule default)
     (rule
