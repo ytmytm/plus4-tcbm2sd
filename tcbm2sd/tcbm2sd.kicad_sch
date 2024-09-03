@@ -3077,12 +3077,12 @@
     (uuid 3084d700-c02b-4aba-b69d-dc76ea0af23f)
   )
   (text "JP1: pass computer reset to Arduino\nJP2: select h/w DEV #9 (1-2) or #8 (2-3)\nJP3: select s/w DEV from A4 (1-2) or D1 (2-3)\nJP4: select s/w DEV (1-2) or h/w DEV (2-3)\n"
-    (at 167.64 149.225 0)
+    (at 161.29 144.145 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 519ca563-535e-4d06-bb80-21bceddc03cf)
   )
   (text "A6 shorted to GND at RESET = disable Arduino\nA6 shorted to GND at RESET = enable TCBM conn\n(A6 can be shorted by TCBM cable or by holding SW1)\nSW1/SW2 option for next/previous disk image (autolist)"
-    (at 188.595 160.655 0)
+    (at 196.85 154.305 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 58f1994b-3909-4c90-81b4-824204145b08)
   )
@@ -3103,7 +3103,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid b34367fe-657c-4423-9345-049a181964db)
   )
-  (text "~{ROMCS}=~{C1LO} AND ~{C1HI}\nROM_A15: H for C1, L for C2"
+  (text "~{ROMCS}=~{C1} AND ~{C2}\nROM_A15: H for C1, L for C2"
     (at 187.325 55.245 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid c5cb3840-0caf-4eac-b0c8-0fbacf0c3ebd)
