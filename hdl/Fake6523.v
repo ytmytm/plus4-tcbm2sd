@@ -19,9 +19,9 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
+
 module Fake6523(
                 input _reset,
-//                input _cs,
                 input [2:0]rs,
                 input _write,
                 inout [7:0]data,
@@ -30,8 +30,12 @@ module Fake6523(
                 inout [7:6]port_c,
 					 input [15:1]pla_i,	// PLA pins
 					 input [4:3]addr, 	// remaining addr lines
-					 output pla_f7, 		// PLA feedback output pin (debug)
-					 output _cs, 			// 6523 /CS pin (debug)
+					 input phi2,
+					 input aec,
+					 input _cas,
+					 input ba,
+					 output pla_f7,		// PLA feedback output pin (debug)
+					 output _cs,			// 6523 /CS pin (debug)
 					 output _resetout		// 3.3V /RESET
                );
 
