@@ -876,16 +876,13 @@ void state_idle() {
 				if (debug) { Serial.println(chn); }
 				channel = chn;
 				switch (channel) {
-					case 1:
-						input_to_filename(0);
-						state = STATE_SAVE; // receive data stream to be saved, until UNLISTEN
-						break;
 					case 15:
 						state = STATE_OPEN; // keep recieving data into input buffer
 						break;
+					case 1: // SAVE
 					default:
-						if (debug) { Serial.println(F("unk SECOND")); }
-						state_init();
+						input_to_filename(0);
+						state = STATE_SAVE; // receive data stream to be saved, until UNLISTEN
 						break;
 				}
 				break;
@@ -910,7 +907,12 @@ void state_idle() {
 				if (debug) { Serial.println(chn); }
 				channel = chn;
 				switch (channel) {
-					case 0:
+					case 15:
+						if (debug) { Serial.println(F("status request, write from outputbuf")); }
+						state = STATE_STAT;
+						break;
+					case 0:	// LOAD
+					default:
 						if (file_opened) {
 							input_to_filename(0);
 							if (filename_is_dir) {
@@ -938,14 +940,6 @@ void state_idle() {
 							if (debug) { Serial.println(F("file not open")); }
 							state_init();
 						}
-						break;
-					case 15:
-						if (debug) { Serial.println(F("status request, write from outputbuf")); }
-						state = STATE_STAT;
-						break;
-					default:
-						if (debug) { Serial.println(F("unk state after OPEN")); }
-						state_init();
 						break;
 				}
 				break;
