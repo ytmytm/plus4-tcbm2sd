@@ -197,6 +197,18 @@ void tcbm_init() {
   tcbm_reset_bus();
 }
 
+void tcbm_disabled() {
+	// make yourself transparent on TCBM bus, no pullups
+	pinMode(PIN_BUT_PREV, INPUT);
+	pinMode(PIN_DAV, INPUT);
+	pinMode(PIN_ACK, INPUT);
+	pinMode(PIN_STATUS0, INPUT);
+	pinMode(PIN_STATUS1, INPUT);
+	tcbm_port_input(); // pullups enabled
+	tcbm_port_write(0x00); // pullups disabled
+	while(true) { }; // never return
+}
+
 uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
   volatile uint8_t tmp, cmd;
 //  Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav());
@@ -1640,6 +1652,12 @@ void state_open() {
 //////////////////////////////////
 
 void setup() {
+  // is TCBM cable connected?
+  pinMode(PIN_BUT_PREV, INPUT_PULLUP);
+  if (digitalRead(PIN_BUT_PREV)==0) { // grounded: TCBM cable connected or BUT_PREV pressed
+	tcbm_disabled(); // will never return
+  }
+  // no, continue
   tcbm_init();
   dev_from_eeprom();
   state_init();
