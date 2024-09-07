@@ -1652,6 +1652,9 @@ void setup() {
 	tcbm_disabled(); // will never return
   }
   // no, continue
+  pinMode(PIN_BUT_NEXT, INPUT_PULLUP);
+  pinMode(PIN_SD_CD, INPUT_PULLUP);
+  //
   tcbm_init();
   dev_from_eeprom();
   state_init();
