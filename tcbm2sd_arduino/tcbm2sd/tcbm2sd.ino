@@ -60,6 +60,12 @@ unsigned int loader_prg_len = 5;
 
 //////////////////////////////////
 
+// SD change switch
+const uint8_t PIN_SD_CD = A5; // may not be connected
+// buttons
+const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
+const uint8_t PIN_BUT_NEXT = A7; //
+
 // TCBM bus https://www.pagetable.com/?p=1324
 // data bus I/O
 const uint8_t PIN_D0 = 2; // PD2
