@@ -99,6 +99,8 @@ const uint8_t TCBM_STATUS_EOI	= 3; // byte currently received by the controller 
 void volatile inline tcbm_port_input() {
   DDRD = DDRD & 0x03;
   DDRB = DDRB & 0xFC;
+  PORTD = ( PORTD & 0x03 ) | (0xFC); // enable pullups
+  PORTB = ( PORTB & 0xFC ) | (0x03);
 /*
   pinMode(PIN_D0, INPUT);
   pinMode(PIN_D1, INPUT);
