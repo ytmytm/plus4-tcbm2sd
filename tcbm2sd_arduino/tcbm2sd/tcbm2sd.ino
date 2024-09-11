@@ -1647,9 +1647,12 @@ void state_open() {
 
 void setup() {
   // is TCBM cable connected?
-  pinMode(PIN_BUT_PREV, INPUT_PULLUP);
+//  pinMode(PIN_BUT_PREV, INPUT_PULLUP);
+  pinMode(PIN_BUT_PREV, INPUT);
+  digitalWrite(PIN_BUT_PREV, HIGH);
+  delay(20);
   if (digitalRead(PIN_BUT_PREV)==0) { // grounded: TCBM cable connected or BUT_PREV pressed
-	tcbm_disabled(); // will never return
+//  	tcbm_disabled(); // will never return
   }
   // no, continue
   pinMode(PIN_BUT_NEXT, INPUT_PULLUP);
