@@ -65,6 +65,7 @@ const uint8_t PIN_SD_CD = A5; // may not be connected
 // buttons
 const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
 const uint8_t PIN_BUT_NEXT = A7; //
+const uint16_t PIN_BUT_ANALOG_THR = 600; // threshold for A6/A7 analog pins to be LOW (closed), not HIGH
 
 // TCBM bus https://www.pagetable.com/?p=1324
 // data bus I/O
@@ -199,7 +200,6 @@ void tcbm_init() {
 
 void tcbm_disabled() {
 	// make yourself transparent on TCBM bus, no pullups
-	pinMode(PIN_BUT_PREV, INPUT);
 	pinMode(PIN_DAV, INPUT);
 	pinMode(PIN_ACK, INPUT);
 	pinMode(PIN_STATUS0, INPUT);
@@ -1647,15 +1647,11 @@ void state_open() {
 
 void setup() {
   // is TCBM cable connected?
-//  pinMode(PIN_BUT_PREV, INPUT_PULLUP);
-  pinMode(PIN_BUT_PREV, INPUT);
-  digitalWrite(PIN_BUT_PREV, HIGH);
   delay(20);
-  if (digitalRead(PIN_BUT_PREV)==0) { // grounded: TCBM cable connected or BUT_PREV pressed
-//  	tcbm_disabled(); // will never return
+  if (analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { // grounded: TCBM cable connected or BUT_PREV pressed
+  	tcbm_disabled(); // will never return
   }
   // no, continue
-  pinMode(PIN_BUT_NEXT, INPUT_PULLUP);
   pinMode(PIN_SD_CD, INPUT_PULLUP);
   //
   tcbm_init();
