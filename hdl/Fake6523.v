@@ -1,26 +1,26 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: 			YTM Enterprises
+// Engineer: 			Maciej Witkowiak
 // 
-// Create Date:    
+// Create Date:    	2024-09-14
 // Design Name: 
-// Module Name:    Fake6523-28pin + FakePLA 251641-3 = Fake1551Paddle
+// Module Name:		Fake1551Paddle
 // Project Name: 
-// Target Devices: 
+// Target Devices: 	XC9572XL VQ64
 // Tool versions: 
 // Description: 
 //
 // Dependencies: 
 //
-// Revision: 
-// Revision 0.02 - Fixed for 1551
-// Revision 0.03 - added FakePLA 251641-3, Maciej Witkowiak <ytm@elysium.pl>
+// Revision:			0.1 first revision loosely based on Fake6523 and CIA clone code
 // Additional Comments: 
+//	combination of F+B+D+G+I - tcbm pcb v1.1 without h/w modifications
+// combination of E+A+C+G+I - would make most sense for tcbm pcb v1.2 to use with phi2, but it doesn't work with 6510
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-module Fake6523(
+module Fake1551Paddle(
                 input _reset,
                 input [2:0]rs,
                 input _write,
@@ -28,63 +28,50 @@ module Fake6523(
                 inout [7:0]port_a,
                 inout [1:0]port_b,
                 inout [7:6]port_c,
-					 input [15:1]pla_i,	// PLA pins
-					 input [4:3]addr, 	// remaining addr lines
-					 input phi2,
-					 input aec,
-					 input _cas,
-					 input ba,
-					 output pla_f7,		// PLA feedback output pin (debug)
-					 output _cs,			// 6523 /CS pin (debug)
-					 output _resetout		// 3.3V /RESET
+                input [15:1]pla_i,	// PLA pins
+                input [4:3]addr,		// remaining addr lines
+                input phi2,
+                input aec,
+                input _cas,
+                input ba,
+                output pla_f7,		// PLA feedback output pin (debug)
+                output _cs,			// 6523 /CS pin (debug)
+                output _resetout		// 3.3V /RESET
                );
 
-// FakePLA 251641-3
-// - can be further simplified:
-//		- portb[1:0] is always input (STATUS0/1) 
-//		- portc[6] is always output (DAV for drive)
-//    - portc[7] is always input (ACK from drive)
+reg [7:0] data_out;
 
-// defined in 1551.251641-3.c but not used
-// #define F1 I0&&I6&&!I7
-// F1 = _cs && Phi0 && !/RAS
-// assign pla_f1 = _cs && pla_i[6] && !pla_i[7];
+// Ports A/B/C
+reg [7:0] ddra;
+reg [7:0] pra;
 
-// #define F7 I10||(!I10&&I6&&I0&&!I7)
-// F7 = MUX || (!MUX && Phi0 && _cs && !/RAS)
-// wired back to I0
-//assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7]);
-assign pla_f7 = pla_i[10] || (!pla_i[10] && pla_i[6] && pla_f7 && !pla_i[7]);
+reg [7:0] ddrb;	// 1:0
+reg [7:0] prb;		// 1:0
 
-//#define F0 !((!I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&	\
-//	      I11&&I14&&!I12&&!I7&&I9&&!I8&&I13)||	\
-//	     (I15&&I0&&I1&&I2&&I3&&I4&&I5&&I6&&		\
-//	      I11&&I14&&!I12&&!I7&&I9&&I8&&I13))
-// - we don't need pla_f7 can use whole expression here
-// - pla F7 routed back to I0? but F7 uses I0 (_cs) in the expression, makes no sense - can be removed?
-/*
-assign _cs = !(
-		( (pla_i[10] || (!pla_i[10] && pla_i[6] && _cs && !pla_i[7])) && // pla_f7 
-			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
-			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
-			!pla_i[12] && // A8=0 
-			pla_i[6] &&   // Phi0
-			!pla_i[7]     // /RAS
-		) &&
-		(
-			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FECF (but without A4 decoded to FEC0-FEDF) TCBM:0 IEC:9
-			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEEF (but without A4 decoded to FEE0-FEFF) TCBM:1 IEC:8
-		)
-		);
-*/
+reg [7:0] ddrc;	// 7:6
+reg [7:0] prc;		// 7:6
 
-// version without pla_f7 feedback (uncomment first line, comment out second one) has no warnings from ISE but sometimes glitches
-// version with pla_f7 feedback (comment out first line, uncomment second one) gives racing condition warning but works much better
+assign port_a[0] = ddra[0] ? pra[0] : 1'bz;
+assign port_a[1] = ddra[1] ? pra[1] : 1'bz;
+assign port_a[2] = ddra[2] ? pra[2] : 1'bz;
+assign port_a[3] = ddra[3] ? pra[3] : 1'bz;
+assign port_a[4] = ddra[4] ? pra[4] : 1'bz;
+assign port_a[5] = ddra[5] ? pra[5] : 1'bz;
+assign port_a[6] = ddra[6] ? pra[6] : 1'bz;
+assign port_a[7] = ddra[7] ? pra[7] : 1'bz;
 
-assign _cs = !(
-//		( (pla_i[10] || (!pla_i[10] && pla_i[6] && !pla_i[7])) && // pla_f7: (MUX || !MUX && Phi0 && !/RAS) && <address> // without feedback
-		( (pla_f7) && // pla_f7 - with feedback
-			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
+assign port_b[0] = ddrb[0] ? prb[0] : 1'bz;
+assign port_b[1] = ddrb[1] ? prb[1] : 1'bz;
+
+assign port_c[6] = ddrc[6] ? prc[6] : 1'bz;
+assign port_c[7] = ddrc[7] ? prc[7] : 1'bz;
+
+
+// 3.3V RESET
+assign _resetout = _reset;
+
+assign seladr = (
+ 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
 			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
 			!addr[3] && // A3=0
 			!pla_i[12] // A8=0
@@ -92,80 +79,47 @@ assign _cs = !(
 		(
 			(!addr[4] && !pla_i[15] && !pla_i[8]) || // A4==0 && A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
 			( addr[4] &&  pla_i[15] &&  pla_i[8])    // A4==1 && A5==1 && DEV==1 // FEF0-FEF7 TCBM:1 IEC:8
-		)
 		);
 
-// 3.3V RESET
-assign _resetout = _reset;
+//wire drive_data_out = phi2 && aec && ba && seladr && _write; // E
+wire drive_data_out = seladr && _write && !pla_i[10]; // F
+assign data = drive_data_out ? data_out : 8'bz;
 
-// Fake6523
-
-reg [7:0]data_out;
-reg [2:0] rs_r;
-wire clock = !_cs;
-wire [7:0] data_ddr_a;
-wire [1:0] data_ddr_b;
-wire [7:6] data_ddr_c;
-
-wire we_ddr_a;
-wire we_ddr_b;
-wire we_ddr_c;
-wire we_port_a;
-wire we_port_b;
-wire we_port_c;
-
-assign we_ddr_a = !_write & (rs_r == 3'd3);
-assign we_ddr_b = !_write & (rs_r == 3'd4);
-assign we_ddr_c = !_write & (rs_r == 3'd5);
-assign we_port_a = !_write & (rs_r == 3'd0);
-assign we_port_b = !_write & (rs_r == 3'd1);
-assign we_port_c = !_write & (rs_r == 3'd2);
-
-ioport         ioport_a(
-								.clock(clock), 
-								.reset(!_reset), 
-								.data_in(data), 
-								.we_ddr(we_ddr_a), 
-								.data_ddr(data_ddr_a), 
-								.we_port(we_port_a), 
-								.pins(port_a)
-								);
-								
-ioport2bit     ioport_b(
-								.clock(clock), 
-								.reset(!_reset), 
-								.data_in(data[1:0]), 
-								.we_ddr(we_ddr_b), 
-								.data_ddr(data_ddr_b), 
-								.we_port(we_port_b), 
-								.pins(port_b)
-								);
-								
-ioport2bit     ioport_c(
-								.clock(clock), 
-								.reset(!_reset), 
-								.data_in(data[7:6]), 
-								.we_ddr(we_ddr_c), 
-								.data_ddr(data_ddr_c), 
-								.we_port(we_port_c), 
-								.pins(port_c)
-								);
-
-
-assign data =  (!_cs & _write ? data_out : 8'bz);
-
-always @(posedge clock)
-begin
-   rs_r = rs;
-	case(rs_r)
-      0: data_out = port_a;
-      1: begin data_out[1:0] = port_b[1:0]; data_out[7:2] = 0; end
-      2: begin data_out[7:6] = port_c[7:6]; data_out[5:0] = 0; end
-      3: data_out = data_ddr_a;
-      4: begin data_out[1:0] = data_ddr_b[1:0]; data_out[7:2] = 0; end
-      5: begin data_out[7:6] = data_ddr_c[7:6]; data_out[5:0] = 0; end
-      default: data_out = 8'bz;
-   endcase
+//always @(negedge phi2 or negedge _reset) begin // A
+always @(negedge pla_i[6] or negedge _reset) begin // B
+	if (!_reset) begin
+		pra <= 8'd0;
+		prb <= 8'd0;
+		prc <= 8'd0;
+		ddra <= 8'd0;
+		ddrb <= 8'd0;
+		ddrc <= 8'd0;
+	end
+//	else if (aec && seladr && !_write) begin // register write // C
+	else if (seladr && !_write) begin // register write // D
+		case (rs)
+			0: pra <= data;
+			1: prb <= data;
+			2: prc <= data;
+			3: ddra <= data;
+			4: ddrb <= data;
+			5: ddrc <= data;
+		endcase
+	end
 end
 
+// reading
+always @(*) begin
+	case (rs)
+      0: data_out = port_a;
+      1: begin data_out[1:0] = port_b[1:0]; data_out[7:2] = 0; end // G
+      2: begin data_out[7:6] = port_c[7:6]; data_out[5:0] = 0; end // G
+      3: data_out = ddra;
+      4: data_out = ddrb; // I
+      5: data_out = ddrc; // I
+//      4: begin data_out[1:0] = ddrb[1:0]; data_out[7:2] = 0; end // J
+//      5: begin data_out[7:6] = ddrc[7:6]; data_out[5:0] = 0; end // J
+      default: data_out = 8'bz;
+	endcase
+end
 endmodule
