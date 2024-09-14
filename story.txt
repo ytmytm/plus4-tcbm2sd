@@ -1,3 +1,41 @@
+[20240914]
+Spent last 3 days trying out various configurations and logic combinations of all the signals available on the cartridge port but nothing would be reliable with 6502.
+Finally it occured to me that it's all about the CPU writing to the port and the message I saw too many times when researching the problem: "data is valid on falling clock edge".
+Well, guess what - with Fake6523 it's too complex for me to research to care. I found two implementations of 6522 and 6526 and did exactly the same thing they did: use phi0/phi2 as clock and its negedge to clock in data into registers from data bus.
+*IT WORKED*
+The testing revealed everything works except:
+- fastload mode on JiffyDOS with 6502 (dbrowser doesn't load directory, but itself it can be loaded; MOS loader fails); JiffyDOS+7501 works fine; could this be still Arduino firmware issue?
+- @$ on jiffydos, but DIRECTORY works
+JED from todays commit c90f487ad7ef8b8be78c856eac885c4cf61f2966 can be used on both v1.1 and v1.2 boards
+
+TODO-HW
+- pullups for arduino A6/A7 (analog pins)
+- pullup for system RESET (5V) (it's acting up when programming arduino out of system)
+- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section
+TODO-FW
+- debug @$ with jiffydos
+- what's up with 6502+JD+fastload?
+- handle but next/prev
+- behavior of SD_CS pin (when high, when low - when to invalidate SD card)
+
+[20240911]
+PCBs arrived (!). The first problem is immediately visible - A6/A7 meant for buttons and TCBM cable sense *are not* digital pins. They need to have external pullups.
+
+[20240904]
+Spent the week trying out various logic configurations for tcbm v1.1.
+The first fixed issue was that using EEPROM instead of ROM would break loading. Then I got stuck.
+Nothing worked for 6502 in fastload mode.
+
+[20240903]
+Sent rev 1.2 to production.
+
+[20240825]
+Started working on v1.2 revision of the board with all useful signals routed to CPLD.
+I left pads for modules unchanged but it should be cheaper (and faster for me as a vendor) to make fab put actual parts on SMD footprints.
+Dropped expansion port passthrough idea - no one has those connectors anyway. This freed up space where 32/64K ROM can be placed. But to drive its /CS and A15 we need to combine 4 /CS[1,2][LO,HI] signals. There are no pins left on CPLD so it goes through diodes with pullup (AND) and a SMD 74'00.
+Another idea is to add PREV/NEXT buttons and make TCBM connector available. The last pin (16) is a GND, but we will use it to sense if TCBM cable is connected (or PREV button is held down) to decide if Arduino should disable itself.
+One more pin goes to SD card. If a real card (not module) socket is used this goes to Arduino.
+
 [20240727]
 Corrected disk image code to handle reading from D81 images, that was a bug in the original code.
 Changed directory listing code to show disk image files as 'DIR' filetype too.
