@@ -24,6 +24,7 @@
 *.spl
 *.sym
 Fake6523_html/*
+Fake1551Paddle_html/*
 _ngo/*
 _xmsgs/*
 iseconfig/*

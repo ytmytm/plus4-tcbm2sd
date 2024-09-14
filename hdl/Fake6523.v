@@ -5,7 +5,7 @@
 // 
 // Create Date:    	2024-09-14
 // Design Name: 
-// Module Name:		Fake1551Paddle
+// Module Name:		Fake6523 (Fake1551Paddle)
 // Project Name: 
 // Target Devices: 	XC9572XL VQ64
 // Tool versions: 
@@ -20,7 +20,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-module Fake1551Paddle(
+module Fake6523(
                 input _reset,
                 input [2:0]rs,
                 input _write,
