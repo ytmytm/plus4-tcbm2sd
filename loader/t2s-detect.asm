@@ -36,10 +36,9 @@ detect_t2sd_loop1   ; read status
         bne detect_t2sd_loop1
 
 detect_t2sd_2
-        lda #$01    ; channel
-        jsr CLOSE
-
         jsr CLRCHN
+        lda #$0f    ; channel
+        jsr CLOSE
 
         sei
         sta RAM_SELECT
