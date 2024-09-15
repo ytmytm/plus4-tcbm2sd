@@ -1,3 +1,10 @@
+[20240915]
+Fixed JiffyDOS turbo/@$ problems. Turbo loading of directory (withing DBrowser) didn't work because of reversed order of CLRCHN/CLOSE calls when detecting the presence of TCBM2SD in reset string.
+@$ listing didn't work because JiffyDOS calls UNTALK/TALK+TKSA after receiving every single line of directory listing. Changed the code to ignore it. Had to add another case for interrupted listing (then it calls LISTEN to close the channel).
+Added handler for PREV/NEXT buttons to switch between disk images. It seems a lot more complex than necessary but opening files by directory index doesn't work - it's all relative to root folder and we can't change current folder because we wouldn't be able to go back to parent (see below).
+Corrected behavior of DLOAD"* - within disk images it will load the first file from the image, not the embedded boot code.
+All of that needs a lot of testing now, with various hardware configurations.
+
 [20240914]
 Spent last 3 days trying out various configurations and logic combinations of all the signals available on the cartridge port but nothing would be reliable with 6502.
 Finally it occured to me that it's all about the CPU writing to the port and the message I saw too many times when researching the problem: "data is valid on falling clock edge".
