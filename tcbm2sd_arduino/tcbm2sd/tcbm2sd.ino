@@ -60,8 +60,11 @@ unsigned int loader_prg_len = 5;
 
 //////////////////////////////////
 
+const uint32_t PIN_SD_CD_CHANGE_THR_MS = 100;
+uint32_t sd_cd_lastchangetime = 0;
+uint8_t sd_cd_laststate = 1;  // initial state=removed (or INPUT_PULLUP when not connected)
 // SD change switch
-const uint8_t PIN_SD_CD = A5; // may not be connected
+const uint8_t PIN_SD_CD = A5; // may not be connected so check only for CHANGE, SD inserted=0, SD removed=1
 // buttons
 const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
 const uint8_t PIN_BUT_NEXT = A7; //
@@ -1651,6 +1654,8 @@ void setup() {
   }
   // no, continue
   pinMode(PIN_SD_CD, INPUT_PULLUP);
+  sd_cd_laststate = digitalRead(PIN_SD_CD);
+  sd_cd_lastchangetime = millis();
   //
   tcbm_init();
   dev_from_eeprom();
@@ -1671,6 +1676,19 @@ void setup() {
 }
 
 void loop() {
+
+  uint8_t sd_cd_state = digitalRead(PIN_SD_CD);
+  if (sd_cd_state != sd_cd_laststate && (millis() - sd_cd_lastchangetime > PIN_SD_CD_CHANGE_THR_MS)) {
+    if (debug) { Serial.print(F("SD CD was")); Serial.print(sd_cd_laststate); Serial.print(F(" is ")); Serial.println(sd_cd_state); }
+    sd_cd_laststate = sd_cd_state;
+    sd_cd_lastchangetime = millis();
+    if (sd_cd_state == 1) { // SD card was in, now it's out
+      SD.end();
+    } else {
+      reload_sd_card();     // SD card was out, now it's in
+    }
+  }
+
 	switch (state) {
 		case STATE_IDLE:
 			state_idle();
