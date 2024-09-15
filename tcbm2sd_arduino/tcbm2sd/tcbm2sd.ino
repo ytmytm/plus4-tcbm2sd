@@ -10,15 +10,16 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 const uint8_t debug=0; // set to value larger than zero for debug messages
+const uint8_t debug2=0; // only for next/prev button debug
 //#define DISABLE_BROWSER // disable embedded loader binary when debug is enabled (it may not fit in flash)
 
 //////////////////////////////////
 
 // buffer size for current working directory path (32K by FAT32)
-// need about 600 RAM bytes free (check out Ardunio IDE messages)
+// need about 600 RAM bytes free (check out Arduino IDE messages)
 // when debug=1 set to low value: 24 (must be more than 17)
 
-#define PATH_SIZE 72
+#define PATH_SIZE 68
 
 //////////////////////////////////
 
@@ -60,7 +61,7 @@ unsigned int loader_prg_len = 5;
 
 //////////////////////////////////
 
-const uint32_t PIN_SD_CD_CHANGE_THR_MS = 100;
+const uint32_t PIN_SD_CD_CHANGE_THR_MS = 100;	// .1s delay for debouncing
 uint32_t sd_cd_lastchangetime = 0;
 uint8_t sd_cd_laststate = 1;  // initial state=removed (or INPUT_PULLUP when not connected)
 // SD change switch
@@ -69,6 +70,9 @@ const uint8_t PIN_SD_CD = A5; // may not be connected so check only for CHANGE, 
 const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
 const uint8_t PIN_BUT_NEXT = A7; //
 const uint16_t PIN_BUT_ANALOG_THR = 600; // threshold for A6/A7 analog pins to be LOW (closed), not HIGH
+const uint8_t PIN_BUT_PREVNEXT_TRIES = 10; // check this many directory positions for next/prev disk image
+uint32_t but_prevnext_lastchangetime = 0;
+const uint32_t BUT_PREVNEXT_CHANGE_THR_MS = 500; // .5s delay for debouncing
 
 // TCBM bus https://www.pagetable.com/?p=1324
 // data bus I/O
@@ -1658,6 +1662,77 @@ void state_open() {
 
 //////////////////////////////////
 
+void disk_image_prevnext(bool prev) {
+	File entry;
+	size_t len;
+	uint16_t diridx;
+	uint16_t curidx;
+	uint8_t tries = PIN_BUT_PREVNEXT_TRIES;
+
+	// we must be in an image to know which one is the prev/next one
+	if (!in_image) return;
+	// name of the current image
+	len = disk_img.getName(filename, sizeof(filename));
+	if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
+		disk_img.getSFN(filename,sizeof(filename));
+	}
+	// image must be closed
+	disk_img.close();
+	in_image = false;
+	if (debug2) { Serial.print(F("closed ")); Serial.print(filename); Serial.println(diridx,HEX); }
+	if (debug2) { Serial.print(F("pwd=")); Serial.println(pwd); }
+	// find its offset in current directory
+	File dir = SD.open(pwd);
+	if (!dir) return;
+	diridx = 0;
+	memset(entryname_c, 0, sizeof(entryname_c));
+	while (strncmp(entryname_c,filename,sizeof(filename)) != 0) {
+		entry = dir.openNextFile(O_RDONLY);
+		if (!entry) { return; } // no more files
+		len = entry.getName(entryname_c,sizeof(entryname_c));
+		if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
+			entry.getSFN(entryname_c,sizeof(entryname_c));
+		}
+		diridx++;
+		entry.close();
+		if (debug2) { Serial.print(F("checking ")); Serial.print(entryname_c); Serial.println(diridx,HEX); }
+	}
+	diridx--;
+	if (debug2) { Serial.print(F("found")); Serial.println(diridx,HEX); }
+
+	// find any other image previous/next within [tries] range
+	while (tries > 0) {
+		if (prev && diridx==0) return; // there is no previous file
+		if (prev) { diridx--; } else { diridx++; };
+		if (debug2) { Serial.print(F("opening ")); Serial.println(diridx,HEX); };
+		// each time rewind folder (open file by directory index doesn't work - cost for not using Cd() but we can't afford it anyway)
+		dir.rewindDirectory();
+		disk_img = dir.openNextFile(O_RDONLY);
+		curidx = diridx;
+		while (curidx>0) {
+			if (disk_img) { disk_img.close(); }
+			disk_img = dir.openNextFile(O_RDONLY);
+			curidx--;
+		}
+
+		if (disk_img) {
+			if (debug2) { Serial.print(F("SUCC size=")); Serial.println(disk_img.fileSize()); }
+			if (debug2) { char imgname[17]; disk_img.getName(imgname, 17); Serial.print(F("name=[")); Serial.print(imgname); Serial.println(F("]")); }
+			di = di_load_image(&disk_img);
+			if (di) {
+			if (debug2) { Serial.println(F("...SUCC2")); Serial.print(F("type=")); Serial.println(di->type); Serial.print(F("free=")); Serial.println(di->blocksfree); }
+				in_image = true;
+				dir.close();
+				return;
+			}
+		}
+		tries--;
+	}
+	dir.close();
+}
+
+//////////////////////////////////
+
 void setup() {
   // is TCBM cable connected?
   delay(20);
@@ -1668,13 +1743,14 @@ void setup() {
   pinMode(PIN_SD_CD, INPUT_PULLUP);
   sd_cd_laststate = digitalRead(PIN_SD_CD);
   sd_cd_lastchangetime = millis();
+  but_prevnext_lastchangetime = millis();
   //
   tcbm_init();
   dev_from_eeprom();
   state_init();
   set_error_msg(73);
   state = STATE_IDLE;
-  if (debug) {
+  if (debug || debug2) {
   Serial.begin(115200); // in fact 57600(?)
   Serial.println(F("initializing I/O"));
   Serial.print(F("initializing SD card..."));
@@ -1699,6 +1775,21 @@ void loop() {
     } else {
       reload_sd_card();     // SD card was out, now it's in
     }
+  }
+
+  if ((analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) && (millis() - but_prevnext_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
+    if (debug2) { Serial.print(F("prev wait until released")); }
+    while(analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { };
+    if (debug2) { Serial.println(F(" prev image")); };
+    disk_image_prevnext(true);
+    but_prevnext_lastchangetime = millis();
+  }
+  if ((analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) && (millis() - but_prevnext_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
+    if (debug2) { Serial.print(F("next wait until released")); }
+    while(analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) { };
+    if (debug2) { Serial.println(F(" next image")); };
+    disk_image_prevnext(false);
+    but_prevnext_lastchangetime = millis();
   }
 
 	switch (state) {
