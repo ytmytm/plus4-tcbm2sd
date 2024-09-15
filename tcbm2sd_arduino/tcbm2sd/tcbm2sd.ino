@@ -1337,6 +1337,8 @@ void state_standard_load() {
 	uint16_t c = 0; // total byte counter
 	uint8_t ret = 0; // final status code
 	bool done = false;
+	bool eoi = false;
+	bool jduntalk = false; // was there already UNTALK sent for DIR transmission? (needed for JiffyDOS which stops after two bytes and resumes)
 	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
 
 	char *fname;
@@ -1437,6 +1439,7 @@ void state_standard_load() {
 							i = 0;
 							if (footer) {
 								if (debug) { Serial.print(F("..EOI")); }
+								eoi = true;
 								status = TCBM_STATUS_EOI; // status must be set with last valid byte
 							} else {
 								if (debug) { Serial.print(F("..next file")); }
@@ -1472,6 +1475,7 @@ void state_standard_load() {
 				}
 				break;
 			case TCBM_CODE_COMMAND:
+			case TCBM_CODE_SECOND:
 				status = TCBM_STATUS_OK;  // commands are always received with status OK, even if we signalled EOI
 				dat = tcbm_read_data(status);
 				if (dat == 0x5F) { // UNTALK
@@ -1480,7 +1484,15 @@ void state_standard_load() {
 					if (debug) { Serial.print(F("unk LOAD/STAT/DIR CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 					status = TCBM_STATUS_SEND; // some kind of error XXX but done is true so we exit immediately
 				}
-				done = true;
+				// JiffyDOS sends UNTALK after 2 bytes of directory, then TALK+TKSA again, don't stop yet
+				if (state==STATE_DIR && !jduntalk && !eoi) {
+					done = false;
+					status = TCBM_STATUS_OK;
+				} else {
+					done = true;
+				}
+				// LISTEN appears after JiffyDOS directory listing is interrupted with RUN/STOP, then exit
+				if (state==STATE_DIR && cmd==0x81 && dat==0x20) { jduntalk = true; }
 				break;
 			default:
 				dat = tcbm_read_data(status);
