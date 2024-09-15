@@ -925,7 +925,7 @@ void state_idle() {
 								}
 							} else {
 								// not directory, a file instead
-								if (filename[0]=='*') {
+								if (filename[0]=='*' && !in_image) {
 									// send data stream from embedded browser
 									state = STATE_BROWSER;
 								} else {
