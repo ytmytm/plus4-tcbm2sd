@@ -6,8 +6,8 @@ https://github.com/niklasekstrom/cia-verilog/blob/master/cia.v
 https://github.com/CompuSAR/6522/blob/main/6522.srcs/sources_1/new/6522.v
 *IT WORKED*
 The testing revealed everything works except:
-- fastload mode on JiffyDOS with 6502 (dbrowser doesn't load directory, but itself it can be loaded; MOS loader fails); JiffyDOS+7501 works fine; could this be still Arduino firmware issue?
-- @$ on jiffydos, but DIRECTORY works
++ fastload mode on JiffyDOS with 6502 (dbrowser doesn't load directory, but itself it can be loaded; MOS loader fails); JiffyDOS+7501 works fine; could this be still Arduino firmware issue?
++ @$ on jiffydos, but DIRECTORY works
 JED from todays commit c90f487ad7ef8b8be78c856eac885c4cf61f2966 can be used on both v1.1 and v1.2 boards
 
 TODO-HW
