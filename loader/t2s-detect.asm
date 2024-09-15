@@ -9,20 +9,20 @@ detect_t2sd:
         sta ROM_SELECT
         cli
 
-        lda #$01    ; file number
-        ldx current_drive_number     ; drive number
-        ldy #$0f    ; command channel
-        jsr SETLFS
-
         lda #2	; name length
         ldx #<detect_t2sd_cmd	; name address low
         ldy #>detect_t2sd_cmd	; name address high
         jsr SETNAM
 
+        lda #$0f    ; file number is command channel
+        ldx current_drive_number     ; drive number
+        tay         ; command channel
+        jsr SETLFS
+
         jsr OPEN
         bcs detect_t2sd_2
 
-        ldx #$01    ; file number
+        ldx #$0f    ; file number
         jsr CHKIN
 
         ldx #0
