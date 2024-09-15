@@ -13,10 +13,11 @@ RAM_MEMUSS = $B4            ; (2) ;MEMUSS  Load ram base
 a05FF = $D8                 ; (1) temp storagefor load address flag, can be anywhere
 
 ; KERNAL routines without jumptable
-ICLRCHN = $EF0C             ;ICLRCHN $FFCC
+ICLRCHN = $FFCC		    ; $EF0C
 ISENDSA = $F005             ;SEND SA ; before TALK? and it's not TLKSA
-ITALK = $EDFA               ;TALK
-ITLKSA = $EE1A              ;TKSA
+ITALK = $FFB4		    ; $EDFA
+ITLKSA = $FF96		    ; $EE1A
+IUNTALK = $FFAB
 
 ; IO
 
@@ -133,6 +134,8 @@ LOADEND
 LOADRET
         lda #$ff                                    ; ;port A to output (a bit delayed after ACK)
         sta aFEF3
+
+	jsr IUNTALK
 
         ldx tgt
         ldy tgt+1                                   ; ;return end address+1 and C=0=no error
