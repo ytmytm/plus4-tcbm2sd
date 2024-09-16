@@ -1174,8 +1174,20 @@ bool dir_render_file(File32 *dir) {
 	return true;
 }
 
+void state_standard_load() {
+	// send data until UNTALK
+	send_data_stream(false);
+}
+
 void state_fastload() {
 	// send data on altering DAV level, confirm by ACK
+	send_data_stream(true);
+}
+
+void send_data_stream(bool fast_mode) {
+	// send data until UNTALK
+	uint8_t cmd;
+	uint8_t dat;
 	uint8_t status = TCBM_STATUS_OK;
 	uint8_t b; // current value
 	uint8_t nb; // next value (for reading from image)
@@ -1185,23 +1197,28 @@ void state_fastload() {
 	uint8_t dav = 0; // waiting for initial DAV=0
 	uint8_t ret = 0; // final status code
 	bool done = false;
+	bool eoi = false;
+	bool jduntalk = false; // was there already UNTALK sent for DIR transmission? (needed for JiffyDOS which stops after two bytes and resumes)
 	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
 
 	char *fname;
 	File32 aFile;
 	ret = 0; // everything is going to be fine
 
-	tcbm_set_ack(ack); // set ack high (it should be already high)
+	if (fast_mode) { tcbm_set_ack(ack); } // set ack high (it should be already high)
 	switch (state) {
 		case STATE_FASTLOAD:
 			if (debug) { Serial.print(F("[FASTLOAD] on channel=")); Serial.print(channel, HEX); }
+			// fall through to STATE_LOAD
+		case STATE_LOAD:
+			if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
 			fname = match_filename(false); // search only for files
 			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
 			if (in_image) {
 				if (debug) { Serial.println(F("image")); }
 				dinfile = di_open(di, fname, T_PRG);
 				if (!dinfile) {
-					if (debug) { Serial.println(F("filenotfound")); }
+					if (debug) { Serial.println(F("imfilenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					ret = 62;
 				} else { // read the very first byte of the file
@@ -1218,13 +1235,15 @@ void state_fastload() {
 						ret = 23;
 					}
 				} else {
-					if (debug) { Serial.println(F(" filenotfound")); }
+					if (debug) { Serial.println(F("filenotfound")); }
 					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
 					ret = 62;
 				}
 			}
 			break;
 		case STATE_FASTDIR:
+			if (debug) { Serial.print(F("[FASTDIR] on channel=")); Serial.print(channel, HEX); }
+		case STATE_DIR:
 			if (debug) { Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX); }
 			aFile = SD.open(pwd); // current dir
 			if (!aFile) {
@@ -1235,12 +1254,19 @@ void state_fastload() {
 			}
 			dir_render_header();
 			break;
+		case STATE_STAT:
+		case STATE_BROWSER:
+			if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
+			if (debug) { Serial.print(F("sending ")); Serial.print(status_len, HEX); Serial.print(F(" bytes from ")); Serial.println(status_flash); }
+			break;
 		default:
 			if (debug) { Serial.println(F("unknown state, we shouldnt be here")); };
 			status = TCBM_STATUS_SEND; // nothing to send
 			ret = 23;
 			break;
 	}
+
+	if (fast_mode) {
 
 	// initial state is DAV=1, ACK=1 - controller will put DAV=0 when port is switched to input, then we switch to output
 	if (debug>2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
@@ -1318,92 +1344,10 @@ void state_fastload() {
 			while (!(tcbm_get_dav() == dav)); // wait for confirmation
 		}
 	}
-	state_init();	// called this to reset input buf ptr and set file_opened flag to false
-	if (aFile) {	// close whatever was opened
-		aFile.close();
-	}
-	if (dinfile) {
-		di_close(dinfile);
-	}
-	set_error_msg(ret);
-	if (debug) { Serial.print(F("sent bytes:")); Serial.println(c, HEX); }
-	state = STATE_IDLE;
-}
 
-void state_standard_load() {
-	// send data until UNTALK
-	uint8_t cmd;
-	uint8_t dat;
-	uint8_t status = TCBM_STATUS_OK;
-	uint8_t b; // current value
-	uint8_t nb; // next value (for reading from image)
-	uint8_t i = 0; // output_buffer offset
-	uint16_t c = 0; // total byte counter
-	uint8_t ret = 0; // final status code
-	bool done = false;
-	bool eoi = false;
-	bool jduntalk = false; // was there already UNTALK sent for DIR transmission? (needed for JiffyDOS which stops after two bytes and resumes)
-	bool footer = false; // directory footer && end of buffer means end of STATE_DIR transmission
+	} else {
 
-	char *fname;
-	File32 aFile;
-	ret = 0; // everything is going to be fine
-
-	switch (state) {
-		case STATE_LOAD:
-			if (debug) { Serial.print(F("[LOAD] on channel=")); Serial.print(channel, HEX); }
-			fname = match_filename(false); // search only for files
-			if (debug) { Serial.print(F(" searching for:")); Serial.print(fname); }
-			if (in_image) {
-				if (debug) { Serial.println(F("image")); }
-				dinfile = di_open(di, fname, T_PRG);
-				if (!dinfile) {
-					if (debug) { Serial.println(F("imfilenotfound")); }
-					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-					ret = 62;
-				} else { // read the very first byte of the file
-					di_read(dinfile, (uint8_t*)&nb, 1);
-				}
-			} else {
-				if (SD.exists(fname)) {
-					if (debug) { Serial.println(F(" filefound")); }
-					aFile = SD.open(fname, FILE_READ);
-					if (!aFile) {
-						if (debug) { Serial.println(F("...file open error")); }
-						status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-						state_init(); // called this to reset input buf ptr and set file_opened flag to false
-						ret = 23;
-					}
-				} else {
-					if (debug) { Serial.println(F("filenotfound")); }
-					status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-					ret = 62;
-				}
-			}
-			break;
-		case STATE_DIR:
-			if (debug) { Serial.print(F("[DIRECTORY] on channel=")); Serial.println(channel, HEX); }
-			aFile = SD.open(pwd); // current dir
-			if (!aFile) {
-				if (debug) { Serial.println(F("directory open error")); }
-				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
-				state_init(); // called this to reset input buf ptr and set file_opened flag to false
-				ret = 23;
-			}
-			dir_render_header();
-			break;
-		case STATE_STAT:
-		case STATE_BROWSER:
-			if (debug) { Serial.print(F("[DS] on channel=")); Serial.println(channel, HEX); }
-			if (debug) { Serial.print(F("sending ")); Serial.print(status_len, HEX); Serial.print(F(" bytes from ")); Serial.println(status_flash); }
-			break;
-		default:
-			if (debug) { Serial.println(F("unknown state, we shouldnt be here")); };
-			status = TCBM_STATUS_SEND; // nothing to send
-			ret = 23;
-			break;
-	}
-
+	// standard Kernal protocol
 	while (!done) {
 		cmd = tcbm_read_cmd_block();
 		switch (cmd) {
@@ -1506,6 +1450,8 @@ void state_standard_load() {
 				break;
 		}
 	}
+	} // if (fast_mode)
+
 	state_init();	// called this to reset input buf ptr and set file_opened flag to false
 	if (aFile) {	// close whatever was opened
 		aFile.close();
