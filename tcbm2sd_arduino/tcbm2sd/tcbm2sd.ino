@@ -1696,6 +1696,7 @@ void setup() {
 	delay(20);
 	if (analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) { // grounded: BUT_NEXT doesn't have pullup or pressed, in any case buttons won't be used
 		but_prevnext_enabled = false;
+	} else {
 		// is TCBM cable connected?
 		if (analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { // grounded: TCBM cable connected or BUT_PREV pressed
 			tcbm_disabled(); // will never return
