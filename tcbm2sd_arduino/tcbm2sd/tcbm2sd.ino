@@ -1736,6 +1736,7 @@ void loop() {
       SD.end();
     } else {
       reload_sd_card();     // SD card was out, now it's in
+      pwd_root();           // go to root folder
     }
   }
 
