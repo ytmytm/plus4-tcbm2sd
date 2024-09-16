@@ -1,3 +1,7 @@
+[20240916]
+Added a case for unconnected A6/A7 and saved some RAM by using the same timeout variable for sd_cd and buttons for debouncing.
+Refactored load/fastload to save flash space.
+
 [20240915]
 Fixed JiffyDOS turbo/@$ problems. Turbo loading of directory (withing DBrowser) didn't work because of reversed order of CLRCHN/CLOSE calls when detecting the presence of TCBM2SD in reset string.
 @$ listing didn't work because JiffyDOS calls UNTALK/TALK+TKSA after receiving every single line of directory listing. Changed the code to ignore it. Had to add another case for interrupted listing (then it calls LISTEN to close the channel).
