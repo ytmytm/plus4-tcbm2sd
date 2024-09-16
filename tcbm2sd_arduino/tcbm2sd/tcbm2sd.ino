@@ -1648,7 +1648,7 @@ void disk_image_prevnext(bool prev) {
 
 	// find any other image previous/next within [tries] range
 	while (tries > 0) {
-		if (prev && diridx==0) return; // there is no previous file
+		if (prev && diridx==0) break; // there is no previous file
 		if (prev) { diridx--; } else { diridx++; };
 		if (debug2) { Serial.print(F("opening ")); Serial.println(diridx,HEX); };
 		// each time rewind folder (open file by directory index doesn't work - cost for not using Cd() but we can't afford it anyway)
@@ -1666,7 +1666,7 @@ void disk_image_prevnext(bool prev) {
 			if (debug2) { char imgname[17]; disk_img.getName(imgname, 17); Serial.print(F("name=[")); Serial.print(imgname); Serial.println(F("]")); }
 			di = di_load_image(&disk_img);
 			if (di) {
-			if (debug2) { Serial.println(F("...SUCC2")); Serial.print(F("type=")); Serial.println(di->type); Serial.print(F("free=")); Serial.println(di->blocksfree); }
+				if (debug2) { Serial.println(F("...SUCC2")); Serial.print(F("type=")); Serial.println(di->type); Serial.print(F("free=")); Serial.println(di->blocksfree); }
 				in_image = true;
 				dir.close();
 				return;
@@ -1674,6 +1674,18 @@ void disk_image_prevnext(bool prev) {
 		}
 		tries--;
 	}
+
+	// failed, try to reopen the image where we started
+	if (debug2) { Serial.print(F("reopen")); }
+	if (disk_img.open(&dir, filename, O_RDONLY)) {
+		di = di_load_image(&disk_img);
+		if (di) {
+			in_image = true;
+			dir.close();
+			return;
+		}
+	}
+
 	dir.close();
 }
 
