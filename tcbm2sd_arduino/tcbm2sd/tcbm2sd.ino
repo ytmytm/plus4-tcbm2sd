@@ -19,7 +19,7 @@ const uint8_t debug2=0; // only for next/prev button debug
 // need about 600 RAM bytes free (check out Arduino IDE messages)
 // when debug=1 set to low value: 24 (must be more than 17)
 
-#define PATH_SIZE 68
+#define PATH_SIZE 71
 
 //////////////////////////////////
 
@@ -62,7 +62,7 @@ unsigned int loader_prg_len = 5;
 //////////////////////////////////
 
 const uint32_t PIN_SD_CD_CHANGE_THR_MS = 100;	// .1s delay for debouncing
-uint32_t sd_cd_lastchangetime = 0;
+uint32_t but_lastchangetime = 0; // common deboucing counter for both sd_cd and button next/prev
 uint8_t sd_cd_laststate = 1;  // initial state=removed (or INPUT_PULLUP when not connected)
 // SD change switch
 const uint8_t PIN_SD_CD = A5; // may not be connected so check only for CHANGE, SD inserted=0, SD removed=1
@@ -71,7 +71,6 @@ const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
 const uint8_t PIN_BUT_NEXT = A7; //
 const uint16_t PIN_BUT_ANALOG_THR = 600; // threshold for A6/A7 analog pins to be LOW (closed), not HIGH
 const uint8_t PIN_BUT_PREVNEXT_TRIES = 10; // check this many directory positions for next/prev disk image
-uint32_t but_prevnext_lastchangetime = 0;
 const uint32_t BUT_PREVNEXT_CHANGE_THR_MS = 500; // .5s delay for debouncing
 
 // TCBM bus https://www.pagetable.com/?p=1324
@@ -1742,8 +1741,7 @@ void setup() {
   // no, continue
   pinMode(PIN_SD_CD, INPUT_PULLUP);
   sd_cd_laststate = digitalRead(PIN_SD_CD);
-  sd_cd_lastchangetime = millis();
-  but_prevnext_lastchangetime = millis();
+  but_lastchangetime = millis();
   //
   tcbm_init();
   dev_from_eeprom();
@@ -1766,10 +1764,10 @@ void setup() {
 void loop() {
 
   uint8_t sd_cd_state = digitalRead(PIN_SD_CD);
-  if (sd_cd_state != sd_cd_laststate && (millis() - sd_cd_lastchangetime > PIN_SD_CD_CHANGE_THR_MS)) {
+  if (sd_cd_state != sd_cd_laststate && (millis() - but_lastchangetime > PIN_SD_CD_CHANGE_THR_MS)) {
     if (debug) { Serial.print(F("SD CD was")); Serial.print(sd_cd_laststate); Serial.print(F(" is ")); Serial.println(sd_cd_state); }
     sd_cd_laststate = sd_cd_state;
-    sd_cd_lastchangetime = millis();
+    but_lastchangetime = millis();
     if (sd_cd_state == 1) { // SD card was in, now it's out
       SD.end();
     } else {
@@ -1777,19 +1775,19 @@ void loop() {
     }
   }
 
-  if ((analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) && (millis() - but_prevnext_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
+  if (but_prevnext_enabled && (analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) && (millis() - but_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
     if (debug2) { Serial.print(F("prev wait until released")); }
     while(analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { };
     if (debug2) { Serial.println(F(" prev image")); };
     disk_image_prevnext(true);
-    but_prevnext_lastchangetime = millis();
+    but_lastchangetime = millis();
   }
-  if ((analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) && (millis() - but_prevnext_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
+  if (but_prevnext_enabled && (analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) && (millis() - but_lastchangetime > BUT_PREVNEXT_CHANGE_THR_MS)) {
     if (debug2) { Serial.print(F("next wait until released")); }
     while(analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) { };
     if (debug2) { Serial.println(F(" next image")); };
     disk_image_prevnext(false);
-    but_prevnext_lastchangetime = millis();
+    but_lastchangetime = millis();
   }
 
 	switch (state) {
