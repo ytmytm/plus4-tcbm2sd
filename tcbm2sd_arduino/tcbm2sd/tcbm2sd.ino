@@ -68,10 +68,11 @@ uint8_t sd_cd_laststate = 1;  // initial state=removed (or INPUT_PULLUP when not
 const uint8_t PIN_SD_CD = A5; // may not be connected so check only for CHANGE, SD inserted=0, SD removed=1
 // buttons
 const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
-const uint8_t PIN_BUT_NEXT = A7; //
+const uint8_t PIN_BUT_NEXT = A7; // buttons prev/next won't work if this is not pulled up
 const uint16_t PIN_BUT_ANALOG_THR = 600; // threshold for A6/A7 analog pins to be LOW (closed), not HIGH
 const uint8_t PIN_BUT_PREVNEXT_TRIES = 10; // check this many directory positions for next/prev disk image
 const uint32_t BUT_PREVNEXT_CHANGE_THR_MS = 500; // .5s delay for debouncing
+bool but_prevnext_enabled = true; // switch to false if A7 is not pulled up upon boot
 
 // TCBM bus https://www.pagetable.com/?p=1324
 // data bus I/O
@@ -1733,11 +1734,15 @@ void disk_image_prevnext(bool prev) {
 //////////////////////////////////
 
 void setup() {
-  // is TCBM cable connected?
-  delay(20);
-  if (analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { // grounded: TCBM cable connected or BUT_PREV pressed
-  	tcbm_disabled(); // will never return
-  }
+	// are buttons connected?
+	delay(20);
+	if (analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) { // grounded: BUT_NEXT doesn't have pullup or pressed, in any case buttons won't be used
+		but_prevnext_enabled = false;
+		// is TCBM cable connected?
+		if (analogRead(PIN_BUT_PREV) < PIN_BUT_ANALOG_THR) { // grounded: TCBM cable connected or BUT_PREV pressed
+			tcbm_disabled(); // will never return
+		}
+	}
   // no, continue
   pinMode(PIN_SD_CD, INPUT_PULLUP);
   sd_cd_laststate = digitalRead(PIN_SD_CD);
