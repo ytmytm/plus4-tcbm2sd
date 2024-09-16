@@ -1,6 +1,8 @@
 [20240916]
 Added a case for unconnected A6/A7 and saved some RAM by using the same timeout variable for sd_cd and buttons for debouncing.
-Refactored load/fastload to save flash space.
+Next/previous buttons will not make you go out of disk image, will stay on first/last image in directory.
+Refactored load/fastload into one huge if/switch/case statement to save flash space.
+Go to root folder when SD card is changed.
 
 [20240915]
 Fixed JiffyDOS turbo/@$ problems. Turbo loading of directory (withing DBrowser) didn't work because of reversed order of CLRCHN/CLOSE calls when detecting the presence of TCBM2SD in reset string.
