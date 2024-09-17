@@ -101,6 +101,8 @@ int di_read(ImageFile *imgfile, unsigned char *buffer, int len);
 int di_sectors_per_track(ImageType type, int track);
 int di_tracks(ImageType type);
 
+uint32_t di_get_ts_image_offs(DiskImage *di, unsigned char track, unsigned char sector);
+
 unsigned char *di_title(DiskImage *di);
 int di_track_blocks_free(DiskImage *di, int track);
 
