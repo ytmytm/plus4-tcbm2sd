@@ -39,19 +39,20 @@ cploop2:lda LOADER_0600+$0100,x
         lda $d5
         cmp #$00
         bne L0607
-        ldy #$01
         lda #$00
-        jmp L060B
-L0607:  ldy #$00
-        lda #$01
+        beq L060B
+L0607:  lda #$01
 L060B:  sta $da
-        lda #$01
-        ldx $ae					// current device
+
+        lda #15					// command
+		tay
+        ldx $ae					// RAM_FA, current device
         jsr $ffba
         lda #(filenameend-filename)
         ldx #<filename
         ldy #>filename
         jsr $ffbd
+		jsr $ffc0								// open -> send command + filename
         lda #$00
         jsr $ff90                               // SETMSG, messages off
         lda #$00
@@ -60,7 +61,9 @@ L060B:  sta $da
         jmp LORAM                               // load and run
 
 filename:
-	.text "/BOOT.T2SD"
+	.text "U0"									// utility command
+	.byte %00011111								// fastload utility
+	.text "/BOOT.T2SD"							// followed by filename
 filenameend:
 
 LOADER_0600:
@@ -99,16 +102,11 @@ L0665:  jmp $867e
 .var RAM_VERFCK = $93            // ;VERFCK  Flag:  0 = load,  1 = verify
 .var tgt = $9D                   // (2)
 .var RAM_LA = $AC
-.var RAM_SA = $AD
 .var RAM_FA = $AE                // ;FA      Current device number
 .var RAM_MEMUSS = $B4            // (2) ;MEMUSS  Load ram base
-.var a05FF = $D8                 // (1) temp storagefor load address flag, can be anywhere
 
 // KERNAL routines without jumptable
-.var ICLRCHN = $EF0C             // ;ICLRCHN $FFCC
-.var ISENDSA = $F005             // ;SEND SA ; before TALK? and it's not TLKSA
-.var ITALK = $EDFA               // ;TALK
-.var ITLKSA = $EE1A              // ;TKSA
+.var ICLRCHN = $FFCC // $EF0C             // ;ICLRCHN $FFCC
 .var aFFFA = $FFFA		 // ;RESET
 
 // IO
@@ -121,19 +119,8 @@ L0665:  jmp $867e
 
 FastLoad:
         sta RAM_VERFCK                              // ;VERFCK  Flag:  0 = load,  1 = verify
-        lda RAM_FA                                  // remember device number in LA ;FA      Current device number
-        sta RAM_LA                                  // ;LA      Current logical fiie number
 
         jsr ICLRCHN                                 // ;ICLRCHN $FFCC
-        ldx RAM_SA                                  // ;SA      Current seconda.y address
-        stx a05FF                                   // ;preserve SA (LOAD address parameter (set in $B4/B5 (RAM_MEMUSS) or from file))
-        lda #$60
-        sta RAM_SA                                  // ;SA      Current seconda.y address
-        jsr ISENDSA                                 // ;SEND SA ; send name with SA=$60
-        lda RAM_FA                                  // ;FA      Current device number
-        jsr ITALK                                   // ;TALK
-        lda #$70                                    // ;SA      Fastload indicator - on channel 16 (treated as channel 0 = LOAD)
-        jsr ITLKSA                                  // ;TLKSA
 
         sei
         lda aFF06                                   // ;preserve FF06 (like $D011, before blank)
@@ -166,8 +153,8 @@ cont1:  bit aFEF2                                   // ;wait for ACK high
         and #%00000011
         bne LOADEND                                 // error
 
-        lda a05FF                                   // ;check if we load to load addr from file or from $b4/b5 (RAM_MEMUSS)
-        bne LOADSTART
+        lda $d5                                     // ;check if we load to load addr from file or from $b4/b5 (RAM_MEMUSS)
+        beq LOADSTART
         lda RAM_MEMUSS
         sta tgt
         lda RAM_MEMUSS+1
