@@ -184,6 +184,15 @@ uint32_t get_block_num(ImageType type, TrackSector ts) {
   return(0);
 }
 
+/* get an offset within di->image to provided track and sector */
+/* only computes, does not seek there */
+uint32_t di_get_ts_image_offs(DiskImage *di, unsigned char track, unsigned char sector) {
+	TrackSector ts;
+	ts.track = track;
+	ts.sector = sector;
+	return get_block_num(di->type, ts) * 256;
+}
+
 
 /* get a pointer to block data */
 /* read one sector into buffer */
