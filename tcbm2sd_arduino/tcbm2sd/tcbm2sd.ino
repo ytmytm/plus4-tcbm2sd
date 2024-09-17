@@ -849,6 +849,16 @@ void handle_command() {
 			return;
 		}
 	}
+	if (debug) {
+		uint8_t in=0;
+		Serial.println();
+		while (in<input_buf_ptr) {
+			Serial.print(input_buf[in],HEX); Serial.print(F(" "));
+			in++;
+		}
+		Serial.println();
+	}
+
 	// unknown command
 	set_error_msg(30);
 }
