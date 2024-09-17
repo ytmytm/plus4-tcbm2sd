@@ -323,6 +323,7 @@ const uint8_t STATE_DIR  = 5; // like STATE_LOAD but render directory listing
 const uint8_t STATE_FASTLOAD = 6; // like STATE_LOAD but with fast transfer protocol
 const uint8_t STATE_BROWSER = 7; // like STATE_LOAD but write from db12b[] array
 const uint8_t STATE_FASTDIR = 8; // like STATE_DIR but with fast transfer protocol
+const uint8_t STATE_FASTLOAD_TS = 9; // like STATE_LOAD from image but t&s passed in filename[0..1] with fast transfer protocol
 
 uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
 uint8_t state = STATE_IDLE;
@@ -835,8 +836,18 @@ void handle_command() {
 	if (input_buf[0]=='U' && input_buf[1]=='0' && (input_buf[2] & 0x3f) == 0x1f) {
 		input_to_filename(3);
 		state = STATE_FASTLOAD;
-		if (debug) { Serial.print(F("UFastload:[")); Serial.print(filename); Serial.println(F("]")); }
+		if (debug2) { Serial.print(F("UFastload:[")); Serial.print(filename); Serial.println(F("]")); }
 		return;
+	}
+	if (in_image && input_buf[0]=='U' && input_buf[1]=='0') {
+		// U0<%xx111111><track><sector> - fastload utility (like BURST CMD TEN) but within image start with t&s
+		if ((input_buf[2] & 0x3f) == 0x3f) {
+			if (debug2) { Serial.print(F("TSFAST:")); Serial.print(input_buf[3],HEX); Serial.print(F(":")); Serial.println(input_buf[4],HEX); }
+			filename[0] = input_buf[3];
+			filename[1] = input_buf[4];
+			state = STATE_FASTLOAD_TS;
+			return;
+		}
 	}
 	// unknown command
 	set_error_msg(30);
@@ -1214,6 +1225,21 @@ void send_data_stream(bool fast_mode) {
 
 	if (fast_mode) { tcbm_set_ack(ack); } // set ack high (it should be already high)
 	switch (state) {
+		case STATE_FASTLOAD_TS:
+			if (debug2) { Serial.print(F("[FASTLOADTS] on channel=")); Serial.print(channel, HEX); }
+			if (!in_image) {
+				status = TCBM_STATUS_SEND;
+				ret = 62;
+			}
+			dinfile = di_open_ts(di, filename[0], filename[1]);
+			if (!dinfile) {
+				if (debug2) { Serial.println(F("filenotopened")); }
+				status = TCBM_STATUS_SEND; // FILE not found == nothing to send
+				ret = 62;
+			} else { // read the very first byte of the file
+				di_read(dinfile, (uint8_t*)&nb, 1);
+			}
+			break;
 		case STATE_FASTLOAD:
 			if (debug) { Serial.print(F("[FASTLOAD] on channel=")); Serial.print(channel, HEX); }
 			// fall through to STATE_LOAD
@@ -1298,6 +1324,7 @@ void send_data_stream(bool fast_mode) {
 			done = true; // exit immediately, there will be no UNTALK
         } else {
 			switch (state) {
+				case STATE_FASTLOAD_TS:
 				case STATE_FASTLOAD:
 					if (in_image) {
 						uint32_t size;
@@ -1786,6 +1813,7 @@ void loop() {
 			state_standard_load();
 			break;
 		case STATE_FASTLOAD:
+		case STATE_FASTLOAD_TS:
 			state_fastload();
 			break;
 		case STATE_BROWSER:

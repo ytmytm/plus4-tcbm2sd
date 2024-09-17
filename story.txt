@@ -1,5 +1,6 @@
 [20240917]
 Fastload made simpler, loader made smaller with 1571/81 burst utility command: U0<$1F><filename>
+Within disk images load files by track&sector with U0<$3F><track><sector> command
 Details: https://www.devili.iki.fi/Computers/Commodore/C1571/firmware/fastutl.html
 Bumped minor version to 2 to indicate utility commands are supported.
 
