@@ -543,7 +543,7 @@ void set_error_msg(uint8_t error) {
       strcpy_P((char*)output_buf, (const char*)F("63, FILE EXISTS,00,00"));
       break;
     case 73:
-      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,01"));
+      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,02"));
       break;
     case 74:
       strcpy_P((char*)output_buf, (const char*)F("74, DRIVE NOT READY,00,00"));
@@ -829,6 +829,13 @@ void handle_command() {
 		} else {
 			dev_to_eeprom(0);
 		}
+		return;
+	}
+	// U0<%xx011111>[filename] - fastload utility (like BURST CMD TEN)
+	if (input_buf[0]=='U' && input_buf[1]=='0' && (input_buf[2] & 0x3f) == 0x1f) {
+		input_to_filename(3);
+		state = STATE_FASTLOAD;
+		if (debug) { Serial.print(F("UFastload:[")); Serial.print(filename); Serial.println(F("]")); }
 		return;
 	}
 	// unknown command
@@ -1598,12 +1605,12 @@ void state_open() {
 	if (channel == 1) {
 		// prepare for SAVE
 	}
+	state = STATE_IDLE;
 	if (channel == 15) {
 		// Directory browser doesn't call CLOSE, only unlisten
 		handle_command();
 		state_init(); // reset input buffer
 	}
-	state = STATE_IDLE;
 }
 
 //////////////////////////////////
