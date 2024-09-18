@@ -5,6 +5,10 @@ Read with :U0<$00><track><sector><number-of-blocks-to-read>
 Write with:U0<$02><track><sector><number-of-blocks-to-write>
 There is a test utility in loader/block-rw.asm that demonstrates how to use it.
 Also it has fast protocol for block-write to send data into tcbm2sd.
+TODO-HW
+- pullups for Arduino A6/A7 (analog pins)
+- J1 (reset passthrough) open by default (causes Arduino programming failures)
+- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section
 [20240917]
 Fastload made simpler, loader made smaller with 1571/81 burst utility command: U0<$1F><filename>
 Within disk images load files by track&sector with U0<$3F><track><sector> command
@@ -35,16 +39,6 @@ The testing revealed everything works except:
 + fastload mode on JiffyDOS with 6502 (dbrowser doesn't load directory, but itself it can be loaded; MOS loader fails); JiffyDOS+7501 works fine; could this be still Arduino firmware issue?
 + @$ on jiffydos, but DIRECTORY works
 JED from todays commit c90f487ad7ef8b8be78c856eac885c4cf61f2966 can be used on both v1.1 and v1.2 boards
-
-TODO-HW
-- pullups for arduino A6/A7 (analog pins)
-- pullup for system RESET (5V) (it's acting up when programming arduino out of system)
-- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section
-TODO-FW
-- debug @$ with jiffydos
-- what's up with 6502+JD+fastload?
-- handle but next/prev
-- behavior of SD_CS pin (when high, when low - when to invalidate SD card)
 
 [20240911]
 PCBs arrived (!). The first problem is immediately visible - A6/A7 meant for buttons and TCBM cable sense *are not* digital pins. They need to have external pullups.
