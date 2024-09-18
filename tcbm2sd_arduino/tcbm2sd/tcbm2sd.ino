@@ -658,7 +658,7 @@ void handle_command() {
 			if (debug) { Serial.print(F("...NOT FOUND ")); Serial.println((char*)filename); }
 			fname = match_filename(false);
 			if (debug) { Serial.print(F("...IMAGE? ")); Serial.println(fname); }
-			disk_img = SD.open(fname);
+			disk_img = SD.open(fname,O_RDWR);
 			if (debug) { Serial.println(F("...SUCC?")); }
 			if (disk_img) {
 				if (debug) { Serial.println(F("...SUCC")); }
@@ -1697,11 +1697,11 @@ void disk_image_prevnext(bool prev) {
 		if (debug2) { Serial.print(F("opening ")); Serial.println(diridx,HEX); };
 		// each time rewind folder (open file by directory index doesn't work - cost for not using Cd() but we can't afford it anyway)
 		dir.rewindDirectory();
-		disk_img = dir.openNextFile(O_RDONLY);
+		disk_img = dir.openNextFile(O_RDWR);
 		curidx = diridx;
 		while (curidx>0) {
 			if (disk_img) { disk_img.close(); }
-			disk_img = dir.openNextFile(O_RDONLY);
+			disk_img = dir.openNextFile(O_RDWR);
 			curidx--;
 		}
 
@@ -1721,7 +1721,7 @@ void disk_image_prevnext(bool prev) {
 
 	// failed, try to reopen the image where we started
 	if (debug2) { Serial.print(F("reopen")); }
-	if (disk_img.open(&dir, filename, O_RDONLY)) {
+	if (disk_img.open(&dir, filename, O_RDWR)) {
 		di = di_load_image(&disk_img);
 		if (di) {
 			in_image = true;
