@@ -1595,8 +1595,6 @@ void state_fastblock(void) {
 					dav ^= 1; // flip DAV
 					while (!(tcbm_get_dav() == dav)); // wait for data
 					b = tcbm_port_read();
-					r = di->file->write(b);
-					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
 					bytes--;
 					if (bytes==0) {
 						status = TCBM_STATUS_EOI; // status must be set with last valid byte
@@ -1606,6 +1604,8 @@ void state_fastblock(void) {
 					tcbm_set_status(status); // put out status
 					if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
 					tcbm_set_ack(ack);	// confirm we got it
+					r = di->file->write(b);
+					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
 					break;
 				default:
 					break;
