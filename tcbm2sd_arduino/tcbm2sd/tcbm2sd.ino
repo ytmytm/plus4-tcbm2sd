@@ -10,7 +10,7 @@
 //   to: mini.menu.cpu.atmega328.upload.speed=57600
 
 const uint8_t debug=0; // set to value larger than zero for debug messages
-const uint8_t debug2=0; // only for next/prev button debug
+const uint8_t debug2=0; // only for next/prev button; utility commands debug
 //#define DISABLE_BROWSER // disable embedded loader binary when debug is enabled (it may not fit in flash)
 
 //////////////////////////////////
@@ -324,6 +324,8 @@ const uint8_t STATE_FASTLOAD = 6; // like STATE_LOAD but with fast transfer prot
 const uint8_t STATE_BROWSER = 7; // like STATE_LOAD but write from db12b[] array
 const uint8_t STATE_FASTDIR = 8; // like STATE_DIR but with fast transfer protocol
 const uint8_t STATE_FASTLOAD_TS = 9; // like STATE_LOAD from image but t&s passed in filename[0..1] with fast transfer protocol
+const uint8_t STATE_FAST_BLOCKREAD = 10; // like STATE_LOAD from image, but read filename[2]*256 bytes from offset pointed by t&s filename[0..1] with fast transfer protocol
+const uint8_t STATE_FAST_BLOCKWRITE = 11; // like STATE_SAVE into image but write filename[2]*256 bytes from offset pointed by t&s filename[0..1] with fast transfer protocol
 
 uint8_t channel = 0; // opened channel: 0=load, 1=save, 15=command, anything else is not supported
 uint8_t state = STATE_IDLE;
@@ -840,16 +842,27 @@ void handle_command() {
 		return;
 	}
 	if (in_image && input_buf[0]=='U' && input_buf[1]=='0') {
+		filename[0] = input_buf[3];	// track
+		filename[1] = input_buf[4];	// sector
+		filename[2] = input_buf[5];	// number of sectors (for block read/write)
+		if (debug2) { Serial.print(F("TSFAST:")); Serial.print(input_buf[3],HEX); Serial.print(F(":")); Serial.print(input_buf[4],HEX); Serial.print(F(":")); Serial.println(input_buf[5],HEX); }
 		// U0<%xx111111><track><sector> - fastload utility (like BURST CMD TEN) but within image start with t&s
 		if ((input_buf[2] & 0x3f) == 0x3f) {
-			if (debug2) { Serial.print(F("TSFAST:")); Serial.print(input_buf[3],HEX); Serial.print(F(":")); Serial.println(input_buf[4],HEX); }
-			filename[0] = input_buf[3];
-			filename[1] = input_buf[4];
 			state = STATE_FASTLOAD_TS;
 			return;
 		}
+		// U0<%00000000><track><sector><number-of-sectors> - block read + number of sectors to load (consecutive, not through t&s link in sector data)
+		if (input_buf[2]==0x00) {
+			state = STATE_FAST_BLOCKREAD;
+			return;
+		}
+		// U0<%00000010><track><sector><number-of-sectors> - block write + number of sectors to write (consecutive, not through t&s link in sector data)
+		if (input_buf[2]==0x02) {
+			state = STATE_FAST_BLOCKWRITE;
+			return;
+		}
 	}
-	if (debug) {
+	if (debug||debug2) {
 		uint8_t in=0;
 		Serial.println();
 		while (in<input_buf_ptr) {
@@ -1508,6 +1521,102 @@ void send_data_stream(bool fast_mode) {
 	state = STATE_IDLE;
 }
 
+void state_fastblock(void) {
+	uint8_t status = TCBM_STATUS_OK;
+	uint8_t b; // current value
+	uint16_t c = 0; // total byte counter
+	uint8_t ack = 1; // initial ACK state is 1
+	uint8_t dav = 0; // waiting for initial DAV=0
+	uint8_t ret = 0; // final status code
+	bool done = false;
+	uint32_t offs;
+	uint16_t bytes;
+	size_t r; // debug: number of written bytes
+
+	tcbm_set_ack(ack); // set ack high (it should be already high)
+
+	if (debug2) { Serial.print(F("[FB-R]:")); Serial.print(filename[0],HEX); Serial.print(F(":")); Serial.print(filename[1],HEX); Serial.print(F(":")); Serial.print(filename[2],HEX); Serial.print(F(":")); }
+	if (in_image) {
+		offs = di_get_ts_image_offs(di, filename[0], filename[1]);
+		bytes = filename[2] << 8;
+		if (debug2) { Serial.print(F("seekto:")); Serial.print(offs,HEX); }
+		// seek to needed block
+		di->file->seekSet(offs);
+	} else {
+		status = TCBM_STATUS_SEND;
+		ret = 74; // drive (image) not ready
+	}
+
+	// initial state is DAV=1, ACK=1 - controller will put DAV=0 when port is switched to input, then we switch to output
+	if (state == STATE_FAST_BLOCKREAD) {
+		if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+		while (!(tcbm_get_dav() == dav)); // wait for initial dav=low
+		tcbm_port_output();
+	} else {
+		// for writing it's the opposite, controller will put DAV=0 then first data is available
+		// so we need to wait until DAV=0, but already within the main loop
+		dav = 1; // will be filpped inside the loop
+	}
+
+	while (!done) {
+		if (status != TCBM_STATUS_OK) {   // not OK or end of transmission
+			tcbm_set_status(status); // put out status
+			ack ^= 1; // flip ACK
+			dav ^= 1; // flip DAV
+			if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+			tcbm_set_ack(ack);
+			tcbm_port_input(); // return to initial state
+			if (debug2) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
+			tcbm_set_ack(1);
+			while (!(tcbm_get_dav() == 1)); // must return to initial state
+			tcbm_set_status(TCBM_STATUS_OK);
+			done = true;
+        } else {
+			switch (state) {
+				case STATE_FAST_BLOCKREAD:
+					b = di->file->read();
+					bytes--;
+					if (bytes==0) {
+						status = TCBM_STATUS_EOI; // status must be set with last valid byte
+						if (debug2) { Serial.println(F("EOF")); }
+					}
+					c++;
+					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
+					tcbm_set_status(status); // put out status
+					tcbm_port_write(b);
+					ack ^= 1; // flip ACK
+					dav ^= 1; // flip DAV
+					if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+					tcbm_set_ack(ack);
+					while (!(tcbm_get_dav() == dav)); // wait for confirmation
+					break;
+				case STATE_FAST_BLOCKWRITE:
+					ack ^= 1; // flip ACK
+					dav ^= 1; // flip DAV
+					while (!(tcbm_get_dav() == dav)); // wait for data
+					b = tcbm_port_read();
+					r = di->file->write(b);
+					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
+					bytes--;
+					if (bytes==0) {
+						status = TCBM_STATUS_EOI; // status must be set with last valid byte
+						if (debug2) { Serial.println(F("EOF")); }
+					}
+					c++;
+					tcbm_set_status(status); // put out status
+					if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+					tcbm_set_ack(ack);	// confirm we got it
+					break;
+				default:
+					break;
+				}
+			}
+	}
+	set_error_msg(ret);
+	if (debug2) { Serial.print(F("bytes:")); Serial.println(c, HEX); }
+	state = STATE_IDLE;
+}
+
 void state_save() {
 	// receive data until UNLISTEN
 	uint8_t cmd;
@@ -1825,6 +1934,10 @@ void loop() {
 		case STATE_FASTLOAD:
 		case STATE_FASTLOAD_TS:
 			state_fastload();
+			break;
+		case STATE_FAST_BLOCKREAD:
+		case STATE_FAST_BLOCKWRITE:
+			state_fastblock();
 			break;
 		case STATE_BROWSER:
 			// send out directory browser from flash
