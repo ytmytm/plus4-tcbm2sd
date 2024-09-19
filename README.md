@@ -66,16 +66,28 @@ Patched Directory Browser is embedded into flash and available at all times by t
   - disk commands will accept full paths, e.g. `S:/GAMES/D/DONALD DUCK`
 - compatible with file browsers: FileBrowser 1.6 and Directory Browser 1.2
 - case insensitve, all filenames converted to lowercase
-- paths up to 72 characters long
+- paths up to 71 characters long
 - fallback to DOS 8.3 filename for entries with names longer than 16 characters
 - wildcard matching `*` and `?`
+- utility commands similar to 1571/81 BURST:
+  - fastload file by name: `U0+chr$(31)+<filename>`
+  - (within image only) fastload file by its initial track and sector: `U0+chr$(63)+chr$(track)+chr$(sector)`
+  - (within image only) fast block-read: `U0+chr$(0)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-read)`
+  - (within image only) fast block-write: `U0+chr$(2)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-write)`
+- support for SD change detection (only if the SD card socket supports it) to automatically initialize card
+- PREV/NEXT buttons to switch between disk images
+- socket for 32/64K cartridge ROM
 
-### Platform for future developments
+### Platform for future TCBM developments
 
 The paddle part has all TCBM bus signals exposed and can be used as the basis for future developments porting existing projects to TCBM bus, like:
 
-- sd2tcbm - sd2iec port to TCBM bus
 - Pi1551 - realtime, cycle-exact 1551 emulator
+- sd2tcbm - sd2iec port to TCBM bus
+
+For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus are exposed at the cartridge edge (TCBM connector) or you can use Arduino footprint instead.
+
+*Please note that if a TCBM cable is connected then both pins 1 and 16 of the TCBM connection must be connected to GND. It's used by Arduino to detect if TCBM cable is attached so that Arduino can disable itself.*
 
 ### Availability
 
@@ -89,13 +101,13 @@ You can also order completed hardware part of the project from PCBWay. This is P
 
 ### tcbm2sd or sd2tcbm?
 
-If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
+This project is named tcbm2sd because it is not a sd2iec port, just a simple 1551 simulator.
 
-This project is named tcbm2sd because it is not a sd2iec port, just a simple 1551 simulator. There is no support for disk images.
 This is more like [Tapecart](https://github.com/KimJorgensen/tapecart) - a loader for file-based programs rather than sd2iec.
 
-Another microcontroller must be used for sd2tcbm because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
-For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus, 3.3V power and SPI connection to SD card are exposed in Micro Pro footprint.
+If a proper sd2iec port to TCBM bus ever appears it should be named sd2tcbm.
+
+Another microcontroller would have to be used for sd2tcbm because ATmega328 from Arduino Micro Pro doesn't have enough flash space for sd2iec port.
 
 ## KiCad project
 
@@ -113,6 +125,8 @@ The first revision of PCB was meant primarily as a MVP demonstration and a devel
 
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
+Starting with revision rev1.2 the PCB contains both kind of footprints - holes for ready to use modules or a set of SMD parts to be soldered directly. Except for CPLD chip all the parts are quite large (0805 footprint) for easy soldering by hand.
+
 ### Jumpers
 
 | Jumper | default | Description |
@@ -126,25 +140,42 @@ JP1, JP3 and JP4 default values are shorted by a thin trace under soldermask. If
 
 JP3 is meant for Arduino Mini Pro clones that would have A4 line missing or in a completely different place. Note that you have to change the definitions on the top of the sketch code too.
 
+### Cartridge ROM
+
+There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge functionality.
+
+The 32K ROM will appear for the system as cartridge 1.
+
+The bottom half of 64K ROM will appear as cartridge 2, the top half as cartrige 1.
+
+### PREV/NEXT buttons
+
+PREV button signal serves also as a way to detect if TCBM cable is connected upon reset.
+
+NEXT button signal detects if the buttons are connected at all.
+
 ## Parts
 
 Parts to be soldered directly:
 
 - 1x XC9572XL-VQ64 CPLD
 - 4x 0.1uF capacitor (0805 footprint)
-- (optional) 50 pin edge connector, with 2.0mm pitch, straight or right angle (this part is unobtanium)
+- Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask; there are two versions that differ by location of A6/A7 pins, both are supported
 
-Modules:
+For the remaining parts of the circuit you can go with ready for use modules or solder SMD parts directly.
+
+### Modules
 
 - AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg) often labeled as HW764; it usually comes with soldered angled pins, you need to replace them with straight ones
 - SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
-- Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask
 
-If all you want is a paddle replacement then only the power supply module is needed.
+### SMD parts
+
+The SMD BOM file with part names and can be find in the [releases](releases).
 
 ### Arduino Mini Pro A4/SDA pin
 
-Clones of Arduino Mini Pro may have different placement of A4/A5/A6/A7 pins. We use only A4.
+Clones of Arduino Mini Pro may have different placement of A4/A5/A6/A7 pins.
 
 On some clones `A4` may be labeled as `SDA` (then `A5` is `SCL`). This is fine.
 
@@ -152,19 +183,7 @@ If A4/A5 pins were moved from the inside row to a different place then solder a 
 
 If `A4` is not available at all then you can modify the sketch to use `D1` (`RXD`) instead for DEV line and change JP3 jumper.
 
-If you don't need software device number setting, you can premanently set the device number using JP2 and JP4.
-
-### Edge connector
-
-This cartridge has a passthrough connector. All 50 pins are connected, even the three normally unused ones. You can solder a 50-pin edge connector.
-
-If it's a right-angle one then the next cartridge is positioned normally with label on the top.
-
-If it's a straight one, then the next cartridge label must point towards computer (so that you can see it).
-
-This is purely theoretical as I couldn't find any source of supply that would sell edge connectors with 2.00mm pitch.
-
-Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
+If you don't need software device number setting, you can permanently set the device number using JP2 and JP4.
 
 ## CPLD Firmware
 
@@ -180,7 +199,9 @@ The code implements 4 parts:
 3. 2-bit, bidirectional port B of 6523T (bits 0 and 1 - status from the drive)
 4. 2-bit, bidirectional port C of 6523T (bit 7 (input from the drive) and bit 6 (output to the drive))
 
-The 6523T is a trimmed-down copy of [Fake6523](https://github.com/go4retro/Fake6523).
+Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
+
+The 6523T code was based on a trimmed-down copy of [Fake6523](https://github.com/go4retro/Fake6523) and a [CIA implementation](https://github.com/niklasekstrom/cia-verilog/blob/master/cia.v).
 
 The remaining, unused, bits of Ports B and C will probably behave in a different way than with a real 6323T. So far I didn't find it as an issue though.
 
@@ -297,13 +318,52 @@ The binary is here [loader/boot.t2sd](boot.t2sd).
 
 To make that file your default browser that will startup every time you load and run `*` file save it on the SD card's root folder as 'BOOT.T2SD`.
 
+### Fastloader
+
 tcbm2sd is compatible with standard TCBM protocol as implemented by Commodore in Plus/4 ROM. However the hardware is capable with much more.
 I took [Directory Browser v1.2](https://plus4world.powweb.com/software/Directory_Browser) and I patched it to use a faster protocol, a bit similar to [Warpload 1551](https://plus4world.powweb.com/software/Warpload_1551).
 The only difference is that since Arduino Micro Pro is much faster than Plus/4 (8MHz vs 1MHz) it would be hard to rely on the timing, so in my version of the fast protocol both sides need to test if the other end has confirmed receiving the data.
 
+#### Fastloader (channel 16)
+
 Fast protocol is enabled when everything is prepared like for load (OPEN channel 0 and send the filename) but after the `TALK` call as a secondary address we send `0x70` instead of `0x60` - talk on channel 16 rather than 0. There is no check if the remote device is a tcbm2sd and actually supports this protocol.
 
 Check out also the other files from [loader/](loader/) folder. I can't publish full source code (it's not mine), but you will find pieces of code I altered in 't2s-...' files.
+
+#### Fastloader (U0 command, filename)
+
+Starting with revision 1.2 there is a simpler way to call fastloader. Just send a command over channel 15 that consists of `U0<$1f>` followed by the filename.
+```
+command:
+	.byte "U0", $1f
+	.byte "FILENAME"
+```
+The example code for this is used in firmware: [loader/loader.asm](loader/loader.asm)
+
+#### Fastloader (U0 command,track,sector)
+
+Another way of loading the file from disk image is to point directly to track and sector where the file starts.
+This is done by sending a command over channel 15 that consists of `U0<$3f>` followed by track and sector:
+```
+command:
+	.byte "U0", $3f
+track:	.byte 17
+sector:	.byte 1
+```
+
+The example code for this is used in firmware: [loader/loaderts.asm](loader/loaderts.asm)
+This works only from within disk image.
+
+#### Fast BLOCK-READ, BLOCK-WRITE
+
+Single sectors can also be loaded from the disk image with fast protocol. The U0 command for this is `U0<$00>` followed by track and sector and number of sectors to load. Since we're working on a disk image after the last sector on a given track we will automatically start reading from the next one.
+
+For writing directly to disk the command is `U0<$02>` followed by track, sector and number of sectors that will be written.
+
+An example code for both these functions can be found in [loader/block-rw.asm](loader/block-rw.asm).
+This is a simple utility that can load a single sector (directory header) to screen ram (`$0C00`) and the buffer (`$2000`) or write data from the buffer into the directory header.
+
+The code there also servers as a reference how to use fast save protocol.
 
 ### Directory browser 1.2b
 

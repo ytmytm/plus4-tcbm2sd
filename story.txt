@@ -1,3 +1,10 @@
+[20240919]
+Made NEXT button enter the first disk image (providing it's within the first <tries> range (10)).
+Tested new Arduino firmware on board without A6/A7 pullups - buttons are enabled until the first reset after powerup.
+How this can be prevented without physical mod: adding pullups or shorting A7 to GND I'm not sure.
+Tested (within MONITOR) both ROM banks: STA $FDDA for C1LO/HI, STA $FDDF for C2LO/HI. SEI+<copy bytes>+BRK are enough for easy and safe work.
+https://plus4world.powweb.com/plus4encyclopedia/500255
+
 [20240918]
 Implemented and tested utility functions for block-read and block-write. GEOS will be possible now.
 This is disk-image agnostic, so GEOS+4 from .D71/.D81 also is possible.
