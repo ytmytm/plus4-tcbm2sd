@@ -1762,19 +1762,23 @@ void state_open() {
 void disk_image_prevnext(bool prev) {
 	File entry;
 	size_t len;
-	uint16_t diridx;
+	int16_t diridx;
 	uint16_t curidx;
 	uint8_t tries = PIN_BUT_PREVNEXT_TRIES;
 
-	// we must be in an image to know which one is the prev/next one
-	if (!in_image) return;
-	// name of the current image
-	len = disk_img.getName(filename, sizeof(filename));
-	if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
-		disk_img.getSFN(filename,sizeof(filename));
+	// we must be in an image to know which one is the prev one
+	if (!in_image && prev) return;
+	if (in_image) {
+		// name of the current image
+		len = disk_img.getName(filename, sizeof(filename));
+		if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
+			disk_img.getSFN(filename,sizeof(filename));
+		}
+		// image must be closed
+		disk_img.close();
+	} else {
+		filename[0]='\0'; // no name for current image
 	}
-	// image must be closed
-	disk_img.close();
 	in_image = false;
 	if (debug2) { Serial.print(F("closed ")); Serial.print(filename); Serial.println(diridx,HEX); }
 	if (debug2) { Serial.print(F("pwd=")); Serial.println(pwd); }
@@ -1782,19 +1786,23 @@ void disk_image_prevnext(bool prev) {
 	File dir = SD.open(pwd);
 	if (!dir) return;
 	diridx = 0;
-	memset(entryname_c, 0, sizeof(entryname_c));
-	while (strncmp(entryname_c,filename,sizeof(filename)) != 0) {
-		entry = dir.openNextFile(O_RDONLY);
-		if (!entry) { return; } // no more files
-		len = entry.getName(entryname_c,sizeof(entryname_c));
-		if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
-			entry.getSFN(entryname_c,sizeof(entryname_c));
+	if (filename[0]!='\0') { // we were in the image, find its index
+		memset(entryname_c, 0, sizeof(entryname_c));
+		while (strncmp(entryname_c,filename,sizeof(filename)) != 0) {
+			entry = dir.openNextFile(O_RDONLY);
+			if (!entry) { return; } // no more files
+			len = entry.getName(entryname_c,sizeof(entryname_c));
+			if (len>16 || len==0) { // fall back on short 8.3 filename if we can't handle it
+				entry.getSFN(entryname_c,sizeof(entryname_c));
+			}
+			diridx++;
+			entry.close();
+			if (debug2) { Serial.print(F("checking ")); Serial.print(entryname_c); Serial.println(diridx,HEX); }
 		}
-		diridx++;
-		entry.close();
-		if (debug2) { Serial.print(F("checking ")); Serial.print(entryname_c); Serial.println(diridx,HEX); }
+		diridx--;
+	} else {
+    diridx = -1; // will be increased to 1
 	}
-	diridx--;
 	if (debug2) { Serial.print(F("found")); Serial.println(diridx,HEX); }
 
 	// find any other image previous/next within [tries] range
@@ -1828,12 +1836,14 @@ void disk_image_prevnext(bool prev) {
 
 	// failed, try to reopen the image where we started
 	if (debug2) { Serial.print(F("reopen")); }
-	if (disk_img.open(&dir, filename, O_RDWR)) {
-		di = di_load_image(&disk_img);
-		if (di) {
-			in_image = true;
-			dir.close();
-			return;
+	if (filename[0]!='\0') { // only if we were in the image
+		if (disk_img.open(&dir, filename, O_RDWR)) {
+			di = di_load_image(&disk_img);
+			if (di) {
+				in_image = true;
+				dir.close();
+				return;
+			}
 		}
 	}
 
