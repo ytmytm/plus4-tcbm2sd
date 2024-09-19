@@ -338,7 +338,7 @@ command:
 	.byte "U0", $1f
 	.byte "FILENAME"
 ```
-The example code for this is here: [loader/loader.asm](loader/loader.asm)
+The example code for this is the firmware for `/BOOT.T2SD`: [loader/loader.asm](loader/loader.asm)
 
 #### Fastloader (U0 command,track,sector)
 
@@ -351,7 +351,7 @@ track:	.byte 17
 sector:	.byte 1
 ```
 
-The example code for this is used in firmware: [loader/loaderts.asm](loader/loaderts.asm)
+The example code for this is here: [loader/loaderts.asm](loader/loaderts.asm)
 This works only from within disk image.
 
 #### Fast BLOCK-READ, BLOCK-WRITE
