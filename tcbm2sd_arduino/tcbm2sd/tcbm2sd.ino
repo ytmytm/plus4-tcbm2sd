@@ -335,7 +335,6 @@ uint8_t input_buf_ptr = 0; // pointer to within input buffer
 uint8_t input_buf[48]; // input buffer - filename + commands
 uint8_t output_buf_ptr = 0; // pointer to within output buffer (can't rely on C strings when sending data bytes)
 uint8_t output_buf[48]; // output buffer, render status here
-uint8_t cbm_errno = 0; // CBM DOS error number
 
 // parameters, valid only for STATE_STAT/STATE_BROWSER, used to send status (RAM) or directory browser (FLASH)
 char* status_buffer; // data pointer
@@ -521,9 +520,8 @@ char *match_filename(bool onlyDir) {
 }
 
 void set_error_msg(uint8_t error) {
-  cbm_errno = error;
   memset(output_buf, 0, sizeof(output_buf));
-  switch (cbm_errno) {
+  switch (error) {
     case 0:
       strcpy_P((char*)output_buf, (const char*)F("00, OK,00,00"));
       break;
