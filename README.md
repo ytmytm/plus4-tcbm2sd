@@ -146,13 +146,15 @@ There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge 
 
 The 32K ROM will appear for the system as cartridge 1.
 
-The bottom half of 64K ROM will appear as cartridge 2, the top half as cartrige 1.
+The bottom half of 64K ROM will appear as cartridge 2, the top half as cartridge 1.
 
 ### PREV/NEXT buttons
 
-PREV button signal serves also as a way to detect if TCBM cable is connected upon reset.
+These buttons allow to switch to next/previous disk image within a folder. They work for all supported files: D64/D71/D81.
 
-NEXT button signal detects if the buttons are connected at all.
+The PREV button signal serves also as a way to detect if TCBM cable is connected upon reset (pin 16 of TCBM connector shorted to GND).
+
+NEXT button signal detects if the buttons are connected at all - if it's shorted to GND (pressed) upon Arduino reset then the button functionality is disabled.
 
 ## Parts
 
@@ -179,7 +181,7 @@ Clones of Arduino Mini Pro may have different placement of A4/A5/A6/A7 pins.
 
 On some clones `A4` may be labeled as `SDA` (then `A5` is `SCL`). This is fine.
 
-If A4/A5 pins were moved from the inside row to a different place then solder a short piece of wire between module's `A4` and PCB pad marked `DEV` (next one to `A5`). `A4` is the only one used.
+If A4/A5 pins were moved from the inside row to a different place then solder a short piece of wire between module's `A4` and PCB pad marked `DEV` (next one to `A5`). `A4` is the only one required.
 
 If `A4` is not available at all then you can modify the sketch to use `D1` (`RXD`) instead for DEV line and change JP3 jumper.
 
@@ -198,8 +200,6 @@ The code implements 4 parts:
 2. 8-bit, bidirectional port A of 6523T
 3. 2-bit, bidirectional port B of 6523T (bits 0 and 1 - status from the drive)
 4. 2-bit, bidirectional port C of 6523T (bit 7 (input from the drive) and bit 6 (output to the drive))
-
-Thanks to the improved PLA equations only 8 actually used I/O addresses are used at a time.
 
 The 6523T code was based on a trimmed-down copy of [Fake6523](https://github.com/go4retro/Fake6523) and a [CIA implementation](https://github.com/niklasekstrom/cia-verilog/blob/master/cia.v).
 
@@ -338,7 +338,7 @@ command:
 	.byte "U0", $1f
 	.byte "FILENAME"
 ```
-The example code for this is used in firmware: [loader/loader.asm](loader/loader.asm)
+The example code for this is here: [loader/loader.asm](loader/loader.asm)
 
 #### Fastloader (U0 command,track,sector)
 
@@ -392,6 +392,7 @@ You might be also interested in a cartridge case. It should [fit inside this one
 This project wouldn't be possible without documentation provided by others:
 
 - [Fake6523](https://github.com/go4retro/Fake6523) and [Fake6523 HW proved](https://github.com/ZXByteman/Fake6523) that I took and trimmed down from full 6523 implementation down to 6323T
+- [cia-verilog](https://github.com/niklasekstrom/cia-verilog/blob/master/cia.v) which showed me a better way of interfacing with CPU bus
 - [Commodore TCBM bus and protocol description](https://www.pagetable.com/?p=1324)
 - [c264-magic-cart](https://github.com/msolajic/c264-magic-cart) and [C264Cart](https://github.com/hackup/C264Cart) which were my template for PCB dimensions
 - [LittleSixteen](https://github.com/SukkoPera/LittleSixteen) where I found KiCad expansion port footprint and symbol, also helped me to understand how Plus/4 expansion port works
