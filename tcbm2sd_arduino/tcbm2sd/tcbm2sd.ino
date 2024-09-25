@@ -610,7 +610,7 @@ void pwd_get_current_dir(char * buffer) {
 
 void handle_command() {
 	char *fname;
-	if (debug) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
+	if (debug||debug2) { Serial.print(F("...command [")); Serial.print((const char*)input_buf); Serial.println(F("]")); }
 	if (!input_buf[0]) {
 		if (debug) { Serial.println(F("no command, no change")); }
 		return;
