@@ -1,3 +1,13 @@
+[20240925]
+GEOS finally loads!. There were several problems, but enabled Arduino code was one of them - I have enabled debug but forgot to reduce PATH_SIZE to account for fewer RAM bytes available.
+It seems that something related to writing (PutBlock / WriteBuff / WriteFile) doesn't work correctly yet. Saving single sectors was already tested, but when this happens in stream something goes wrong.
+TCBM as a single drive #8 is the only one supported now.
+Need to figure out what happens at the intercepted GEOS reset vector to recover from that. The message says that it needs bootdisk, but it doesn't even try to access the drive.
+
+[20240922]
+Spent last 2 days on disassembling 1551 GEOS disk driver and repacking GEOS. GEOS does boot but tcbm2sd doesn't work yet.
+I have to try again with debug Arduino firmware to see what's going on.
+
 [20240919]
 Made NEXT button enter the first disk image (providing it's within the first <tries> range (10)).
 Tested new Arduino firmware on board without A6/A7 pullups - buttons are enabled until the first reset after powerup.

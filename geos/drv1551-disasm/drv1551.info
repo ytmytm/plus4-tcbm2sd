@@ -1,0 +1,77 @@
+
+GLOBAL {
+    OUTPUTNAME "drv1551.s";
+    INPUTNAME "drv1551.bin";
+    STARTADDR $9000;
+    CPU "6502";
+};
+
+ASMINC { FILE "geossym.inc"; IGNOREUNKNOWN True ; } ;
+ASMINC { FILE "diskdrv.inc"; } ;
+ASMINC { FILE "jumptab.inc"; } ;
+
+RANGE { START $9000; END $902F; TYPE AddrTable; };
+RANGE { START $9030; END $904A; TYPE Code; };
+RANGE { START $904B; END $904E; TYPE ByteTable; };
+RANGE { START $904F; END $925C; TYPE Code; };
+RANGE { START $925D; END $926C; TYPE TextTable; };
+RANGE { START $926D; END $93E7; TYPE Code; };
+RANGE { START $93E8; END $93F2; TYPE ByteTable; };
+RANGE { START $93F3; END $9439; TYPE Code; };
+RANGE { START $943A; END $943A; TYPE ByteTable; };
+RANGE { START $943B; END $954D; TYPE Code; };
+RANGE { START $954E; END $9555; TYPE ByteTable; };
+RANGE { START $9556; END $959A; TYPE Code; };
+RANGE { START $959B; END $95A2; TYPE ByteTable; };
+RANGE { START $95A3; END $97DD; TYPE Code; };
+RANGE { START $97DE; END $97E0; TYPE TextTable; };
+RANGE { START $97E1; END $97E3; TYPE ByteTable; };
+RANGE { START $97E4; END $97EE; TYPE TextTable; };
+RANGE { START $97EF; END $9800; TYPE ByteTable; };
+
+LABEL { NAME "TriportA"; addr $fec0; };
+LABEL { NAME "TriportB"; addr $fec1; };
+LABEL { NAME "TriportC"; addr $fec2; };
+LABEL { NAME "TriportDDRA"; addr $fec3; };
+LABEL { NAME "TriportDDRB"; addr $fec4; };
+LABEL { NAME "TriportDDRC"; addr $fec5; };
+
+
+LABEL { NAME "DrvCodeBoot"; addr $97E4; };
+LABEL { NAME "FBBBitTab"; addr $959b; };
+LABEL { NAME "SecTrTab"; addr $954e; };
+LABEL { NAME "SecScTab"; addr $9552; };
+LABEL { NAME "DosErrors"; addr $93e8; };
+
+LABEL { NAME "__InitDoneForIO"; addr   $97DD; };
+LABEL { NAME "__ExitTurbo"; addr   $90DC; };
+LABEL { NAME "__PurgeTurbo"; addr   $90F9; };
+LABEL { NAME "__EnterTurbo"; addr   $926E; };
+LABEL { NAME "__ChangeDiskDevice"; addr   $90B6; };
+LABEL { NAME "__NewDisk"; addr   $92C6; };
+LABEL { NAME "__ReadBlock"; addr   $92F7; };
+LABEL { NAME "__WriteBlock"; addr   $9676; };
+LABEL { NAME "__VerWriteBlock"; addr   $969D; };
+LABEL { NAME "__OpenDisk"; addr   $93F3; };
+LABEL { NAME "__GetBlock"; addr   $92F1; };
+LABEL { NAME "__PutBlock"; addr   $9654; };
+LABEL { NAME "__GetDirHead"; addr   $92E4; };
+LABEL { NAME "__PutDirHead"; addr   $9647; };
+LABEL { NAME "__GetFreeDirBlk"; addr   $943B; };
+LABEL { NAME "__CalcBlksFree"; addr   $95BB; };
+LABEL { NAME "__FreeBlock"; addr   $95A3; };
+LABEL { NAME "__SetNextFree"; addr   $94E5; };
+LABEL { NAME "__FindBAMBit"; addr   $957C; };
+LABEL { NAME "__NxtBlkAlloc"; addr   $910C; };
+LABEL { NAME "__BlkAlloc"; addr   $9105; };
+LABEL { NAME "__ChkDkGEOS"; addr   $923E; };
+LABEL { NAME "__SetGEOSDisk"; addr   $95E4; };
+LABEL { NAME "_Get1stDirEntry"; addr $91B5; };
+LABEL { NAME "_GetNxtDirEntry"; addr $91CE; };
+LABEL { NAME "_GetBorder"; addr $9218; };
+LABEL { NAME "_AddDirBlock"; addr $9499; };
+LABEL { NAME "_ReadBuff"; addr $92E9; };
+LABEL { NAME "_WriteBuff"; addr $964C; };
+LABEL { NAME "_SendTSBytes"; addr $9329; };
+LABEL { NAME "_CheckErrors"; addr $93C1; };
+LABEL { NAME "_AllocateBlock"; addr $96D2; };
