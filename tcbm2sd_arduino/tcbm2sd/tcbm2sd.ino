@@ -1558,11 +1558,11 @@ void state_fastblock(void) {
 
 	while (!done) {
 		if (status != TCBM_STATUS_OK) {   // not OK or end of transmission
-			tcbm_set_status(status); // put out status
-			ack ^= 1; // flip ACK
-			dav ^= 1; // flip DAV
-			if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
-			tcbm_set_ack(ack);
+//			tcbm_set_status(status); // put out status
+//			ack ^= 1; // flip ACK
+//			dav ^= 1; // flip DAV
+//			if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+//			tcbm_set_ack(ack);
 			tcbm_port_input(); // return to initial state
 			if (debug2) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
 			tcbm_set_ack(1);
