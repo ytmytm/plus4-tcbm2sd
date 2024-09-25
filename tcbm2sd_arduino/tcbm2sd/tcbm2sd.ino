@@ -1579,12 +1579,12 @@ void state_fastblock(void) {
 						if (debug2) { Serial.println(F("EOF")); }
 					}
 					c++;
-					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
+					if (debug2>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.println(b, HEX); }
 					tcbm_set_status(status); // put out status
 					tcbm_port_write(b);
 					ack ^= 1; // flip ACK
 					dav ^= 1; // flip DAV
-					if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+					if (debug2>1) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
 					tcbm_set_ack(ack);
 					while (!(tcbm_get_dav() == dav)); // wait for confirmation
 					break;
@@ -1600,10 +1600,10 @@ void state_fastblock(void) {
 					}
 					c++;
 					tcbm_set_status(status); // put out status
-					if (debug2) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+					if (debug2>1) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
 					tcbm_set_ack(ack);	// confirm we got it
 					r = di->file->write(b);
-					if (debug2) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
+					if (debug2>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
 					break;
 				default:
 					break;
