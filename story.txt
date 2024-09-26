@@ -1,3 +1,7 @@
+[20240926]
+GEOS finally loads and saves! Desk accessories work (because saving/loading of swap files is correct).
+The last thing to figure out is what happens at GEOS reset vector. It should just reload desktop.
+
 [20240925]
 GEOS finally loads!. There were several problems, but enabled Arduino code was one of them - I have enabled debug but forgot to reduce PATH_SIZE to account for fewer RAM bytes available.
 It seems that something related to writing (PutBlock / WriteBuff / WriteFile) doesn't work correctly yet. Saving single sectors was already tested, but when this happens in stream something goes wrong.
@@ -25,7 +29,15 @@ Also it has fast protocol for block-write to send data into tcbm2sd.
 TODO-HW
 - pullups for Arduino A6/A7 (analog pins)
 - J1 (reset passthrough) open by default (causes Arduino programming failures)
-- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section
+- dual THT/SMD footprints for NEXT/PREV buttons
+- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section (needs tests first)
+TODO:
+- testy testy testy
+- test ROMu bez 74'00 (CPLD+rewire+uniesione nóżki)
+	- test obu banków! https://plus4world.powweb.com/plus4encyclopedia/500255
+- zdjęcie PCB dla PCBWay bez Arduino ani guzików - tak jak przysłane
+- +imre/siz (gmail),+zarko,+sukkopera,nameless - info o nowym JED ; carrion+icheck(?) - info o nowym do testów (na rev1)
+
 [20240917]
 Fastload made simpler, loader made smaller with 1571/81 burst utility command: U0<$1F><filename>
 Within disk images load files by track&sector with U0<$3F><track><sector> command
