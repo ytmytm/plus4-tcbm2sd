@@ -1330,15 +1330,8 @@ void send_data_stream(bool fast_mode) {
 
 	while (!done) {
 		if (status != TCBM_STATUS_OK) {   // file not found, not OK
-			if (debug>1) { Serial.println(F("0D : 0D")); }
 			tcbm_set_status(status); // put out status
-//          tcbm_port_write(13); // anything
-			ack ^= 1; // flip ACK
-			dav ^= 1; // flip DAV
-			if (debug>1) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
-			tcbm_set_ack(ack);
-//          while (!(tcbm_get_dav() == dav)); // wait for confirmation
-			tcbm_port_input(); // return to initial state
+			tcbm_port_input(); // return to initial state1
 			if (debug>1) { Serial.println(F("ACK=1 waiting for final DAV=1")); }
 			tcbm_set_ack(1);
 			while (!(tcbm_get_dav() == 1)); // must return to initial state
