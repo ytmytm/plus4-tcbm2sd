@@ -453,11 +453,14 @@ inc $FF19
 ;	bne ReadBlockLoop
 
 ReadBlockLoopEnd:
-	lda #$40										; $40 = DAV (bit 6) to 1
-	sta $FEF2
-
+:	lda $FEF2                                   	; wait for ACK high
+	bpl :-
+	lda #$00
+	sta $FEF0										; clear data port (just in case it was one of command bytes)
 	lda #$ff            	                        ; port A to output (a bit delayed after ACK)
 	sta $FEF3
+	lda #$40										; $40 = DAV (bit 6) to 1
+	sta $FEF2
 
 	ldx #0
 GetBlk0:
@@ -480,6 +483,8 @@ __WriteBlock:
 
 	; port A is already an output
 	; DAV is high, ACK is high
+	lda #$40                           	 	        ; DAV=1 byte is not ready
+	sta $FEF2
 
 	ldy #0
 WriteBlockLoop:
@@ -507,11 +512,17 @@ inc $FF19
 inc $FF19
 	tya
 	bne WriteBlockLoop
-	; more sectors - but this example saves only one
+	; we can send more sectors - but this example saves only one
 ;	inc r4H											; possibly more sectors?
 ;	bne WriteBlockLoop
 
 WriteBlockLoopEnd:
+	lda $FEF2                                   	; wait for ACK high
+	bpl :-
+	lda #$00
+	sta $FEF0										; clear data port (just in case it was one of command bytes)
+	lda #$ff            	                        ; port A to output (a bit delayed after ACK)
+	sta $FEF3
 	lda #$40										; $40 = DAV (bit 6) to 1
 	sta $FEF2
 
