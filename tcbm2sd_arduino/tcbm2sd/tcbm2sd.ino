@@ -216,14 +216,15 @@ void tcbm_disabled() {
 
 uint8_t tcbm_read_cmd() { // read command byte - 0 or $81/82/83/84
   volatile uint8_t tmp, cmd;
-//  Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav());
+  if (debug2>1) { Serial.println(F("read_cmd, dav=")); Serial.println(tcbm_get_dav()); }
   if (tcbm_get_dav() != 1) return 0; // controller ready?
   tmp = tcbm_port_read();
   cmd = tcbm_port_read();
-//  Serial.print(F("tmp,cmd=")); Serial.println((uint16_t)(tmp << 8 | cmd),HEX);
+  if (debug2>1) { Serial.print(F("tmp,cmd=")); Serial.println((uint16_t)(tmp << 8 | cmd),HEX); }
   if (tmp != cmd) return 0; // stable?
   if (!(cmd & 0x80)) return 0; // command?
-//  Serial.println(F("set ACK=0"));
+  if (!(cmd==0x81 || cmd==0x82 || cmd==0x83 || cmd==0x84)) return 0; // valid command?
+  if (debug2>1) { Serial.println(F("set ACK=0")); }
   tcbm_set_ack(0);
   return cmd;
 }
@@ -895,7 +896,7 @@ void state_idle() {
 	if (dat == 0x20) { // LISTEN
 		cmd = tcbm_read_cmd_block();
 		dat = tcbm_read_data(TCBM_STATUS_OK);
-		if (debug) { Serial.print(F("[LISTEN]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+		if (debug|debug2) { Serial.print(F("[LISTEN]:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 		if (cmd != TCBM_CODE_SECOND) return;
 		chn = dat & 0x0F;
 		switch (dat & 0xF0) {
@@ -906,10 +907,10 @@ void state_idle() {
 				state = STATE_OPEN; // filename or command incoming, until UNLISTEN
 				break;
 			case 0xE0:	// CLOSE
-				if (debug) { Serial.print(F("close chn=")); }
-				if (debug) { Serial.println(chn); }
+				if (debug|debug2) { Serial.print(F("close chn=")); }
+				if (debug|debug2) { Serial.println(chn); }
 				if (channel == 15) {
-					if (debug) { Serial.println(F("handle command from input buf")); }
+					if (debug|debug2) { Serial.println(F("handle command from input buf")); }
 					// handle command from input buffer: S:, R:, CD<-, CD<name>, CD:<name>, CD//
 					handle_command();
 				}
@@ -1533,7 +1534,9 @@ void state_fastblock(void) {
 
 	tcbm_set_ack(ack); // set ack high (it should be already high)
 
-	if (debug2) { Serial.print(F("[FB-R]:")); Serial.print(filename[0],HEX); Serial.print(F(":")); Serial.print(filename[1],HEX); Serial.print(F(":")); Serial.print(filename[2],HEX); Serial.print(F(":")); }
+	if (debug2 && state == STATE_FAST_BLOCKREAD) { Serial.print(F("[FB-R]:")); }
+	if (debug2 && state == STATE_FAST_BLOCKWRITE) { Serial.print(F("[FB-W]:")); }
+	if (debug2) { Serial.print(filename[0],HEX); Serial.print(F(":")); Serial.print(filename[1],HEX); Serial.print(F(":")); Serial.print(filename[2],HEX); Serial.print(F(":")); }
 	if (in_image) {
 		offs = di_get_ts_image_offs(di, filename[0], filename[1]);
 		bytes = filename[2] << 8;
@@ -1591,6 +1594,7 @@ void state_fastblock(void) {
 				case STATE_FAST_BLOCKWRITE:
 					ack ^= 1; // flip ACK
 					dav ^= 1; // flip DAV
+					if (debug2>1) { Serial.print(F("waiting for DAV=")); Serial.println(dav); }
 					while (!(tcbm_get_dav() == dav)); // wait for data
 					b = tcbm_port_read();
 					bytes--;
@@ -1600,7 +1604,7 @@ void state_fastblock(void) {
 					}
 					c++;
 					tcbm_set_status(status); // put out status
-					if (debug2>1) { Serial.print(F("ACK=")); Serial.print(ack); Serial.print(F("waiting for DAV=")); Serial.println(dav); }
+					if (debug2>1) { Serial.print(F("ACK=")); Serial.print(ack); }
 					tcbm_set_ack(ack);	// confirm we got it
 					r = di->file->write(b);
 					if (debug2>1) { Serial.print(c,HEX); Serial.print(F(" : ")); Serial.print(b, HEX); Serial.print(F(" : ")); Serial.println(r, HEX); }
@@ -1725,10 +1729,10 @@ void state_open() {
 				break;
 			case TCBM_CODE_COMMAND:
 				if (dat == 0x3F) { // UNLISTEN
-					if (debug) { Serial.println(F("[UNLISTEN]")); }
+					if (debug|debug2) { Serial.println(F("[UNLISTEN]")); }
 					file_opened = true;
 				} else {
-					if (debug) { Serial.print(F("unk OPEN CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
+					if (debug|debug2) { Serial.print(F("unk OPEN CODE cmd:")); Serial.println((uint16_t)(cmd << 8 | dat), HEX); }
 					input_buf_ptr = 0;
 				}
 				done = true;
