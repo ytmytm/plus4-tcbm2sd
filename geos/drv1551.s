@@ -1,8 +1,28 @@
-; da65 V2.19 - Git dcdf7ade0
-; Created:    2024-09-21 19:34:58
-; Input file: drv1551.bin
-; Page:       1
-
+;
+; GEOS disk driver for TCBM2SD
+; Maciej 'YTM/Elysium' Witkowiak, 2024, <ytm@elysium.pl>
+;
+; Based on disassembled 1551 disk driver
+;
+; This driver is fixed to device #8
+; This driver uses fast protocol for block read/write within disk images: 'U0'+<oper>+<track>+<sector>+<number of blocks>
+; - oper = $00 (read) or $02 (write)
+; - track and sector bytes
+; - number of blocks to read/write = 1 (always a single block)
+;
+; Notes about original code:
+; - 1551 loads drive code from 'TDISK*' file, that saved precious space here, but every disk must have this file present
+;   (DeskTop could just put it on track 18 as a part of GEOS disk format)
+; - TCBM_SendDOSCommand and other TCBM_* functions next to it use standard TCBM protocol to communicate with DOS without Kernal
+;   - using LSR to copy DAV bit (input) to ACK (output) is clever
+; - the last jump in the jump table goes to 'Add2' instead of AllocateBlock like on C64/128
+; - $97F8 holds offsets to TCBM device ports indexed by drive number
+; - parts of low GEOS Kernal code are present here:
+;   - _ReadFile/_WriteFile (vectors at $97FA/B $97FC/D)
+;   - serial number ($97FE/F)
+;   - 'Add2' through $9048 jump table
+; - InitForIO/DoneWithIO never accessed, disabled already in the GEOS jumptabel
+; - a lot of remaining code identical with 1541 disk driver
 
         .setcpu "6502"
 
@@ -423,7 +443,7 @@ RdBlock0:
 ReadBlockLoop:
 :	lda $FEF2                                   	; wait for ACK low
 	bmi :-
-inc $FF19
+;inc $FF19
 	lda $FEF0
 	sta (r4),y
 	iny
@@ -436,7 +456,7 @@ inc $FF19
 
 :	lda $FEF2										; wait for ACK high
 	bpl :-
-inc $FF19
+;inc $FF19
 	lda $FEF0
 	sta (r4),y
 	iny
@@ -498,7 +518,7 @@ WriteBlockLoop:
 	lda $FEF1                         	    	    ; STATUS
 	and #%00000011									; EOI?
 	bne WriteBlockLoopEnd
-inc $FF19
+;inc $FF19
 	lda (r4),y
 	sta $FEF0
 	iny
@@ -509,7 +529,7 @@ inc $FF19
 	lda $FEF1                         	    	    ; STATUS
 	and #%00000011									; EOI?
 	bne WriteBlockLoopEnd
-inc $FF19
+;inc $FF19
 	tya
 	bne WriteBlockLoop
 	; we can send more sectors - but this example saves only one

@@ -1,3 +1,14 @@
+;
+; GEOS BOOT for Plus4 + TCBM2SD
+; Maciej 'YTM/Elysium' Witkowiak, 2024, <ytm@elysium.pl>
+;
+; This is based on disassembled 'GEOS BOOT' for Plus4
+; all code related to original 1551 disk driver was removed
+;
+; Since GEOS Kernal low code ($8C00-$9800) and high ($C000-$FD00) are already in place
+; we just use the system routines.
+;
+; After RESET GEOS Kernal should load 'GEOS BOOT' to $0900 and jump into $0903.
 
 .include "const.inc"
 .include "geossym.inc"
@@ -94,22 +105,46 @@ L09CD:  jsr     i_FillRam                       ; 09CD
         jsr     LC332                           ; 09F9
         jsr     LFB80                           ; mouse init
 	LoadB	$FD10, 0
-        LoadB	NUMDRV, 1			; one drive only
+	LoadB	NUMDRV, 1			; one drive only
 	sta	driveType			; 1541/1551
 	LoadB	curDeviceP4, 8			; switch current device to 8
 	sta	curDrive
-        sta     $FD02                           ; ???
+	sta interleave
+	sta     $FD02                           ; ???
 	jsr	SetDevice
 	LoadB	$9FF8, $3f			; ???
 	LoadB	TCBMPortOffs, $30		; correct offset setup if TCBM:1 is #8 (default)
 	LoadB	TCBMPortOffs+1, $00
 
-        jsr     OpenDisk                        ; 0BB2
-	bnex	err
+	jsr		OpenDisk
+	beqx	:+
+	jmp		err
+:
 
 	jsr $C332	; clearscr
 	jsr $C39E	; pointer?
 
+	; we could jump to EnterDeskTop here, but that would clear the screen and the message
+	;jmp EnterDeskTop
+	jsr UseSystemFont
+	jsr i_PutString
+	.word 10
+	.byte 40
+	.byte BOLDON, "TCBM2SD disk driver by YTM/Elysium, 2024",0
+
+	LoadB	r0L, 0
+	LoadW	r6, DeskTopName
+    jsr     GetFile
+	bnex	err
+
+	jsr		LC3B6
+	LoadB	$8FF8, 0
+	sta		r0
+	MoveW	fileHeader+O_GHST_VEC, r7		; exec addr from file header
+	jmp     StartAppl
+
+
+.if .defined(debug)
 ;;;	jsr gfxtest
 
 	lda	#0
@@ -130,10 +165,12 @@ L09CD:  jsr     i_FillRam                       ; 09CD
 
 	jsr gfxtest
 	jmp	EnterDeskTop
+.endif
 
 err:
 	inc 	$ff19
 	jmp 	err
+
 
 ; ----------------------------------------------------------------------------
 L0BED:  .addr   GeosReset                       ; 0BED
@@ -149,7 +186,7 @@ DeskTopName:
 ;
 
 ;----------------------------
-
+.if .defined(debug)
 waitkey:
 	inc $ff19
 	jsr GetNextChar
@@ -419,3 +456,4 @@ LoadB r0L, 0
 
 	rts
 
+.endif
