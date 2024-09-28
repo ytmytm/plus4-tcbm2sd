@@ -1,3 +1,6 @@
+[20240928]
+GEOS reset vector is supposed to ask for boot disk, then load 'GEOS BOOT' (using Kernal) and jump to $0903.
+It doesn't work, but I'm not going to fix that now.
 [20240926]
 GEOS finally loads and saves! Desk accessories work (because saving/loading of swap files is correct).
 The last thing to figure out is what happens at GEOS reset vector. It should just reload desktop.
@@ -26,17 +29,6 @@ Read with :U0<$00><track><sector><number-of-blocks-to-read>
 Write with:U0<$02><track><sector><number-of-blocks-to-write>
 There is a test utility in loader/block-rw.asm that demonstrates how to use it.
 Also it has fast protocol for block-write to send data into tcbm2sd.
-TODO-HW
-- pullups for Arduino A6/A7 (analog pins)
-- J1 (reset passthrough) open by default (causes Arduino programming failures)
-- dual THT/SMD footprints for NEXT/PREV buttons
-- cut off unneeded GPIO+one of cartridge pins (/CAS) from expansion port and use that to replace ROM /CS+A15 driver section (needs tests first)
-TODO:
-- testy testy testy
-- test ROMu bez 74'00 (CPLD+rewire+uniesione nóżki)
-	- test obu banków! https://plus4world.powweb.com/plus4encyclopedia/500255
-- zdjęcie PCB dla PCBWay bez Arduino ani guzików - tak jak przysłane
-- +imre/siz (gmail),+zarko,+sukkopera,nameless - info o nowym JED ; carrion+icheck(?) - info o nowym do testów (na rev1)
 
 [20240917]
 Fastload made simpler, loader made smaller with 1571/81 burst utility command: U0<$1F><filename>
