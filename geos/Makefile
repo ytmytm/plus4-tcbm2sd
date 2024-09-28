@@ -21,7 +21,7 @@ geos.prg: $(TARGETS) bin/geoskernal.8c00-8fff.prg bin/geoskernal.bf40-fcff.prg
 
 geostcbm.d64: geos.prg bin/geos_3_53-clean.d64
 	cp bin/geos_3_53-clean.d64 geostcbm.d64
-	c1541 -attach geostcbm.d64 8 -write geos.prg
+	c1541 -attach geostcbm.d64 8 -write geos.prg 'geos' -write geosboot.prg 'geos boot'
 
 # Clean rule to remove generated files
 clean:
