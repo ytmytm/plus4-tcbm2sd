@@ -67,8 +67,8 @@ assign port_c[6] = ddrc[6] ? prc[6] : 1'bz;
 assign port_c[7] = ddrc[7] ? prc[7] : 1'bz;
 
 
-// 3.3V RESET
-assign _resetout = _reset;
+// 3.3V RESET only low or floating
+assign _resetout = !_reset ? _reset : 1'bz;
 
 assign seladr = (
  			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
