@@ -34,10 +34,23 @@ module Fake6523(
                 input aec,
                 input _cas,
                 input ba,
-                output pla_f7,		// PLA feedback output pin (debug)
-                output _cs,			// 6523 /CS pin (debug)
-                output _resetout		// 3.3V /RESET
-               );
+//                output pla_f7,		// PLA feedback output pin (debug)
+//                output _cs,			// 6523 /CS pin (debug)
+//                output _resetout		// 3.3V /RESET
+					input c1lo,
+					input c1hi,
+					input c2lo,
+					input c2hi,
+               output rom_a15,
+					output rom_cs
+					);
+
+// ROM
+
+assign rom_cs = !(!c1lo || !c1hi || !c2lo || !c2hi);
+assign rom_a15 =!(!c1lo || !c1hi); // 1 for C1 (high 32K half, default fro 32K ROM), 0 for C2 (low 32K half)
+
+// Fake6523
 
 reg [7:0] data_out;
 
@@ -68,7 +81,7 @@ assign port_c[7] = ddrc[7] ? prc[7] : 1'bz;
 
 
 // 3.3V RESET only low or floating
-assign _resetout = !_reset ? _reset : 1'bz;
+//assign _resetout = !_reset ? _reset : 1'bz; // XXX temporarily
 
 assign seladr = (
  			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
