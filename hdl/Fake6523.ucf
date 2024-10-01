@@ -29,17 +29,17 @@ NET "rs<2>"			LOC = "P16"  ; # A2 exp. W
 # other inputs
 NET "phi2"			LOC = "P34"  ;	# Phi2 exp. 24
 NET "aec" 			LOC = "P33"  ; # AEC exp. 22
-NET "_cas"			LOC = "P42"  ; # /CAS exp. 11
+NET "_cas"			LOC = "P42"  ; # /CAS exp. 11	XXX (remove in next rev)
 NET "ba"				LOC = "P43"  ; # BA exp. 13
 
-# unused I/O on header
-NET "pla_f7" 		LOC="P35"	 ; # PLA F7 (10) -> I0 (2)
-NET "_cs"			LOC="P36"	 ; # PLA F0 (18) -> 6523 /CS (12)
-#NET "gpio<1>"		LOC = "P35"	 ; # J3-1
-#NET "gpio<2>"		LOC = "P36"  ; # J3-2
-#NET "gpio<3>"		LOC = "P38"  ; # J3-3
-#NET "gpio<4>"		LOC = "P39"  ; # J3-4
-#NET "gpio<5>"		LOC = "P40"  ; # J3-5
+# ROM control
+NET "c1lo"			LOC = "P35"	 ; # J3-1			<- C1LO exp. B
+NET "c1hi"			LOC = "P36"  ; # J3-2			<- C1HI exp. 6
+NET "c2lo"			LOC = "P38"  ; # J3-3			<- C2LO exp. 7
+NET "c2hi"			LOC = "P39"  ; # J3-4			<- C2HI exp. 8
+NET "rom_a15"		LOC = "P40"  ; # J3-5			-> ROM A15 1
+NET "rom_cs"	   LOC = "P44"  ; # JP1				-> ROM /CE/OE 20+22 (temporary, use /CAS from P42 instead)
+//NET "rom_cs"		LOC = "P42"  ; # /CAS			-> ROM /CE/OE 20+22 XXX
 
 # PLA inputs
 NET "pla_i<1>"		LOC = "P6"	 ; # PLA I1 (8)   <- A11 exp. L
@@ -60,5 +60,5 @@ NET "pla_i<15>"   LOC = "P12"  ; # PLA I15 (20) <- A5 exp. T
 # additional inputs
 NET "addr<4>"     LOC = "P13"  ; # PLA xxx      <- A4 exp. U
 NET "addr<3>"     LOC = "P15"  ; # PLA xxx      <- A3 exp. V
-# additional output
-NET "_resetout"   LOC = "P44"  ; # copy 5V /RESET to 3.3V /RESET
+# additional output (temp. disabled)
+#NET "_resetout"   LOC = "P44"  ; # copy 5V /RESET to 3.3V /RESET XXX
