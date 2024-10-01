@@ -1,3 +1,8 @@
+[20241001]
+Removed 74'00 and reused J3 GPIO connections to check if I can move ROM logic into CPLD and save space and parts.
+It's confirmed and tested that it works, so I can start working on rev1.3 with some simplifications.
+For reference, bank switching info is here https://plus4world.powweb.com/plus4encyclopedia/500255
+
 [20240928]
 GEOS reset vector is supposed to ask for boot disk, then load 'GEOS BOOT' (using Kernal) and jump to $0903.
 It doesn't work, but I'm not going to fix that now.
