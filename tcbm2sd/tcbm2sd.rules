@@ -10,8 +10,8 @@
     (vias on)
     (via_costs 1)
     (plane_via_costs 1)
-    (start_ripup_costs 50)
-    (start_pass_no 41965)
+    (start_ripup_costs 10)
+    (start_pass_no 10768)
     (layer_rule F.Cu
       (active on)
       (preferred_direction vertical)
@@ -65,15 +65,14 @@
     /A11 /A13 /A3 /A1 /A5 /A7 /A12 /A0
     /A6 /A4 /A2 /A8 /A10 /A9 /A14 /A15
     GND /R{slash}~{W} /D0 /D1 /D2 /D3 /D4 /D5
-    /D6 /D7 /~{RESET} "Net-(JP1-Pad2)" "Net-(JP2-Pad2)" "/~{RESET_3_3V}" /DEV /DIO1
-    /DIO2 /DIO3 /DIO4 /DIO5 /DIO6 /DIO7 /DIO8 /DAV
-    /STATUS0 /ACK /STATUS1 +3V3 /TDI /TMS /TCK /TDO
-    /PHI0 /MUX /~{RAS} "Net-(J3-Pad1)" "Net-(JP3-Pad3)" "unconnected-(U2-Pad24)" "/SD_CS" "/SD_MOSI"
-    "/SD_MISO" "/SD_SCK" /~{IRQ} /C1HI /C2LO /C2HI /~{CS1} /~{CS0}
-    /~{CAS} /BA /AEC "/EXT_AUDIO" /PHI2 /NC2 /C1LO /NC3
-    /NC1 "unconnected-(U2-Pad1)" "/SD_CD" "Net-(C5-Pad1)" "Net-(J3-Pad2)" "unconnected-(U2-Pad3)" "Net-(J3-Pad3)" "Net-(J3-Pad4)"
-    "Net-(J3-Pad5)" "Net-(JP3-Pad2)" "/ALT_A7" "/ALT_A6" "Net-(D2-Pad1)" /~{ROMCS} "/ROM_A15" "Net-(JP3-Pad1)"
-    "Net-(U5-Pad3)" "Net-(U5-Pad12)"
+    /D6 /D7 /~{RESET} "Net-(JP2-Pad2)" "/~{RESET_3_3V}" /DEV /DIO1 /DIO2
+    /DIO3 /DIO4 /DIO5 /DIO6 /DIO7 /DIO8 /DAV /STATUS0
+    /ACK /STATUS1 +3V3 /TDI /TMS /TCK /TDO /PHI0
+    /MUX /~{RAS} "Net-(U2-Pad22)" "Net-(JP3-Pad3)" "unconnected-(U2-Pad24)" "/SD_CS" "/SD_MOSI" "/SD_MISO"
+    "/SD_SCK" /~{IRQ} /C1HI /C2LO /C2HI /~{CS1} /~{CS0} "unconnected-(U$1-Pad11)"
+    /BA /AEC "/EXT_AUDIO" /PHI2 /NC2 /C1LO /NC3 /NC1
+    "unconnected-(U2-Pad1)" "/SD_CD" "Net-(C5-Pad1)" "unconnected-(U2-Pad3)" "Net-(JP3-Pad2)" "/ALT_A7" "/ALT_A6" /~{ROMCS}
+    "/ROM_A15" "Net-(JP3-Pad1)"
     (clearance_class default)
     (via_rule default)
     (rule

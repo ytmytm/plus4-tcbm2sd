@@ -2469,8 +2469,8 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 519ca563-535e-4d06-bb80-21bceddc03cf)
   )
-  (text "A6 shorted to GND at RESET = disable Arduino\nA6 shorted to GND at RESET = enable TCBM conn\n(A6 can be shorted by TCBM cable or by holding SW1)\nSW1/SW2 option for next/previous disk image (autolist)"
-    (at 196.85 154.305 0)
+  (text "A7 shorted to GND at RESET = disable buttons (A6 won't be checked)\nelse:\nA6 shorted to GND at RESET = disable Arduino\nA6 shorted to GND at RESET = enable TCBM conn\n(A6 can be shorted by TCBM cable or by holding SW1)\nSW1/SW2 option for next/previous disk image (autolist)"
+    (at 184.785 161.925 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 58f1994b-3909-4c90-81b4-824204145b08)
   )
