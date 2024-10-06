@@ -1,3 +1,7 @@
+[20241007]
+Changed switch footprint from the default one to a new one that can be shared between straight and angled push buttons.
+J1 (reset passthrough) is open by default - caused Arduino programming failures when passed through CPLD.
+
 [20241001]
 Removed 74'00 and reused J3 GPIO connections to check if I can move ROM logic into CPLD and save space and parts.
 It's confirmed and tested that it works, so I can start working on rev1.3 with some simplifications.
@@ -6,6 +10,7 @@ For reference, bank switching info is here https://plus4world.powweb.com/plus4en
 [20240928]
 GEOS reset vector is supposed to ask for boot disk, then load 'GEOS BOOT' (using Kernal) and jump to $0903.
 It doesn't work, but I'm not going to fix that now.
+
 [20240926]
 GEOS finally loads and saves! Desk accessories work (because saving/loading of swap files is correct).
 The last thing to figure out is what happens at GEOS reset vector. It should just reload desktop.
