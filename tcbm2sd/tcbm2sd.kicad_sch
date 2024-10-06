@@ -3750,7 +3750,7 @@
     (uuid 9077d6af-aba8-40fe-9d96-a7e025a21e36)
     (property "Reference" "SW2" (id 0) (at 229.235 120.65 0))
     (property "Value" "BUT_NEXT" (id 1) (at 229.235 123.19 0))
-    (property "Footprint" "Button_Switch_THT:SW_PUSH_6mm" (id 2) (at 229.235 123.19 0)
+    (property "Footprint" "LittleSixteen:SW_PUSH_6mm_OR_SW_Tactile_SPST_Angled_PTS645Vx58-2LFS" (id 2) (at 229.235 123.19 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 229.235 123.19 0)
@@ -4025,7 +4025,7 @@
     (uuid c959f069-2b8c-4c54-a835-a0cd1e70cff6)
     (property "Reference" "SW1" (id 0) (at 229.235 110.49 0))
     (property "Value" "BUT_PREV" (id 1) (at 229.235 113.03 0))
-    (property "Footprint" "Button_Switch_THT:SW_PUSH_6mm" (id 2) (at 229.235 113.03 0)
+    (property "Footprint" "LittleSixteen:SW_PUSH_6mm_OR_SW_Tactile_SPST_Angled_PTS645Vx58-2LFS" (id 2) (at 229.235 113.03 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 229.235 113.03 0)
@@ -4422,10 +4422,10 @@
       (reference "R3") (unit 1) (value "10K") (footprint "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder")
     )
     (path "/c959f069-2b8c-4c54-a835-a0cd1e70cff6"
-      (reference "SW1") (unit 1) (value "BUT_PREV") (footprint "Button_Switch_THT:SW_PUSH_6mm")
+      (reference "SW1") (unit 1) (value "BUT_PREV") (footprint "LittleSixteen:SW_PUSH_6mm_OR_SW_Tactile_SPST_Angled_PTS645Vx58-2LFS")
     )
     (path "/9077d6af-aba8-40fe-9d96-a7e025a21e36"
-      (reference "SW2") (unit 1) (value "BUT_NEXT") (footprint "Button_Switch_THT:SW_PUSH_6mm")
+      (reference "SW2") (unit 1) (value "BUT_NEXT") (footprint "LittleSixteen:SW_PUSH_6mm_OR_SW_Tactile_SPST_Angled_PTS645Vx58-2LFS")
     )
     (path "/71fe6854-21dc-4774-adbd-eb6f5e8f643d"
       (reference "U$1") (unit 1) (value "C16_CARTRIDGE") (footprint "c264-magic-cart-rev1:C16_CART")
