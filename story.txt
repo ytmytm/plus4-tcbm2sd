@@ -1,3 +1,6 @@
+[20241008]
+Proven working with a C16 (6510, EEPROM, expanded to 64K, GAL pla.
+
 [20241007]
 Changed switch footprint from the default one to a new one that can be shared between straight and angled push buttons.
 J1 (reset passthrough) is open by default - caused Arduino programming failures when passed through CPLD.
