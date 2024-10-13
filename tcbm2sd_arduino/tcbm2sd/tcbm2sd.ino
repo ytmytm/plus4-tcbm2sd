@@ -21,6 +21,9 @@ const uint8_t debug2=0; // only for next/prev button; utility commands debug
 
 #define PATH_SIZE 71
 
+// disable buttons (if A6/A7 are not connected or without pullup)
+//#define DISABLE_NEXT_PREV_BUT
+
 //////////////////////////////////
 
 #include <EEPROM.h>
@@ -1848,6 +1851,9 @@ void disk_image_prevnext(bool prev) {
 void setup() {
 	// are buttons connected?
 	delay(20);
+#ifdef DISABLE_NEXT_PREV_BUT
+  but_prevnext_enabled = false;
+#else
 	if (analogRead(PIN_BUT_NEXT) < PIN_BUT_ANALOG_THR) { // grounded: BUT_NEXT doesn't have pullup or pressed, in any case buttons won't be used
 		but_prevnext_enabled = false;
 	} else {
@@ -1856,6 +1862,7 @@ void setup() {
 			tcbm_disabled(); // will never return
 		}
 	}
+#endif
   // no, continue
   pinMode(PIN_SD_CD, INPUT_PULLUP);
   sd_cd_laststate = digitalRead(PIN_SD_CD);
