@@ -73,7 +73,7 @@ const uint8_t PIN_SD_CD = A5; // may not be connected so check only for CHANGE, 
 const uint8_t PIN_BUT_PREV = A6; // also TCBM cable sense
 const uint8_t PIN_BUT_NEXT = A7; // buttons prev/next won't work if this is not pulled up
 const uint16_t PIN_BUT_ANALOG_THR = 600; // threshold for A6/A7 analog pins to be LOW (closed), not HIGH
-const uint8_t PIN_BUT_PREVNEXT_TRIES = 10; // check this many directory positions for next/prev disk image
+const uint8_t PIN_BUT_PREVNEXT_TRIES = 20; // check this many directory positions for next/prev disk image
 const uint32_t BUT_PREVNEXT_CHANGE_THR_MS = 100; // .1s delay for debouncing
 bool but_prevnext_enabled = true; // switch to false if A7 is not pulled up upon boot
 
