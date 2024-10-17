@@ -1,3 +1,11 @@
+[20241016]
+Big batch of v1.3 arrived. Confirmed working. Need to make releases (also for v1.1 revision with correct JED).
+Several updates needed:
+- separate H/W info from S/W user manual
+- new photos
+- publish GEOS boot disk
+- publish corrected design on pcbway
+
 [20241008]
 Proven working with a C16 (6510, EEPROM, expanded to 64K, GAL pla.
 
