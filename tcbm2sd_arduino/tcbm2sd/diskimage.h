@@ -94,11 +94,14 @@ DiskImage *di_load_image(File32 *file);
 int di_status(DiskImage *di, char *status);
 
 ImageFile *di_open(DiskImage *di, const char *rawname, FileType type);
+ImageFile *di_open_ts(DiskImage *di, unsigned char track, unsigned char sector);
 void di_close(ImageFile *imgfile);
 int di_read(ImageFile *imgfile, unsigned char *buffer, int len);
 
 int di_sectors_per_track(ImageType type, int track);
 int di_tracks(ImageType type);
+
+uint32_t di_get_ts_image_offs(DiskImage *di, unsigned char track, unsigned char sector);
 
 unsigned char *di_title(DiskImage *di);
 int di_track_blocks_free(DiskImage *di, int track);

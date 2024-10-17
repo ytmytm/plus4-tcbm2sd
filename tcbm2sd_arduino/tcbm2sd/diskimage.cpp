@@ -184,6 +184,15 @@ uint32_t get_block_num(ImageType type, TrackSector ts) {
   return(0);
 }
 
+/* get an offset within di->image to provided track and sector */
+/* only computes, does not seek there */
+uint32_t di_get_ts_image_offs(DiskImage *di, unsigned char track, unsigned char sector) {
+	TrackSector ts;
+	ts.track = track;
+	ts.sector = sector;
+	return get_block_num(di->type, ts) * 256;
+}
+
 
 /* get a pointer to block data */
 /* read one sector into buffer */
@@ -427,6 +436,37 @@ ImageFile *di_open(DiskImage *di, const char *rawname, FileType type) {
 
   set_status(di, 0, 0, 0);
   return(imgfile);
+}
+
+/* open a file for reading by track and sector */
+ImageFile *di_open_ts(DiskImage *di, unsigned char track, unsigned char sector) {
+	ImageFile *imgfile;
+	unsigned char *p;
+
+	set_status(di, 255, 0, 0);
+
+	imgfile = &_imgfile;
+	imgfile->ts.track = track;
+	imgfile->ts.sector = sector;
+	if (imgfile->ts.track > di_tracks(di->type)) {
+		return(NULL);
+	}
+	p = get_ts_addr(di, imgfile->ts);
+	imgfile->buffer = p + 2;
+	imgfile->nextts.track = p[0];
+	imgfile->nextts.sector = p[1];
+	if (imgfile->nextts.track == 0) {
+		imgfile->buflen = imgfile->nextts.sector - 1;
+	} else {
+		imgfile->buflen = 254;
+	}
+
+	imgfile->diskimage = di;
+	imgfile->position = 0;
+	imgfile->bufptr = 0;
+
+	set_status(di, 0, 0, 0);
+	return(imgfile);
 }
 
 
