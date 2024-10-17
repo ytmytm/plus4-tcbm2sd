@@ -25,13 +25,23 @@ NET "port_c<7>"	LOC = "P48"  ; # DAV, <-, wire 11 (controller's DAV in,  drive's
 NET "rs<0>"			LOC = "P18"  ; # A0 exp. Y
 NET "rs<1>"			LOC = "P17"  ; # A1 exp. X
 NET "rs<2>"			LOC = "P16"  ; # A2 exp. W
-# /CS from PLA (18) F0
 
-# PLA outputs
-NET "_cs"			LOC = "P34"  ;	# PLA F0 (18) -> 6523 /CS (12)
-NET "pla_f7" 		LOC = "P33"  ; # PLA F7 (10) -> I0 (2)
+# other inputs
+NET "phi2"			LOC = "P34"  ;	# Phi2 exp. 24
+NET "aec" 			LOC = "P33"  ; # AEC exp. 22
+NET "_cas"			LOC = "P42"  ; # /CAS exp. 11
+NET "ba"				LOC = "P43"  ; # BA exp. 13
+
+# unused I/O on header
+NET "pla_f7" 		LOC="P35"	 ; # PLA F7 (10) -> I0 (2)
+NET "_cs"			LOC="P36"	 ; # PLA F0 (18) -> 6523 /CS (12)
+#NET "gpio<1>"		LOC = "P35"	 ; # J3-1
+#NET "gpio<2>"		LOC = "P36"  ; # J3-2
+#NET "gpio<3>"		LOC = "P38"  ; # J3-3
+#NET "gpio<4>"		LOC = "P39"  ; # J3-4
+#NET "gpio<5>"		LOC = "P40"  ; # J3-5
+
 # PLA inputs
-# PLA I0 (9) <- PLA F7 (10) (wired back)
 NET "pla_i<1>"		LOC = "P6"	 ; # PLA I1 (8)   <- A11 exp. L
 NET "pla_i<2>"		LOC = "P5"	 ; # PLA I2 (7)   <- A12 exp. K
 NET "pla_i<3>"    LOC = "P4"	 ; # PLA I3 (6)   <- A13 exp. J

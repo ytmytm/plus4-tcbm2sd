@@ -22,6 +22,7 @@
   <sourceproject xmlns="http://www.xilinx.com/XMLSchema" xil_pn:fileType="FILE_XISE" xil_pn:name="Fake6523.xise"/>
 
   <files xmlns="http://www.xilinx.com/XMLSchema">
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_LSO" xil_pn:name=".lso"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGDBUILD_LOG" xil_pn:name="Fake6523.bld"/>
     <file xil_pn:fileType="FILE_CMD_LOG" xil_pn:name="Fake6523.cmd_log"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_GYD" xil_pn:name="Fake6523.gyd"/>
@@ -70,10 +71,11 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1723979561" xil_pn:in_ck="6504871993526262721" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="4809160305107765988" xil_pn:start_ts="1723979556">
+    <transform xil_pn:end_ts="1729201750" xil_pn:in_ck="3389918333788555" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="4809160305107765988" xil_pn:start_ts="1729201745">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name=".lso"/>
       <outfile xil_pn:name="Fake6523.lso"/>
       <outfile xil_pn:name="Fake6523.ngc"/>
       <outfile xil_pn:name="Fake6523.ngr"/>
@@ -90,7 +92,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1723979564" xil_pn:in_ck="-2759229508827602784" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="-2081320714713457669" xil_pn:start_ts="1723979561">
+    <transform xil_pn:end_ts="1729201753" xil_pn:in_ck="-2759229508827602784" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="-2081320714713457669" xil_pn:start_ts="1729201750">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="Fake6523.bld"/>
@@ -99,10 +101,11 @@
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1723979568" xil_pn:in_ck="3691621065495731182" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-6784470280908785381" xil_pn:start_ts="1723979564">
+    <transform xil_pn:end_ts="1729201759" xil_pn:in_ck="3691621065495731182" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-6784470280908785381" xil_pn:start_ts="1729201753">
       <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="Fake6523.gyd"/>
       <outfile xil_pn:name="Fake6523.mfd"/>
       <outfile xil_pn:name="Fake6523.nga"/>
@@ -117,29 +120,33 @@
       <outfile xil_pn:name="Fake6523_html"/>
       <outfile xil_pn:name="Fake6523_pad.csv"/>
     </transform>
-    <transform xil_pn:end_ts="1723979569" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1723979568">
+    <transform xil_pn:end_ts="1729201760" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1729201759">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="Fake6523.jed"/>
     </transform>
     <transform xil_pn:end_ts="1718663617" xil_pn:in_ck="3691621065495726760" xil_pn:name="TRAN_impactProgrammingTool_CPLD" xil_pn:prop_ck="-3598488201878296819" xil_pn:start_ts="1718663617">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="InputAdded"/>
       <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="InputRemoved"/>
     </transform>
-    <transform xil_pn:end_ts="1718659320" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1718659319">
-      <status xil_pn:value="AbortedRun"/>
+    <transform xil_pn:end_ts="1729201759" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1729201758">
+      <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="InputChanged"/>
     </transform>
     <transform xil_pn:name="TRAN_createTimingConstraints">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="InputAdded"/>
       <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="InputRemoved"/>
     </transform>
   </transforms>
 
