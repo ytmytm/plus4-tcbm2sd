@@ -1,0 +1,9 @@
+﻿Designator,Quantity,Value,Footprint,Package,MPN,Mount_Type
+"C1, C2, C3, C4",4,0.1uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,,,smt
+U1,1,XC9572XL-VQ64,TQFP-64_10x10mm_P0.5mm,,,smt
+J1,1,do not populate,do not populate,,,
+J2,1,do not populate,do not populate,,,
+J4,1,AMS1117 3.3V power supply module HW764,Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical,,,tht
+J5,1,do not populate,do not populate,,,
+J8,1,do not populate,do not populate,,,
+U2,1,do not populate,do not populate,,,
