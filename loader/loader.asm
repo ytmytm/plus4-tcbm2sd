@@ -4,6 +4,16 @@
 
 .var LORAM = $05F5
 
+// Kernal routines
+.var IRESTOR = $FF8A
+.var ISETMSG = $FF90
+.var ICLRCHN = $FFCC
+.var ISETLFS = $FFBA
+.var ISETNAM = $FFBD
+.var IOPEN   = $FFC0
+.var ICHROUT = $FFD2
+.var aFFFA = $FFFA		 // ;RESET
+
 	* = $1001
 
 // Basic start
@@ -18,6 +28,8 @@ start:
         sei
         sta $ff3e				// ROM_SELECT
         cli
+	//
+	jsr IRESTOR				// restore default vectors (in case some hooks were installed: e.g. TURBO PLUS)
 	//
 	ldx #0
 cploop:	lda LOADER_0600,x
@@ -47,14 +59,14 @@ L060B:  sta $da
         lda #15					// command
 		tay
         ldx $ae					// RAM_FA, current device
-        jsr $ffba
+        jsr ISETLFS
         lda #(filenameend-filename)
         ldx #<filename
         ldy #>filename
-        jsr $ffbd
-		jsr $ffc0								// open -> send command + filename
+        jsr ISETNAM
+        jsr IOPEN				// open -> send command + filename
         lda #$00
-        jsr $ff90                               // SETMSG, messages off
+        jsr ISETMSG                             // SETMSG, messages off
         lda #$00
         ldx $2b
         ldy $2c                                 // all this stuff doesn't have to be in loram
@@ -68,7 +80,6 @@ filenameend:
 
 LOADER_0600:
 .pseudopc LORAM {
-//        jsr $ffd5
         jsr FastLoad
         //; original CODE
         stx $2d
@@ -83,7 +94,7 @@ LOADER_0600:
         lda #$d0
         sta $ff13
         lda #$90
-        jsr $ffd2
+        jsr ICHROUT
         jsr $d88b
         lda #$00
         sta $ef
@@ -104,10 +115,6 @@ L0665:  jmp $867e
 .var RAM_LA = $AC
 .var RAM_FA = $AE                // ;FA      Current device number
 .var RAM_MEMUSS = $B4            // (2) ;MEMUSS  Load ram base
-
-// KERNAL routines without jumptable
-.var ICLRCHN = $FFCC // $EF0C             // ;ICLRCHN $FFCC
-.var aFFFA = $FFFA		 // ;RESET
 
 // IO
 

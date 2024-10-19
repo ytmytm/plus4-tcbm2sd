@@ -1,3 +1,6 @@
+[20241019]
+Made loader/booter call RESTOR to restore system vector to default. Otherwise they would hang with certain cartridges (e.g. TURBO PLUS) that install hooks to code on page $06xx.
+
 [20241016]
 Big batch of v1.3 arrived. Confirmed working. Need to make releases (also for v1.1 revision with correct JED).
 Several updates needed:
