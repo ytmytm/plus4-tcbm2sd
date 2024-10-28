@@ -1145,7 +1145,7 @@ bool dir_render_file(File32 *dir) {
 		} else {
 			type = 2; // PRG
 		}
-		// if it's a disk image D64/71/81, also return DIR
+		// if it's a disk image D64/71/81/80/82, also return DIR
 		uint8_t flen = strlen(entryname_c);
 		if (flen>4) {
 			if (
@@ -1153,7 +1153,7 @@ bool dir_render_file(File32 *dir) {
 					(   (entryname_c[flen-3] == 'D') || (entryname_c[flen-3] == 'd') ) &&
 					( ( (entryname_c[flen-2] == '6') && (entryname_c[flen-1] == '4') ) ||
 					  ( (entryname_c[flen-2] == '7') && (entryname_c[flen-1] == '1') ) ||
-					  ( (entryname_c[flen-2] == '8') && (entryname_c[flen-1] == '1') )
+					  ( (entryname_c[flen-2] == '8') && ((entryname_c[flen-1] == '0') || (entryname_c[flen-1] == '1') || (entryname_c[flen-1] == '2') ) )
 					)
 			) type = 6; // DIR
 		}

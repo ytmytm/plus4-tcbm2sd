@@ -107,6 +107,12 @@ int di_tracks(ImageType type) {
   case D81:
     return(80);
     break;
+  case D80:
+    return(77);
+    break;
+  case D82:
+    return(154);
+    break;
   }
   return(0);
 }
@@ -136,13 +142,29 @@ int di_sectors_per_track(ImageType type, int track) {
   case D81:
     return(40);
     break;
+  case D82:
+    if (track > 77) {
+      track -= 77;
+    }
+    // fall through
+  case D80:
+    if (track < 40) {
+      return(29);
+    } else if (track < 54) {
+      return(27);
+    } else if (track < 65) {
+      return(25);
+    } else {
+      return(23);
+    }
+    break;
   }
   return(0);
 }
 
 /* convert track, sector to blocknum */
 uint32_t get_block_num(ImageType type, TrackSector ts) {
-  uint32_t block;
+  uint32_t block = 0;
 
   switch (type) {
   case D64:
@@ -180,7 +202,26 @@ uint32_t get_block_num(ImageType type, TrackSector ts) {
   case D81:
     return((ts.track - 1) * 40 + ts.sector);
     break;
+  case D82:
+    if (ts.track > 77) {
+        block = 2083;
+        ts.track -= 77;
+    }
+    // fall through
+  case D80:
+    if (ts.track < 40) {
+      block += (ts.track - 1) * 29;
+    } else if (ts.track < 54) {
+      block += (ts.track - 40) * 27 + 39 * 29;
+    } else if (ts.track < 65) {
+      block += (ts.track - 54) * 25 + 39 * 29 + 14 * 27;
+    } else {
+      block += (ts.track - 65) * 23 + 39 * 29 + 14 * 27 + 11 * 25;
+    }
+    return(block + ts.sector);
+    break;
   }
+
   return(0);
 }
 
@@ -202,6 +243,13 @@ unsigned char *get_ts_addr(DiskImage *di, TrackSector ts) {
   return (di->image);
 }
 
+/* verify pointer to the next block in the chain */
+unsigned char verify_next_ts(DiskImage *di, TrackSector ts) {
+  if ( (ts.track == 0) || ts.track > di_tracks(di->type) || ts.sector > di_sectors_per_track(di->type, ts.track) ) {
+    return(0);
+  }
+  return 1;
+}
 
 /* return a pointer to the next block in the chain */
 TrackSector next_ts_in_chain(DiskImage *di, TrackSector ts) {
@@ -211,10 +259,7 @@ TrackSector next_ts_in_chain(DiskImage *di, TrackSector ts) {
   p = get_ts_addr(di, ts);
   newts.track = p[0];
   newts.sector = p[1];
-  if (p[0] > di_tracks(di->type)) {
-    newts.track = 0;
-    newts.sector = 0;
-  } else if (p[1] > di_sectors_per_track(di->type, p[0])) {
+  if (verify_next_ts(di, newts) == 0) {
     newts.track = 0;
     newts.sector = 0;
   }
@@ -235,6 +280,9 @@ unsigned char *di_title(DiskImage *di) {
   case D81:
     return(get_ts_addr(di, di->dir) + 4);
     break;
+  case D80:
+  case D82:
+    return(get_ts_addr(di, di->dir) + 6);
   }
 }
 
@@ -242,6 +290,7 @@ unsigned char *di_title(DiskImage *di) {
 /* return number of free blocks in track */
 int di_track_blocks_free(DiskImage *di, int track) {
   unsigned char *bam;
+  TrackSector ts;
 
   switch (di->type) {
   default:
@@ -264,6 +313,16 @@ int di_track_blocks_free(DiskImage *di, int track) {
       track -= 40;
     }
     return(bam[track * 6 + 10]);
+    break;
+  case D82:
+  case D80:
+    ts.track = di->bam.track;
+    ts.sector = di->bam.sector;
+    if (track > 150) { ts.sector += 9; track -=150; }
+    if (track > 100) { ts.sector += 6; track -=100; }
+    if (track > 50)  { ts.sector += 3; track -=50; }
+    bam = get_ts_addr(di, ts);
+    return(bam[track * 5 + 1]);
     break;
   }
   return(bam[track * 4]);
@@ -335,6 +394,24 @@ DiskImage *di_load_image(File32 *file) {
     di->dir.track = 40;
     di->dir.sector = 0;
     break;
+  case 533248:
+    di->type = D80;
+    di->bam.track = 38;
+    di->bam.sector = 0;
+    di->bam2.track = 38;
+    di->bam2.sector = 3;
+    di->dir.track = 39;
+    di->dir.sector = 0; // NB: 39/0 points to BAM, not to directory entires (39/1)
+    break;
+  case 1066496:
+    di->type = D82;
+    di->bam.track = 38;
+    di->bam.sector = 0;
+    di->bam2.track = 38;
+    di->bam2.sector = 3; // NB: two more BAM sectors at 38/6 and 38/9
+    di->dir.track = 39;
+    di->dir.sector = 0; // NB: 39/0 points to BAM, not to directory entires (39/1)
+    break;
   default:
     return(NULL);
   }
@@ -375,7 +452,16 @@ RawDirEntry *find_file_entry(DiskImage *di, unsigned char *rawpattern, FileType 
   RawDirEntry *rde;
   int offset;
 
+  switch (di->type) {
+    case D80:
+    case D82: // chain points to track 38 to BAM, we don't want that
+      ts.track = di->dir.track;
+      ts.sector = 1;
+      break;
+    default:
   ts = next_ts_in_chain(di, di->dir);
+      break;
+  }
   while (ts.track) {
     buffer = get_ts_addr(di, ts);
     for (offset = 0; offset < 256; offset += 32) {
@@ -405,8 +491,17 @@ ImageFile *di_open(DiskImage *di, const char *rawname, FileType type) {
       imgfile->ts = di->dir;
       p = get_ts_addr(di, di->dir);
       imgfile->buffer = p + 2;
-      imgfile->nextts.track = p[0];
-      imgfile->nextts.sector = p[1];
+      switch (di->type) {
+        case D80:
+        case D82: // chain points to track 38 to BAM, we don't want that
+          imgfile->nextts.track = di->dir.track;
+          imgfile->nextts.sector = 1;
+          break;
+        default:
+          imgfile->nextts.track = p[0];
+          imgfile->nextts.sector = p[1];
+          break;
+      }
       imgfile->buflen = 254;
       rde = NULL;
     } else {
@@ -478,19 +573,17 @@ int di_read(ImageFile *imgfile, unsigned char *buffer, int len) {
   while (len) {
     bytesleft = imgfile->buflen - imgfile->bufptr;
     if (bytesleft == 0) {
-      if (imgfile->nextts.track == 0) {
+      if (verify_next_ts(imgfile->diskimage,imgfile->nextts) == 0) {
 	return(counter);
       }
-      imgfile->ts = next_ts_in_chain(imgfile->diskimage, imgfile->ts);
-      if (imgfile->ts.track == 0) {
-	return(counter);
-      }
+      imgfile->ts.track = imgfile->nextts.track;
+      imgfile->ts.sector = imgfile->nextts.sector;
       p = get_ts_addr(imgfile->diskimage, imgfile->ts);
       imgfile->buffer = p + 2;
       imgfile->nextts.track = p[0];
       imgfile->nextts.sector = p[1];
       if (imgfile->nextts.track == 0) {
-	imgfile->buflen = imgfile->nextts.sector - 1;
+	      imgfile->buflen = imgfile->nextts.sector > 0 ? imgfile->nextts.sector - 1 : 254;
       } else {
 	imgfile->buflen = 254;
       }

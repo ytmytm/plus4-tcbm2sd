@@ -34,7 +34,9 @@ typedef enum imagetype {
   D64_40,
   D64_42,
   D71,
-  D81
+  D81,
+  D80,
+  D82
 } ImageType;
 
 typedef enum filetype {

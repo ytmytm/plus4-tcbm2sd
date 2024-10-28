@@ -1,3 +1,6 @@
+[20241028]
+Support for D80/D82 disk images (Issue #4). Like with D64/71/81 file-level access is read-only  but blocks can be read and written using fast protocol (like GEOS driver does).
+
 [20241019]
 Made loader/booter call RESTOR to restore system vector to default. Otherwise they would hang with certain cartridges (e.g. TURBO PLUS) that install hooks to code on page $06xx.
 
