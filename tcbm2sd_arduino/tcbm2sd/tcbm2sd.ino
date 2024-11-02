@@ -16,10 +16,10 @@ const uint8_t debug2=0; // only for next/prev button; utility commands debug
 //////////////////////////////////
 
 // buffer size for current working directory path (32K by FAT32)
-// need about 600 RAM bytes free (check out Arduino IDE messages)
+// need about 610 RAM bytes free (check out Arduino IDE messages)
 // when debug=1 set to low value: 24 (must be more than 17)
 
-#define PATH_SIZE 71
+#define PATH_SIZE 64
 
 // disable buttons (if A6/A7 are not connected or without pullup)
 //#define DISABLE_NEXT_PREV_BUT
