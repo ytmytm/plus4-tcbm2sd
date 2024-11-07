@@ -1,0 +1,10 @@
+
+GLOBAL {
+    OUTPUTNAME "giana_sisters.s";
+    INPUTNAME "giana_sisters.prg";
+    STARTADDR $0fff;
+    CPU "6502";
+};
+
+LABEL { NAME "Fastloader_LOAD"; addr $0700; };
+LABEL { NAME "START"; addr $1010; };
