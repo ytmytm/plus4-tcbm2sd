@@ -13,6 +13,8 @@
 .segment PatchDriveType[]
 .pc = $1446 "Patch drivetype"
 
+	// XXX TCBM2SD / 1551 detect code could be here
+
 	lda $ae			// current device
 	cmp #8
 	beq !+

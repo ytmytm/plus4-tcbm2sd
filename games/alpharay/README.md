@@ -1,5 +1,6 @@
 
 Alpharay patched for TCBM protocol (YaPe and TCBM2SD)
+
 by Maciej 'YTM/Elysium' Witkowiak
 
 # Source
@@ -39,6 +40,6 @@ Exomizer decruncher at `$0300-$04xx`.
 ## Patches
 
 There is not enough space to fit full TCBM code for `startload` and `readbyte` (for decruncher) within 256 bytes.
-Since byte loader is now shorter part of `$036D-$0385` space is used for `startload`.
+Since byte loader is now shorter, part of `$036D-$0385` space is used for `startload`.
 
 `writebyte` protocol for filename is not supported, decruncher calls `$0210` with filename in X/Y (like `startload`).
