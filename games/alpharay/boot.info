@@ -1,0 +1,12 @@
+
+GLOBAL {
+    OUTPUTNAME "boot.s";
+    INPUTNAME "boot.bin";
+    STARTADDR $0fff;
+    CPU "6502";
+};
+
+LABEL { NAME "Fastloader_LOAD"; addr $0200; };
+LABEL { NAME "START"; addr $1010; };
+LABEL { NAME "Exodecrunch"; addr $0300; };
+LABEL { NAME "IOLibInit"; addr $6000; };

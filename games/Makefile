@@ -1,5 +1,7 @@
 
-DIRS := giana_sisters
+DIRS := \
+	alpharay \
+	giana_sisters
 
 .PHONY: all clean $(DIRS)
 
