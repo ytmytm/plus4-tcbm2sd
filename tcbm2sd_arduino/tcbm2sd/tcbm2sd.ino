@@ -527,34 +527,34 @@ void set_error_msg(uint8_t error) {
   memset(output_buf, 0, sizeof(output_buf));
   switch (error) {
     case 0:
-      strcpy_P((char*)output_buf, (const char*)F("00, OK,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("00, OK,00,00\r"));
       break;
     case 1:
-      strcpy_P((char*)output_buf, (const char*)F("01, FILES SCRATCHED,01"));
+      strcpy_P((char*)output_buf, (const char*)F("01, FILES SCRATCHED,01\r"));
       break;
     case 23:
-      strcpy_P((char*)output_buf, (const char*)F("23, READ ERROR,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("23, READ ERROR,00,00\r"));
       break;
     case 26:
-      strcpy_P((char*)output_buf, (const char*)F("26, WRITE PROTECT ON,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("26, WRITE PROTECT ON,00,00\r"));
       break;
     case 30:
-      strcpy_P((char*)output_buf, (const char*)F("30, SYNTAX ERROR,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("30, SYNTAX ERROR,00,00\r"));
       break;
     case 62:
-      strcpy_P((char*)output_buf, (const char*)F("62, FILE NOT FOUND,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("62, FILE NOT FOUND,00,00\r"));
       break;
     case 63:
-      strcpy_P((char*)output_buf, (const char*)F("63, FILE EXISTS,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("63, FILE EXISTS,00,00\r"));
       break;
     case 73:
-      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,02"));
+      strcpy_P((char*)output_buf, (const char*)F("73, TCBM2SD BY YTM 2024,00,02\r"));
       break;
     case 74:
-      strcpy_P((char*)output_buf, (const char*)F("74, DRIVE NOT READY,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("74, DRIVE NOT READY,00,00\r"));
       break;
     default:
-      strcpy_P((char*)output_buf, (const char*)F("99, UNKNOWN,00,00"));
+      strcpy_P((char*)output_buf, (const char*)F("99, UNKNOWN,00,00\r"));
       break;
   }
 }
