@@ -1,6 +1,6 @@
 
-.print "Assembling ALPHARAY-TCBM.PRG"
-.segmentdef Combined  [outPrg="alpharay-tcbm.prg", segments="Base,PatchDriveType,PatchLoader,PatchExo0,PatchExo", allowOverlap]
+.print "Assembling PETSRESCUE-TCBM.PRG"
+.segmentdef Combined  [outPrg="petsrescue-tcbm.prg", segments="Base,PatchDriveType,PatchLoader,PatchExo0,PatchExo", allowOverlap]
 
 .segment Base [start = $1001, max=$ffff]
 .var data = LoadBinary("boot.bin", BF_C64FILE)

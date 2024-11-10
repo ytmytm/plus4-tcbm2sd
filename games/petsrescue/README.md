@@ -1,15 +1,15 @@
 
-Alpharay patched for TCBM protocol (YaPe and TCBM2SD)
+Pets Rescue patched for TCBM protocol (YaPe and TCBM2SD)
 
 by Maciej 'YTM/Elysium' Witkowiak
 
 # Note
 
-This games doesn't seem to work with 6502 CPU.
+Method is identical to Alpharay
 
 # Source
 
-Alpharay IEC version from https://plus4world.powweb.com/software/Alpharay
+Pets Rescue IEC version from https://plus4world.powweb.com/software/Pets_Rescue
 
 # Notes
 
@@ -23,7 +23,7 @@ c1541 (from VICE)
 
 ## Makefile
 
-`make` prepares everything and generates new disk image `alpharay-tcbm.d81`.
+`make` prepares everything and generates new disk image `petsrescue-tcbm.d81`.
 Note that it's not usable with emulators because it's not meant for 1581.
 `D81` is just data container, the loader uses TCBM protocol: like 1551/TCBM2SD.
 

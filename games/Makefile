@@ -1,7 +1,9 @@
 
 DIRS := \
 	alpharay \
-	giana_sisters
+	giana_sisters \
+	petsrescue \
+
 
 .PHONY: all clean $(DIRS)
 
