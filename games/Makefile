@@ -2,6 +2,7 @@
 DIRS := \
 	alpharay \
 	giana_sisters \
+	lemmings \
 	petsrescue \
 	prince_of_persia \
 	turbo_outrun \
