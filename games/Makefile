@@ -4,6 +4,7 @@ DIRS := \
 	giana_sisters \
 	petsrescue \
 	prince_of_persia \
+	turbo_outrun \
 
 
 .PHONY: all clean $(DIRS)
