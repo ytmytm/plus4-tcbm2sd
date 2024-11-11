@@ -1,0 +1,8 @@
+*.d64
+*.d81
+*.prg
+*.sym
+*.s
+files
+prince.bin
+princeraw.bin

@@ -3,6 +3,7 @@ DIRS := \
 	alpharay \
 	giana_sisters \
 	petsrescue \
+	prince_of_persia \
 
 
 .PHONY: all clean $(DIRS)
