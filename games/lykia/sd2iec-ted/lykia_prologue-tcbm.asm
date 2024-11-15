@@ -9,11 +9,14 @@
 .label io_base = $0200
 .label io_tcbmoffs = $02FF
 
-// $0300-$0314
-.segment PatchExo0[min=$75f6,max=$75f6-$300+$314]
+// $0300-$0318
+.segment PatchExo0[min=$75f6,max=$75f6-$300+$318]
 .pc = $75F6
 .pseudopc $0300 {
-	jsr $0210
+	cpy #$5f	// TCBM2SD firmware 00,02 and earlier map $5F into $7E in filenames, even on disk images :/
+	bne !+
+	ldy #$7e
+!:	jsr $0210
 	tsx
 	stx $038e	// needed?
 	jmp $0319
