@@ -88,7 +88,26 @@ test: lykia_prologue-tcbm.d81
 		-write files/prologue/cn cn \
 		-write files/prologue/co co \
 		-write files/prologue/cp cp \
-		-write files/prologue/cq cq 
+		-write files/prologue/ad ad \
+		-write files/prologue/ce ce \
+		-write files/prologue/cf cf \
+		-write files/prologue/bv bv \
+		-write files/prologue/bs bs \
+		-write files/prologue/br br \
+		-write files/prologue/bu bu \
+		-write files/prologue/bt bt \
+		-write files/prologue/af af \
+		-write files/prologue/bi bi \
+		-write files/prologue/cw cw \
+		-write files/prologue/av av \
+		-write files/prologue/ay ay \
+		-write files/prologue/ax ax \
+		-write files/prologue/a_ a_ \
+		-write files/prologue/a. a. \
+		-write files/prologue/a[ a[ \
+		-write files/prologue/a] a] \
+		-write files/prologue/a\\ a\\ \
+		-write files/prologue/a^ a^
 	$(XPLUS4) $(XPLUS4FLAGS) lykia_prologue-tcbm.d64
 
 # a must!
