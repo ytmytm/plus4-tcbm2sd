@@ -10,14 +10,15 @@ KICKASSLAGS :=
 XPLUS4FLAGS := 
 EXOMIZERFLAGS := sfx 4112 -t 4 -n
 
-SOURCES := lykia_prologue-tcbm.asm
+SOURCES := lykia_prologue-tcbm.asm lykia_disk1-tcbm.asm lykia_disk2-tcbm.asm lykia_disk4-tcbm.asm
 
 BINS := $(SOURCES:.asm=.prg)
 D64S := $(SOURCES:.asm=.d81)
 
 .PHONY: all clean test love disasm files
 
-all: $(BINS) $(D64S)
+all: $(BINS) $(D64S) lykia_disk3-tcbm.d81
+	zip ../../lykia-ted-tcbm.zip lykia_prologue-tcbm.d81 lykia_disk1-tcbm.d81 lykia_disk2-tcbm.d81 lykia_disk3-tcbm.d81 lykia_disk4-tcbm.d81
 
 files: lykia_prologue.d81 lykia_disk1.d81 lykia_disk2.d81 lykia_disk3.d81 lykia_disk4.d81
 	rm -rf files
@@ -64,8 +65,13 @@ disasm: boot0.bin boot1.bin boot2.bin boot3.bin boot4.bin boot.info
 	c1541 -attach $@ 8 -delete \!\!entrance\!\! -validate -write $*-exo.prg \!\!entrance\!\!
 #	cp $@ ../
 
+lykia_disk3-tcbm.d81: lykia_disk3.d81
+	echo "nothing to do for disk 3"
+	cp $< $@
+#	cp $@ ../
+
 clean:
-	-rm -f $(BINS) $(D64S) $(SOURCES:.asm=-exo.prg) *.sym boot[0-4].bin
+	-rm -f $(BINS) $(D64S) $(SOURCES:.asm=-exo.prg) *.sym boot[0-4].bin *-tcbm.d81 *-tcbm.d64
 
 test: lykia_prologue-tcbm.d81
 	echo "incomplete test version for emulators"
