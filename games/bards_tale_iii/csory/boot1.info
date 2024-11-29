@@ -1,0 +1,52 @@
+
+GLOBAL {
+    OUTPUTNAME "boot1.s";
+    INPUTNAME "boot1.bin";
+    STARTADDR $17a7;
+    CPU "6502";
+};
+
+LABEL { NAME "L213F"; addr $213F; };
+
+LABEL { NAME "L182D"; addr $182D; };
+RANGE { START $182D; END $182E; TYPE TextTable; };
+
+LABEL { NAME "L182F"; addr $182F; };
+RANGE { START $182F; END $183B; TYPE TextTable; };
+
+RANGE { START $183C; END $183C; TYPE Code; };
+
+RANGE { START $1C00; END $1F89; TYPE ByteTable; COMMENT "Loader"; };
+
+LABEL { NAME "L17C8"; addr $17C8; COMMENT "Patch loader (to C900) for TCBM comm instead of serial"; };
+
+LABEL { NAME "L183B"; addr $183B; COMMENT "Drive code at (1,13 - IEC) or (1,12 - TCBM)"; };
+
+
+LABEL { NAME "L1945"; addr $1945; };
+LABEL { NAME "L1955"; addr $1955; };
+LABEL { NAME "L1965"; addr $1965; };
+LABEL { NAME "L1975"; addr $1975; };
+LABEL { NAME "L1985"; addr $1985; };
+LABEL { NAME "L1995"; addr $1995; };
+LABEL { NAME "L19A5"; addr $19A5; };
+LABEL { NAME "L19B5"; addr $19B5; };
+
+LABEL { NAME "L19C5"; addr $19C5; };
+LABEL { NAME "L19D5"; addr $19D5; };
+LABEL { NAME "L19E5"; addr $19E5; };
+LABEL { NAME "L19F5"; addr $19F5; };
+
+RANGE { START $1945; END $1954; TYPE TextTable; };
+RANGE { START $1955; END $1964; TYPE TextTable; };
+RANGE { START $1965; END $1974; TYPE TextTable; };
+RANGE { START $1975; END $1984; TYPE TextTable; };
+RANGE { START $1985; END $1994; TYPE TextTable; };
+RANGE { START $1995; END $19A4; TYPE TextTable; };
+RANGE { START $19A5; END $19B4; TYPE TextTable; };
+RANGE { START $19B5; END $19C4; TYPE TextTable; };
+
+RANGE { START $19C5; END $19D4; TYPE TextTable; };
+RANGE { START $19D5; END $19E4; TYPE TextTable; };
+RANGE { START $19E5; END $19F4; TYPE TextTable; };
+RANGE { START $19F5; END $1A04; TYPE TextTable; };

@@ -1,0 +1,9 @@
+
+GLOBAL {
+    OUTPUTNAME "boot0.s";
+    INPUTNAME "boot0.bin";
+    STARTADDR $0263;
+    CPU "6502";
+};
+
+LABEL { NAME "L213F"; addr $213F; };

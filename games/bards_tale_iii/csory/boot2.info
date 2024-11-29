@@ -1,0 +1,51 @@
+
+GLOBAL {
+    OUTPUTNAME "boot2.s";
+    INPUTNAME "boot2.bin";
+    STARTADDR $c800;
+    CPU "6502";
+};
+
+LABEL { NAME "IECBitTable"; addr $c800; };
+RANGE { START $c800; end $c8ff; type bytetable; };
+
+LABEL { NAME "SendByte";        addr $C900; };
+LABEL { NAME "GetByte";         addr $C959; };
+LABEL { NAME "DoSectorOp";      addr $C99C; COMMENT "Do operation from DriveOp with block number already converted to track and sector. This must be at C99C"; };
+LABEL { NAME "LC9FA";           addr $C9FA; };
+LABEL { NAME "LCB61";           addr $CB61; };
+LABEL { NAME "LCB77";           addr $CB77; };
+
+LABEL { NAME "DoGetStatus";     addr $C9DF; COMMENT "Get operation status from drive"; };
+
+LABEL { NAME "DoPutSector"; addr $C9C7; COMMENT "Write buffer to disk"; };
+LABEL { NAME "DoGetSector"; addr $C9D4; COMMENT "Read disk sector into buffer"; };
+
+LABEL { NAME "TrackSizeTab";           addr $CA43; COMMENT "TrackLengths"; };
+RANGE { START $CA43; END $CA64; TYPE ByteTable; COMMENT "TrackLengths"; };
+
+LABEL { NAME "ConvertBlockTmp"; addr $CA65; COMMENT "Convert from block number to track and sector"; };
+
+LABEL { NAME "BlockNumTmp"; addr $C99A; };
+LABEL { NAME "BlockNumTmpHi"; addr $C99B; };
+RANGE { START $C99A; END $C99B; TYPE WordTable; };
+
+LABEL { NAME "TrackSpeedZones"; addr $CA89; };
+RANGE { START $CA89; END $CA8C; TYPE ByteTable; };
+LABEL { NAME "TrackInterleaveSectorNumber"; addr $CA8D; };
+RANGE { START $CA8D; END $CA94; TYPE WordTable; };
+
+LABEL { NAME "LCA95"; addr $CA95; };
+LABEL { NAME "LCAAA"; addr $CAAA; };
+LABEL { NAME "LCABD"; addr $CABD; };
+LABEL { NAME "LCACF"; addr $CACF; };
+RANGE { START $CA95; END $CAA9; TYPE ByteTable; };
+RANGE { START $CAAA; END $CABC; TYPE ByteTable; };
+RANGE { START $CABD; END $CACE; TYPE ByteTable; };
+RANGE { START $CACF; END $CAF0; TYPE ByteTable; };
+
+LABEL { NAME "DriveOp";         addr $0042; COMMENT "operation code, 1=read, 2=write, 3=get status byte"; };
+LABEL { NAME "BufferVec";       addr $0044; COMMENT "buffer vector"; };
+LABEL { NAME "BufferVecHi";      addr $0045; };
+LABEL { NAME "SectorBuffer";    addr $BF00; COMMENT "general disk buffer"; };
+
