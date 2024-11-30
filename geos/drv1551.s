@@ -537,7 +537,7 @@ WriteBlockLoop:
 ;	bne WriteBlockLoop
 
 WriteBlockLoopEnd:
-	lda $FEF2                                   	; wait for ACK high
+:	lda $FEF2                                   	; wait for ACK high
 	bpl :-
 	lda #$00
 	sta $FEF0										; clear data port (just in case it was one of command bytes)
