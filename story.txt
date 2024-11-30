@@ -1,3 +1,7 @@
+[20241130]
+Started writing user's manual (this information not removed from README.MD yet).
+Updated loader/booter to restore standard text color palette at $0113 in case it was overwritten by cartridge startup.
+
 [20241028]
 Support for D80/D82 disk images (Issue #4). Like with D64/71/81 file-level access is read-only  but blocks can be read and written using fast protocol (like GEOS driver does).
 
