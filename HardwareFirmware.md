@@ -31,7 +31,7 @@ A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/p
 
 The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules
 
-<img src="media/01.pcb-top.png" width=640 alt="tcbm2sd PCB Top view">
+<img src="media/01.pcb-top.jpg" width=640 alt="tcbm2sd PCB Top view">
 
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
@@ -62,16 +62,35 @@ NEXT button signal detects if the buttons are connected at all - if it's shorted
 
 Parts to be soldered directly:
 
-- 1x XC9572XL-VQ64 CPLD
-- 4x 0.1uF capacitor (0805 footprint)
-- Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask; there are two versions that differ by location of A6/A7 pins, both are supported
+* 1x XC9572XL-VQ64 CPLD: U1
+* 4x 0.1uF capacitor (0805 footprint): C1, C2, C3, C4
+* 2x 10K resistors (0805 footprint): R2, R3
+* 2x straight or angled push buttons: SW1, SW2
+* 1x DIP28 socket: U4
+* Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask; there are two versions that differ by location of A6/A7 pins, both are supported
 
-For the remaining parts of the circuit you can go with ready for use modules or solder SMD parts directly.
+For the remaining parts of the circuit you can go with ready for use modules or solder SMD parts in their place:
 
-### <a name='Modules'></a>Modules
+### Power 3.3V
 
-- AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg) often labeled as HW764; it usually comes with soldered angled pins, you need to replace them with straight ones
-- SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
+* AMS1117-3.3: U3
+* 2x 10uF tantalum capacitor (0805 footprint): C6, C7
+
+Or a module:
+
+AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg) often labeled as HW764; it usually comes with soldered angled pins, you need to replace them with straight ones
+
+### SD card connector
+
+* SD card connector, typical [such as this one](https://www.lcsc.com/product-detail/SD-Card-Memory-Card-Connector_SHOU-HAN-TF-CARD-H1-8_C7529389.html): XS1
+* 1x 10uF tantalum capacitor (0805 footprint): C5 (same as C6, C7)
+* 1x 2.2 ohm resistor (0805 footprint): R1
+
+Or a module:
+
+SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
+
+The disadvantage is that an adapter will not have card sense switch exposed.
 
 ### <a name='SMDparts'></a>SMD parts
 
@@ -116,13 +135,14 @@ You don't need any special equipment to flash it. A Raspberry Pi and some jumper
 | Signal | GPIO Header Pin | GPIO Name |
 |--------|-----------------|-----------|
 | GND | 6 or 9 or 14... | GND |
-| TDO	| 13 | GPIO 27 |
-| TDI	| 15 | GPIO 22 |
-| TCK	| 11 | GPIO 17 |
-| TMS	| 7  | GPIO 4 |
+| TDO | 13 | GPIO 27 |
+| TDI | 15 | GPIO 22 |
+| TCK | 11 | GPIO 17 |
+| TMS | 7  | GPIO 4 |
 | 3.3V | 1 | 3.3V |
 
 Command to test the connection and list JTAG devices (our XC9572 will be most likely device 0):
+
 ```
 xc3sprog -c matrix_creator
 ```
@@ -130,6 +150,7 @@ xc3sprog -c matrix_creator
 <img src="media/90.detect-jtag.jpg" width=640 alt="CPLD detected">
 
 Command to flash the firmware to device on position 0 (`-p 0`)
+
 ```
 xc3sprog -c matrix_creator -v -p 0 Fake6523.jed
 ```
@@ -170,10 +191,13 @@ If you have trouble uploading the compiled code check if changing the upload spe
 Close the IDE and find you Arduino `boards.txt` settings file. On Windows it will be in `C:/Users/<user name>/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.6/boards.txt`
 
 Find there a line:
+
 ```
 mini.menu.cpu.atmega328.upload.speed=115200
 ```
+
 and change it to
+
 ```
 mini.menu.cpu.atmega328.upload.speed=57600
 ```
@@ -198,10 +222,13 @@ This code also serves as an example how to handle fastloader protocol.
 The provided `Makefile` doesn't do much but it shows the order of commands:
 
 Assemble the code:
+
 ```
 java -jar Kickass.jar loader.asm
 ```
+
 This saves `loader.prg`. To embed that binary into Arduino Micro flash we need to convert it to a C-style array and put into Arduino sketch folder:
+
 ```
 xxd -i loader.prg ../tcbm2sd_arduino/tcbm2sd/loader.h
 ```
@@ -215,9 +242,11 @@ Then the Arduino code has to be recompiled and uploaded to the device.
 The source code for the patch is in [loader/db12patch.asm](loader/db12patch.asm) file. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
 
 Assemble the patch and apply it over the binary
+
 ```
 java -jar Kickass.jar db12patch.asm
 ```
+
 This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
 
 ### <a name='Games'></a>Games
