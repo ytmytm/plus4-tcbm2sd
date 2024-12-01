@@ -1,18 +1,46 @@
 # TCBM2SD 1.3 User's Manual
 
-### by Maciej 'YTM/Elysium' Witkowiak
+### <a name='byMaciejYTMElysiumWitkowiak'></a>by Maciej 'YTM/Elysium' Witkowiak
 
-## Operation
+## <a name='Tableofcontents'></a>Table of contents
 
-### Introduction
+<!-- vscode-markdown-toc -->
+* [Introduction](#Introduction)
+* [Installation](#Installation)
+* [Cartridge ROM](#CartridgeROM)
+* [Paddle mode](#Paddlemode)
+* [Hardware configuration(TODO)](#HardwareconfigurationTODO)
+* [SD card organization](#SDcardorganization)
+* [Autostart/boot feature](#Autostartbootfeature)
+* [Listing directory](#Listingdirectory)
+* [Loading and saving files](#Loadingandsavingfiles)
+* [Wildcards](#Wildcards)
+* [Supported file types](#Supportedfiletypes)
+* [Disk images](#Diskimages)
+* [Next/Previous buttons for disk swapping](#NextPreviousbuttonsfordiskswapping)
+* [BASIC 3.5 disk commands](#BASIC3.5diskcommands)
+* [Sending DOS commands and reading back status](#SendingDOScommandsandreadingbackstatus)
+* [Supported commands](#Supportedcommands)
+* [Changing device number (hardware or software)](#Changingdevicenumberhardwareorsoftware)
+* [Utility commands for fastloader](#Utilitycommandsforfastloader)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+## <a name='Operation'></a>Operation
+
+### <a name='Introduction'></a>Introduction
 
 TCBM2SD simulates behavior of a 1551 disk drive. It's not capable of emulating the drive's CPU, but it does response to a subset of commands just like 1551 would.
 
-### Installation
+### <a name='Installation'></a>Installation
 
 With the power off insert the tcbm2sd cartridge into the expansion port of C16/C116/Plus4.
 
-### Cartridge ROM
+### <a name='CartridgeROM'></a>Cartridge ROM
 
 There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge functionality.
 
@@ -20,7 +48,7 @@ The 32K ROM will appear for the system as both cartridge 1 and cartridge 2. Its 
 
 The bottom half of 64K ROM will appear as cartridge 2, the top half as cartridge 1.
 
-### Paddle mode
+### <a name='Paddlemode'></a>Paddle mode
 
 If during power on a cable to a real 1551 is connected (if pin 16 on the TCBM2SD TCBM connector is shorted to GND) then Arduino will disable itself and TCBM2SD will become a paddle cartridge replacement: emulating behavior of the original PLA and 6523T chips.
 
@@ -28,11 +56,11 @@ The same will happen if during power-on the `PREV` button is held down.
 
 This has no effect on the TCBM2SD cartridge ROM functionality - you will still have access to both C1 and C2 ROMs.
 
-### Hardware configuration(TODO)
+### <a name='HardwareconfigurationTODO'></a>Hardware configuration(TODO)
 
 There is a number of jumpers that you can cut or short to enable/disable features.
 
-### SD card organization
+### <a name='SDcardorganization'></a>SD card organization
 
 Keep in mind that Arduino has only about 70 characters for the whole path, so try to keep the names short.
 
@@ -46,7 +74,7 @@ DLOAD"/GAMES/A/AC/ACE.PRG
 SCRATCH "FILES/FILE.PRG
 ```
 
-### Autostart/boot feature
+### <a name='Autostartbootfeature'></a>Autostart/boot feature
 
 The `BOOT.T2SD` file from the SD card's root folder will be loaded whenever the computer tries to load file named `*` (like after pressing `SHIFT+RUN/STOP`).
 
@@ -56,7 +84,7 @@ Thanks to Géza Eperjessy, the author of 'Directory browser', I got access to it
 
 *Hint: this feature can be used for autostarting software released on SD cards*
 
-### Listing directory
+### <a name='Listingdirectory'></a>Listing directory
 
 Standard commands work as expected:
 ```
@@ -70,7 +98,7 @@ and
 ```
 with JiffyDOS.
 
-### Loading and saving files
+### <a name='Loadingandsavingfiles'></a>Loading and saving files
 
 Standard `LOAD`, `DLOAD`, `SAVE` and `DSAVE` commands work:
 
@@ -80,7 +108,7 @@ DSAVE"MYFILE
 SAVE"PROGRAM",8
 ```
 
-### Wildcards
+### <a name='Wildcards'></a>Wildcards
 
 Wildcards are supported for loading data:
 ```
@@ -94,11 +122,11 @@ SCRATCH "F*
 OPEN15,8,15,"CD:DI*":CLOSE15
 ```
 
-### Supported file types
+### <a name='Supportedfiletypes'></a>Supported file types
 
 Extensions are needed only for disk images. For TCBM2SD each file is either a `PRG` file (data) or a `DIR` (folder or disk image). Therefore you can drop `.PRG` extensions from files on the SD card and use those four characters.
 
-### Disk images
+### <a name='Diskimages'></a>Disk images
 
 TCBM2SD supports disk images: D64/D71/D81/D80/D82.
 
@@ -108,7 +136,7 @@ Disk images are read-only. You can't `SAVE` or `DSAVE` files when within a disk 
 
 The exception to this is block-write using utility command (see below), that is used by GEOS driver.
 
-### Next/Previous buttons for disk swapping
+### <a name='NextPreviousbuttonsfordiskswapping'></a>Next/Previous buttons for disk swapping
 
 Starting with revision 1.2 TCBM2SD is equipped with two buttons to switch between disk images within current folder. This is a bit similar to SD2IEC disk swap lists.
 
@@ -124,11 +152,11 @@ This is especially useful with multi-disk games (Lykia or Bard's Tale III) that 
 
 If you are not within a disk image and press `NEXT`, then firmware will try to enter the first available disk image in the current folder.
 
-### BASIC 3.5 disk commands
+### <a name='BASIC3.5diskcommands'></a>BASIC 3.5 disk commands
 
 BASIC commands that alias CBM DOS commands are supported:
 
-#### DIRECTORY
+#### <a name='DIRECTORY'></a>DIRECTORY
 
 List the current directory: `DIRECTORY`
 
@@ -140,15 +168,15 @@ The number of free blocks out of disk image is always reported as `9999` no matt
 
 Within disk images the real number of free blocks is reported, even though the disk images are read only.
 
-#### SCRATCH
+#### <a name='SCRATCH'></a>SCRATCH
 
 Remove a file from the disk: `SCRATCH <filename>`
 
-#### RENAME
+#### <a name='RENAME'></a>RENAME
 
 Rename a file: `RENAME <oldname> TO <newname>`
 
-### Sending DOS commands and reading back status
+### <a name='SendingDOScommandsandreadingbackstatus'></a>Sending DOS commands and reading back status
 
 TCBM2SD like any CBM DOS compatible device (1541, 1551, SD2IEC, ...) uses channel 15 for disk commands.
 
@@ -172,7 +200,7 @@ With JiffyDOS it's simpler using DOS wedge:
 00, OK,00,00
 ```
 
-### Supported commands
+### <a name='Supportedcommands'></a>Supported commands
 
 | Command | Example | Description |
 |---|---|---|
@@ -196,7 +224,7 @@ Notes about retuned status messages:
 2. The last two numbers in the startup message are major/minor version. I don't expect to ever change major version. Minor version was changed when significant new features were added: from `00` to `01` with disk image support and to `02` with fastload utility commands
 3. `S`cratch can only remove one file at a time, even with wildcards
 
-### Changing device number (hardware or software)
+### <a name='Changingdevicenumberhardwareorsoftware'></a>Changing device number (hardware or software)
 
 The device number can be changed permanently by cutting/shorting jumpers or using a software method.
 
@@ -210,7 +238,7 @@ The `<device number>` must be 8 or 9.
 
 If you own a C128D/C128DCR/1571/1581 you will recognize that it's exactly the same command as for 1571/1581.
 
-### Utility commands for fastloader
+### <a name='Utilitycommandsforfastloader'></a>Utility commands for fastloader
 
 These commands are not useful in an interactive mode. Their purpose is to enable additional features for software patched to support TCBM2SD fast load/save protocol.
 
@@ -234,13 +262,13 @@ Since Arduino Micro Pro is much faster than a Plus/4 (8MHz vs 1MHz) it would be 
 
 The fastload protocol should be used only if there is TCBM2SD device on the other end. This can be detected by checking if disk status after `UI` command contains `TCBM2SD` string.
 
-#### Fastload (channel 16)
+#### <a name='Fastloadchannel16'></a>Fastload (channel 16)
 
 Fast protocol is enabled when everything is prepared like for load (`OPEN` channel 0 and send the filename) but after the `TALK` call as a secondary address we send `0x70` instead of `0x60` to talk on channel 16 rather than 0.
 
 Check out also the other files from [loader/](loader/) folder. I can't publish full source code (it's not mine), but you will find pieces of code I altered in 't2s-...' files. That also includes the TCBM2SD detection part.
 
-#### Fastload (U0, filename)
+#### <a name='FastloadU0filename'></a>Fastload (U0, filename)
 
 Command: `U0+chr$(31)+<filename>`
 
@@ -253,7 +281,7 @@ command:
 ```
 The example code for this is in the firmware that loads `/BOOT.T2SD`: [loader/loader.asm](loader/loader.asm)
 
-#### Fastload (U0, track & sector)
+#### <a name='FastloadU0tracksector'></a>Fastload (U0, track & sector)
 
 Command: `U0+chr$(63)+chr$(track)+chr$(sector)`
 
@@ -268,7 +296,7 @@ sector:	.byte 1
 
 The example code for this is here: [loader/loaderts.asm](loader/loaderts.asm)
 
-#### Fast block read
+#### <a name='Fastblockread'></a>Fast block read
 
 Command: `U0+chr$(0)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-read)`
 
@@ -279,7 +307,7 @@ This is a simple utility that can load a single sector (directory header) to scr
 
 There is also GEOS TCBM2SD driver that reads and writes single sectors.
 
-#### Fast block save
+#### <a name='Fastblocksave'></a>Fast block save
 
 Command: `U0+chr$(2)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-read)`
 

@@ -1,16 +1,33 @@
 # TCBM2SD 1.3 Hardware and Firmware
 
-### by Maciej 'YTM/Elysium' Witkowiak
+### <a name='byMaciejYTMElysiumWitkowiak'></a>by Maciej 'YTM/Elysium' Witkowiak
 
-## KiCad project
+## Table of contents
+
+<!-- vscode-markdown-toc -->
+* [KiCad project](#KiCadproject)
+* [Schematic](#Schematic)
+* [PCB](#PCB)
+* [Parts](#Parts)
+* [CPLD firmware](#CPLDfirmware)
+* [Arduino firmware](#Arduinofirmware)
+* [C16, C116, Plus/4 software](#C16C116Plus4software)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+## <a name='KiCadproject'></a>KiCad project
 
 Project files for Kicad 6.0 are in [this folder](tcbm2sd).
 
-## Schematic
+## <a name='Schematic'></a>Schematic
 
 A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/plots/tcbm2sd.pdf) for preview.
 
-## PCB
+## <a name='PCB'></a>PCB
 
 The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules
 
@@ -20,7 +37,7 @@ Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
 
 Starting with revision rev1.2 the PCB contains both kind of footprints - holes for ready to use modules or a set of SMD parts to be soldered directly. Except for CPLD chip all the parts are quite large (0805 footprint) for easy soldering by hand.
 
-### Jumpers
+### <a name='Jumpers'></a>Jumpers
 
 | Jumper | default | Description |
 |--------|-----------------|-----------|
@@ -33,7 +50,7 @@ JP1, JP3 and JP4 default values are shorted by a thin trace under soldermask. If
 
 JP3 is meant for Arduino Mini Pro clones that would have A4 line missing or in a completely different place. Note that you have to change the definitions on the top of the sketch code too.
 
-### PREV/NEXT buttons
+### <a name='PREVNEXTbuttons'></a>PREV/NEXT buttons
 
 These buttons allow to switch to next/previous disk image within a folder. They work for all supported files: D64/D71/D81.
 
@@ -41,7 +58,7 @@ The PREV button signal serves also as a way to detect if TCBM cable is connected
 
 NEXT button signal detects if the buttons are connected at all - if it's shorted to GND (pressed) upon Arduino reset then the button functionality is disabled.
 
-## Parts
+## <a name='Parts'></a>Parts
 
 Parts to be soldered directly:
 
@@ -51,16 +68,16 @@ Parts to be soldered directly:
 
 For the remaining parts of the circuit you can go with ready for use modules or solder SMD parts directly.
 
-### Modules
+### <a name='Modules'></a>Modules
 
 - AMS1117 3.3V power supply module with 3 pins, [such as this](media/AMS1117.jpg) often labeled as HW764; it usually comes with soldered angled pins, you need to replace them with straight ones
 - SD card 3.3V adapter (3.3V VCC, with no level shifters) [like this one](media/SD.jpg)
 
-### SMD parts
+### <a name='SMDparts'></a>SMD parts
 
 The SMD BOM file with part names and can be find in the [releases](releases).
 
-### Arduino Mini Pro A4/SDA pin
+### <a name='ArduinoMiniProA4SDApin'></a>Arduino Mini Pro A4/SDA pin
 
 Clones of Arduino Mini Pro may have different placement of A4/A5/A6/A7 pins.
 
@@ -72,9 +89,9 @@ If `A4` is not available at all then you can modify the sketch to use `D1` (`RXD
 
 If you don't need software device number setting, you can permanently set the device number using JP2 and JP4.
 
-## CPLD Firmware
+## <a name='CPLDfirmware'></a>CPLD firmware
 
-### CPLD source code
+### <a name='CPLDsourcecode'></a>CPLD source code
 
 Verilog source code can be found in [hdl](hdl/) folder. Apart from `.v` files there are also project files for [Xilinx ISE 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html).
 If you want to modify them and rebuild `.jed` file, I highly recommend using Linux version, even with Windows WSL it's much easier to install and with fewer install/startup issues than the Windows version.
@@ -90,7 +107,7 @@ The 6523T code was based on a trimmed-down copy of [Fake6523](https://github.com
 
 The remaining, unused, bits of Ports B and C will probably behave in a different way than with a real 6323T. So far I didn't find it as an issue though.
 
-### CPLD flashing
+### <a name='CPLDflashing'></a>CPLD flashing
 
 JEDEC file with CPLD fimware is here: [hdl/Fake6523.jed](hdl/Fake6523.jed).
 
@@ -119,9 +136,9 @@ xc3sprog -c matrix_creator -v -p 0 Fake6523.jed
 
 There is [an excellent reference about programming XC9500XL](https://anastas.io/hardware/2020/09/29/xc9500-cpld-raspberry-pi-xc3sprog.html) via JTAG with Raspberry Pi. Please read it for more details.
 
-## Arduino firmware
+## <a name='Arduinofirmware'></a>Arduino firmware
 
-### Arduino source code
+### <a name='Arduinosourcecode'></a>Arduino source code
 
 The source code of Arduino Mini Pro sketch is in [tcbm2sd_arduino/tcbm2sd/](tcbm2sd_arduino/tcbm2sd/) folder.
 
@@ -131,7 +148,7 @@ The only dependency (other than Arduino IDE) is [SDFat 2.2.3](https://github.com
 
 The disk image handling code is a trimmed down 'diskimage' library from CGTerm, by Per Olofsson.
 
-### Arduino flashing
+### <a name='Arduinoflashing'></a>Arduino flashing
 
 A basic USB-serial dongle (CH340G or similar) with 6 pins is enough to flash the firmware. Mind the pin labels (order may be reversed), but the connection is usually one to one (without any crossings) with one of the pins left unconnected.
 This is the only time, when the 6 pins on the short side of Arduino Mini Pro board will be used.
@@ -168,9 +185,9 @@ Reopen the Arduino IDE and try again.
 1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
 2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect the VCC** line.
 
-## C16, C116, Plus/4 firmware
+## <a name='C16C116Plus4software'></a>C16, C116, Plus/4 software
 
-### Autostart/boot feature
+### <a name='Autostartbootfeature'></a>Autostart/boot feature
 
 If the filename is a single '*' (like after pressing `SHIFT+RUN/STOP`) then a small loader will be sent to the computer. This loader will try to load and run file `BOOT.T2SD` from the SD card's root folder.
 
@@ -191,7 +208,7 @@ xxd -i loader.prg ../tcbm2sd_arduino/tcbm2sd/loader.h
 
 Then the Arduino code has to be recompiled and uploaded to the device.
 
-### Directory browser 1.2b
+### <a name='Directorybrowser1.2b'></a>Directory browser 1.2b
 
 *(This serves only as an example of directly patching a binary file. The `BOOT.T2SD` that I publish is assembled from original source code.)*
 
@@ -203,7 +220,7 @@ java -jar Kickass.jar db12patch.asm
 ```
 This saves `db12b.prg` patched directory browser that can be put on an SD card to be `DLOAD`ed and executed.
 
-### Games
+### <a name='Games'></a>Games
 
 Check the [games/](games/) subfolders. Each one has original disk images and the `Makefile` which applies patch over binaries to create a new disk image with game that can be loaded using standard TCBM protocol (`-tcbm`) or fastloader (`-tcbmfast`).
 
