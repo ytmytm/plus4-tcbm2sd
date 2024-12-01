@@ -29,8 +29,6 @@ A PDF plot of schematic is available here: [tcbm2sd/plots/tcbm2sd.pdf](tcbm2sd/p
 
 ## <a name='PCB'></a>PCB
 
-The first revision of PCB was meant primarily as a MVP demonstration and a development platform for software, so it relies on cheap, ready to use modules
-
 <img src="media/01.pcb-top.jpg" width=640 alt="tcbm2sd PCB Top view">
 
 Gerber files for manufacturing are in [tcbm2sd/plots/](tcbm2sd/plots) folder.
@@ -94,7 +92,7 @@ The disadvantage is that an adapter will not have card sense switch exposed.
 
 ### <a name='SMDparts'></a>SMD parts
 
-The SMD BOM file with part names and can be find in the [releases](releases).
+The SMD BOM file with part names and can be found in the [releases](releases).
 
 ### <a name='ArduinoMiniProA4SDApin'></a>Arduino Mini Pro A4/SDA pin
 
@@ -124,7 +122,7 @@ The code implements 4 parts:
 
 The 6523T code was based on a trimmed-down copy of [Fake6523](https://github.com/go4retro/Fake6523) and a [CIA implementation](https://github.com/niklasekstrom/cia-verilog/blob/master/cia.v).
 
-The remaining, unused, bits of Ports B and C will probably behave in a different way than with a real 6323T. So far I didn't find it as an issue though.
+The remaining, unused, bits of Ports B and C will permanently return 0. This is a bit different than with a real 6323T. There is no space left in CPLD to implement fully compatible behaviour. So far that wasn't an issue for me.
 
 ### <a name='CPLDflashing'></a>CPLD flashing
 
@@ -185,8 +183,9 @@ This is the only time, when the 6 pins on the short side of Arduino Mini Pro boa
 
 **UPLOAD PROBLEMS**
 
-Many Ardunio Mini Pro clones are sold with old bootloader flashed. That was the case for me. (They are also unable to use 115200 serial speed, but that's another story).
-If you have trouble uploading the compiled code check if changing the upload speed from 115200 (new bootloader) to 57600 (old bootloader) helps.
+Many Arduino Mini Pro clones are sold with an old bootloader flashed.
+
+If you have trouble with uploading the compiled code check if changing the upload speed from 115200 (new bootloader) to 57600 (old bootloader) helps.
 
 Close the IDE and find you Arduino `boards.txt` settings file. On Windows it will be in `C:/Users/<user name>/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.6/boards.txt`
 
@@ -206,14 +205,14 @@ Reopen the Arduino IDE and try again.
 
 **WARNING**
 
-1. Be sure to setup you USB dongle to 3.3V operation. They usually have a switch for that.
+1. Be sure to setup your USB dongle to 3.3V operation. They usually have a switch for that.
 2. For development I have been reflashing Arduino code while cartridge was still connected to the computer. For this case make sure **to disconnect the VCC** line.
 
 ## <a name='C16C116Plus4software'></a>C16, C116, Plus/4 software
 
 ### <a name='Autostartbootfeature'></a>Autostart/boot feature
 
-If the filename is a single '*' (like after pressing `SHIFT+RUN/STOP`) then a small loader will be sent to the computer. This loader will try to load and run file `BOOT.T2SD` from the SD card's root folder.
+If the filename is a single `*` (like after pressing `SHIFT+RUN/STOP`) then a small loader will be sent to the computer. This loader will try to load and run file `BOOT.T2SD` from the SD card's root folder.
 
 The source code for the loader is in [loader/loader.asm](loader) folder. You need [KickAssembler](https://www.theweb.dk/KickAssembler/) to rebuild it.
 

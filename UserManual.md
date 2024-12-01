@@ -9,7 +9,6 @@
 * [Installation](#Installation)
 * [Cartridge ROM](#CartridgeROM)
 * [Paddle mode](#Paddlemode)
-* [Hardware configuration(TODO)](#HardwareconfigurationTODO)
 * [SD card organization](#SDcardorganization)
 * [Autostart/boot feature](#Autostartbootfeature)
 * [Listing directory](#Listingdirectory)
@@ -34,7 +33,7 @@
 
 ### <a name='Introduction'></a>Introduction
 
-TCBM2SD simulates behavior of a 1551 disk drive. It's not capable of emulating the drive's CPU, but it does response to a subset of commands just like 1551 would.
+TCBM2SD simulates behaviour of a 1551 disk drive. It's not capable of emulating the drive's CPU, but it does response to a subset of commands just like 1551 would.
 
 ### <a name='Installation'></a>Installation
 
@@ -42,23 +41,19 @@ With the power off insert the tcbm2sd cartridge into the expansion port of C16/C
 
 ### <a name='CartridgeROM'></a>Cartridge ROM
 
-There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge functionality.
+There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge functionality. This is a new external ROM, just like any other cartridge. It's operation is completely unrelated to the TCBM/drive simulation part.
 
 The 32K ROM will appear for the system as both cartridge 1 and cartridge 2. Its startup message will appear twice, but usually this is not a problem.
 
-The bottom half of 64K ROM will appear as cartridge 2, the top half as cartridge 1.
+With a 64K ROM the bottom half will appear as cartridge 2 and the top half as cartridge 1.
 
 ### <a name='Paddlemode'></a>Paddle mode
 
-If during power on a cable to a real 1551 is connected (if pin 16 on the TCBM2SD TCBM connector is shorted to GND) then Arduino will disable itself and TCBM2SD will become a paddle cartridge replacement: emulating behavior of the original PLA and 6523T chips.
+During power on, if a cable to a real 1551 is connected (pin 16 on the TCBM2SD TCBM connector is shorted to GND) then Arduino will disable itself and TCBM2SD will become a paddle cartridge replacement: emulating behavior of the original PLA and 6523T chips.
 
 The same will happen if during power-on the `PREV` button is held down.
 
 This has no effect on the TCBM2SD cartridge ROM functionality - you will still have access to both C1 and C2 ROMs.
-
-### <a name='HardwareconfigurationTODO'></a>Hardware configuration(TODO)
-
-There is a number of jumpers that you can cut or short to enable/disable features.
 
 ### <a name='SDcardorganization'></a>SD card organization
 
@@ -78,9 +73,9 @@ SCRATCH "FILES/FILE.PRG
 
 The `BOOT.T2SD` file from the SD card's root folder will be loaded whenever the computer tries to load file named `*` (like after pressing `SHIFT+RUN/STOP`).
 
-It can by any file of your choice, but I recommend [loader/boot.t2sd](Directory Browser 1.2 (TCBM2SD)) patched for fast loading of the files and directory listings.
+It can by any file of your choice, but I recommend [Directory Browser 1.2 TCBM2SD](loader/boot.t2sd) patched for fast loading of the files and directory listings.
 
-Thanks to Géza Eperjessy, the author of 'Directory browser', I got access to its source code and I could change the code directly to support fast protocol when TCBM2SD is detected in response to `UI` command.
+Thanks to Géza Eperjessy, the author of 'Directory Browser', I got access to its source code and I could change the code directly to support fast protocol when TCBM2SD is detected in response to `UI` command.
 
 *Hint: this feature can be used for autostarting software released on SD cards*
 
@@ -128,7 +123,7 @@ Extensions are needed only for disk images. For TCBM2SD each file is either a `P
 
 ### <a name='Diskimages'></a>Disk images
 
-TCBM2SD supports disk images: D64/D71/D81/D80/D82.
+TCBM2SD supports following disk images: D64/D71/D81/D80/D82.
 
 The disk images are treated like directories. You enter them using `CD` command and exit with `CD..` or `CD`&larr; to go to the parent folder. You don't have to specify full name, wildcards work too.
 
@@ -198,6 +193,19 @@ With JiffyDOS it's simpler using DOS wedge:
 @<disk command>
 @
 00, OK,00,00
+```
+
+DOS commands can include a drive number (`0`) and a colon (`:`). These are equivalent:
+```
+DLOAD"FILE
+DLOAD":FILE"
+DLOAD"0:FILE"
+```
+or with JiffyDOS:
+```
+@CDIMAGE.D64
+@CD:IMAGE.D64
+@CD0:IMAGE.D64
 ```
 
 ### <a name='Supportedcommands'></a>Supported commands
