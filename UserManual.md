@@ -12,6 +12,14 @@ TCBM2SD simulates behavior of a 1551 disk drive. It's not capable of emulating t
 
 With the power off insert the tcbm2sd cartridge into the expansion port of C16/C116/Plus4.
 
+### Cartridge ROM
+
+There is a socket for a 32K (27E257) or 64K (27E512) EPROM/EEPROM for cartridge functionality.
+
+The 32K ROM will appear for the system as both cartridge 1 and cartridge 2. Its startup message will appear twice, but usually this is not a problem.
+
+The bottom half of 64K ROM will appear as cartridge 2, the top half as cartridge 1.
+
 ### Paddle mode
 
 If during power on a cable to a real 1551 is connected (if pin 16 on the TCBM2SD TCBM connector is shorted to GND) then Arduino will disable itself and TCBM2SD will become a paddle cartridge replacement: emulating behavior of the original PLA and 6523T chips.
@@ -232,7 +240,7 @@ Fast protocol is enabled when everything is prepared like for load (`OPEN` chann
 
 Check out also the other files from [loader/](loader/) folder. I can't publish full source code (it's not mine), but you will find pieces of code I altered in 't2s-...' files. That also includes the TCBM2SD detection part.
 
-#### Fastload by name
+#### Fastload (U0, filename)
 
 Command: `U0+chr$(31)+<filename>`
 
@@ -245,7 +253,7 @@ command:
 ```
 The example code for this is in the firmware that loads `/BOOT.T2SD`: [loader/loader.asm](loader/loader.asm)
 
-#### Fastload by track & sector
+#### Fastload (U0, track & sector)
 
 Command: `U0+chr$(63)+chr$(track)+chr$(sector)`
 
@@ -266,7 +274,7 @@ Command: `U0+chr$(0)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-read)`
 
 Description: Fast load consecutive sectors starting with initial track and sector. The transfer will not stop until number of blocks is exhausted. That parameter must be equal to 1 or more. This works only within disk images. You will get as many sectors as needed, they will be read from following tracks if necessary (just like the data is arranged within disk image file).
 
-The example code for block read and write can be found in [loader/block-rw.asm](loader/block-rw.asm).
+The example code for both block read and save can be found in [loader/block-rw.asm](loader/block-rw.asm).
 This is a simple utility that can load a single sector (directory header) to screen ram (`$0C00`) and the buffer (`$2000`) or write data from the buffer into the directory header.
 
 There is also GEOS TCBM2SD driver that reads and writes single sectors.
@@ -276,3 +284,5 @@ There is also GEOS TCBM2SD driver that reads and writes single sectors.
 Command: `U0+chr$(2)+chr$(track)+chr$(sectors)+chr$(number-of-blocks-to-read)`
 
 Description: Fast save consecutive sectors starting with initial track and sector. The transfer will not stop until number of blocks is exhausted. That parameter must be equal to 1 or more. This works only within disk images. You will get as many sectors as needed, they will be read from following tracks if necessary (just like the data is arranged within disk image file).
+
+The example code for both block read and save can be found in [loader/block-rw.asm](loader/block-rw.asm).
