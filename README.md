@@ -12,7 +12,7 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 ## Software
 
 - [GEOS for tcbm2sd (D64)](geos/geostcbm.d64)
-- [Collection of patched disk games](games/README.md)
+- [Collection of patched disk games](games/)
 <!-- XXX patched cartridge images -->
 
 ## Media
