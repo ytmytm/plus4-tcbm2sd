@@ -73,7 +73,7 @@ SCRATCH "FILES/FILE.PRG
 
 The `BOOT.T2SD` file from the SD card's root folder will be loaded whenever the computer tries to load file named `*` (like after pressing `SHIFT+RUN/STOP`).
 
-It can by any file of your choice, but I recommend [Directory Browser 1.2 TCBM2SD](loader/boot.t2sd) patched for fast loading of the files and directory listings.
+It can be any file of your choice, but I recommend [Directory Browser 1.2 TCBM2SD](loader/boot.t2sd) patched for fast loading of the files and directory listings.
 
 Thanks to Géza Eperjessy, the author of 'Directory Browser', I got access to its source code and I could change the code directly to support fast protocol when TCBM2SD is detected in response to `UI` command.
 
@@ -218,7 +218,7 @@ or with JiffyDOS:
 | `CD/` | `CD/` | Got to cards' root folder. `DLOAD"*` will now load `/BOOT.T2SD` |
 | `CD..` | `CD..` | Exit disk image or enter parent folder. `DLOAD"*` will now load `/BOOT.T2SD` |
 | `CD`&larr; | `CD`&larr; | Exit disk image or enter parent folder. `DLOAD"*` will now load `/BOOT.T2SD` |
-| `S:<filename>` | `S:MYFILE.PRG` | Remove the file. If using wildcards only the first matching file will be removed |
+| `S:<filename>` | `S:MYFILE.PRG` | Remove a file. With wildcards only the first matching file will be removed |
 | `R:<new>=<old>` | `R:NEWFILE=OLDFILE` | Rename a file |
 | `MD:<dir name>` | `MD:GAMES` | Create an empty directory in current folder |
 | `RD:<dir name>` | `RD:GAMES` | Remove a directory. It must be empty |
@@ -254,8 +254,6 @@ These commands try to follow the syntax of Burst Utility Commands known from 157
 
 Fast load/save protocol is defined by its software implementation within game patches, GEOS TCBM2SD driver and embedded loader.
 
-TCBM2SD is compatible with standard TCBM protocol as implemented by Commodore in Plus/4 ROM. However the hardware is capable with much more.
-
 | device | bytes/second | times 1541 |
 |---|---|---|
 | 1541 (CBM) | 430 | 1x |
@@ -270,11 +268,16 @@ Since Arduino Micro Pro is much faster than a Plus/4 (8MHz vs 1MHz) it would be 
 
 The fastload protocol should be used only if there is TCBM2SD device on the other end. This can be detected by checking if disk status after `UI` command contains `TCBM2SD` string.
 
+Example for this is in: [loader/t2s-detect.asm](loader/t2s-detect.asm)
+
+Check out also the other files from [loader/](loader/) folder. I can't publish full source code for patched Directory Browser (it's not mine), but you will find pieces of code I altered in 't2s-...' files. That also includes the TCBM2SD detection part.
+
+
 #### <a name='Fastloadchannel16'></a>Fastload (channel 16)
 
 Fast protocol is enabled when everything is prepared like for load (`OPEN` channel 0 and send the filename) but after the `TALK` call as a secondary address we send `0x70` instead of `0x60` to talk on channel 16 rather than 0.
 
-Check out also the other files from [loader/](loader/) folder. I can't publish full source code (it's not mine), but you will find pieces of code I altered in 't2s-...' files. That also includes the TCBM2SD detection part.
+The example code for this is in: [loader/t2s-load.asm](loader/t2s-load.asm)
 
 #### <a name='FastloadU0filename'></a>Fastload (U0, filename)
 
@@ -287,7 +290,7 @@ command:
 	.byte "U0", $1f
 	.byte "FILENAME"
 ```
-The example code for this is in the firmware that loads `/BOOT.T2SD`: [loader/loader.asm](loader/loader.asm)
+The example code for this is in the firmware that loads `/BOOT.T2SD`: [loader/loader.asm](loader/loader.asm) and IOLib patch for games: [games/tcbm2sdloaderfast.asm](games/tcbm2sdloaderfast.asm)
 
 #### <a name='FastloadU0tracksector'></a>Fastload (U0, track & sector)
 
