@@ -15,6 +15,8 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 - [Collection of patched disk games](games/)
 <!-- XXX patched cartridge images -->
 
+[ZIP archive of the above](https://drive.google.com/drive/folders/1UYzHO3PNRJw3JCk5QNncfK0rwXZ2pFXH?usp=drive_link)
+
 ## Media
 
 <img src="media/81.toscale.jpg" width=640 alt="tcbm2sd PCB and Plus/4 to scale">
