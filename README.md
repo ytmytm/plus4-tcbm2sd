@@ -11,17 +11,28 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 
 ## Software
 
+- supported by [Siz's I/O library v4](https://github.com/iszell/siziolib)
 - [GEOS for tcbm2sd (D64)](geos/geostcbm.d64)
 - [Collection of patched disk games](games/)
-<!-- XXX patched cartridge images -->
+<!-- XXX patched cartridge images: OctaBASIC, Gamecart -->
 
 [ZIP archive of the above](https://drive.google.com/drive/folders/1UYzHO3PNRJw3JCk5QNncfK0rwXZ2pFXH?usp=drive_link)
 
 ## Media
 
+### Commodore Users Europe presentation
+
+<a href="https://www.youtube.com/watch?v=iNGW5h6bXoA" target="_blank">
+ <img src="https://img.youtube.com/vi/iNGW5h6bXoA/mqdefault.jpg" alt="Commodore Users Europe presentation about TCBM2SD" />
+ <p><small>Click for video</small></p>
+</a>
+
+### Photos
+
 <img src="media/81.toscale.jpg" width=640 alt="tcbm2sd PCB and Plus/4 to scale">
 <img src="media/82.installed.jpg" width=640 alt="tcbm2sd installed in Plus/4 expansion port">
 <img src="media/80.topview.jpg" width=640 alt="tcbm2sd populated PCB">
+
 
 ### Basic operations
 
