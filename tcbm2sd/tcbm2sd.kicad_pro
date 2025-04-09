@@ -402,7 +402,7 @@
       "netlist": "",
       "specctra_dsn": "tcbm2sd.dsn",
       "step": "",
-      "vrml": ""
+      "vrml": "plots/3d/tcbm2sd.wrl"
     },
     "page_layout_descr_file": ""
   },
