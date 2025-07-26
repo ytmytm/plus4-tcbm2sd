@@ -1,0 +1,22 @@
+
+GLOBAL {
+    OUTPUTNAME "boot1.s";
+    INPUTNAME "boot1.bin";
+    STARTADDR $1800;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+LABEL { NAME "L180C"; addr $180c; COMMENT "Detect IEC (C=1) or TCBM (C=0)"; };
+
+LABEL { NAME "L18F9"; addr $18F9; };
+RANGE { START $18F9; END $18FA; TYPE TextTable; };
+
+LABEL { NAME "L18ED"; addr $18ED; COMMENT "Block-Execute command"; };
+RANGE { START $18ED; END $18F8; TYPE TextTable; };
+
+LABEL { NAME "L1818"; addr $1818; COMMENT "Patch loader (to C000) for TCBM comm instead of serial (C300 and 5600)"; };
+
+LABEL { NAME "L1827"; addr $1827; COMMENT "Drive code at (18,2 - IEC) or (18,8 - TCBM)"; };

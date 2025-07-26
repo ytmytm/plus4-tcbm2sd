@@ -1,0 +1,11 @@
+
+GLOBAL {
+    OUTPUTNAME "boot0.s";
+    INPUTNAME "boot0.bin";
+    STARTADDR $0265;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+

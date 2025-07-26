@@ -1,0 +1,52 @@
+
+GLOBAL {
+    OUTPUTNAME "boot3.s";
+    INPUTNAME "boot3.bin";
+    STARTADDR $5600;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+LABEL { NAME "LoadByte"; ADDR $56B5; COMMENT "LDA xxxx,X"; };
+LABEL { NAME "WriteBufferAddr"; ADDR $56B6; SIZE 2; };
+LABEL { NAME "StoreByte"; ADDR $56C6; COMMENT "STA xxxx,X"; };
+LABEL { NAME "ReadBufferAddr"; ADDR $56C7; SIZE 2; };
+
+// this is ~the same as C64 prodos.s
+LABEL { NAME "SendByte";        addr $5600; COMMENT "Send byte from A, use $FF as tmp"; };
+LABEL { NAME "GetByte";         addr $563A; COMMENT "Get byte into A, use $FF as tmp"; };
+LABEL { NAME "Delay";           addr $5679; COMMENT "Delay for IEC ops"; };
+LABEL { NAME "SendParams";      addr $567F; COMMENT "Send parameters to the drive: op, track, sector"; };
+LABEL { NAME "DoGetStatus";     addr $56CC; COMMENT "Get operation status from drive"; };
+LABEL { NAME "DoSectorOp";      addr $5694; COMMENT "Do operation from DriveOp with block number already converted to track and sector. This must be at 5694(?)"; };
+LABEL { NAME "DoGetSector";     addr $56C1; COMMENT "Read disk sector into buffer"; };
+LABEL { NAME "DoPutSector";     addr $56B3; COMMENT "Write buffer to disk"; };
+
+LABEL { NAME "DoBlockOp";     addr $56DC; COMMENT "Do block operation, called externally. This must be at $56DC"; };
+
+LABEL { NAME "ConvertBlockTmp"; addr $56EC; COMMENT "Convert from block number to track and sector"; };
+
+
+LABEL { NAME "TrackSizeTab"; addr $5721; COMMENT "Track lengths (32 entries)"; };
+RANGE { START $5721; END $5742; TYPE ByteTable; };
+LABEL { NAME "IOStatus"; ADDR $5744; SIZE 1; COMMENT "Status of the last I/O operation"; };
+LABEL { NAME "BlockNumTmp"; addr $5745; SIZE 2; COMMENT "ProDOS block number / converted track and sector"; };
+//LABEL { NAME "BlockNumTmpHi"; addr $5746; };
+RANGE { START $5745; END $5746; TYPE WordTable; };
+
+RANGE { START $5747; END $574E; TYPE Code; COMMENT "NMI ???"; };
+
+// zeropage
+
+LABEL { NAME "DriveOp";         addr $00d5; COMMENT "operation code, 1=read, 2=write, 3=get status byte"; };
+LABEL { NAME "BufferVec";       addr $00d6; SIZE 2; COMMENT "operation buffer vector"; };
+//LABEL { NAME "BufferVecHi";     addr $00d7; };
+LABEL { NAME "BlockNum";        addr $00d8; SIZE 2; COMMENT "operation block number"; };
+LABEL { NAME "tmpbyte"; ADDR $00FF; COMMENT "tmp storage for Send/GetByte"; };
+
+//LABEL { NAME "SectorBuffer";    addr $5500; COMMENT "general disk buffer??? (is it?)"; };
+LABEL { NAME "DiskSideNum";     addr $F5DF; COMMENT "needed disk side number (0=disk1, 1=disk2, ...) same as on C64"; };
+
+LABEL { NAME "ProDOS_END"; addr $574E; COMMENT "end of code: $574F, $57FF?"; };
