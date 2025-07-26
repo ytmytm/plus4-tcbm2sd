@@ -1,0 +1,25 @@
+
+GLOBAL {
+    OUTPUTNAME "titlepic.s";
+    INPUTNAME "titlepic1000.bin";
+    STARTADDR $1000;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+RANGE { START $1000; END $1060; TYPE Code; };
+RANGE { START $1061; END $2FA0; TYPE ByteTable; COMMENT "bitmap"; };
+RANGE { START $2FA1; END $3388; TYPE ByteTable; COMMENT "screen"; };
+RANGE { START $3389; END $3770; TYPE ByteTable; COMMENT "colors"; };
+
+LABEL { NAME "TitlepicStart"; ADDR $1000; };
+
+LABEL { NAME "TabBitmap"; ADDR $1061; COMMENT "bitmap data (8000) "; };
+LABEL { NAME "TabScreen"; ADDR $2fa1; COMMENT "screen color map data (1000) "; };
+LABEL { NAME "TabColors"; ADDR $3389; COMMENT "color ram data (1000) "; };
+
+LABEL { NAME "Bitmap"; ADDR $8000; COMMENT "multicolor bitmap for TED"; };
+LABEL { NAME "Colors"; ADDR $5800; COMMENT "color map for TED"; };
+LABEL { NAME "Screen"; ADDR $5C00; COMMENT "screen colormap for TED"; };
