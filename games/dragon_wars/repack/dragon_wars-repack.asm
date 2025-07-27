@@ -1,9 +1,10 @@
 // ----------------------------------------------------------------------------
 // DRAGONWARS-REPACK.PRG
-// repackaged loader and intro into a single compressed file
+// repackaged loader and intro and utils into a single compressed file
 // UTIL can't return because there is no autostart anymore (can be patched)
+// note: sectors occupied by UTILS were freed on D64 template
+// (whole track 8)
 // ----------------------------------------------------------------------------
-
 
 .print "Assembling DRAGONWARS-REPACK.PRG"
 
@@ -12,7 +13,7 @@
 // ----------------------------------------------------------------------------
 
 //.segmentdef Combined  [outPrg="dragon_wars-repack.prg", segments="Startup,Subs1,TitlePicColorBitmap,Music,IntroLoader,Intro"]
-.segmentdef Combined  [outPrg="dragon_wars-repack.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,IntroLoader,Intro"]
+.segmentdef Combined  [outPrg="dragon_wars-repack.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,Utils,IntroLoader,Intro,UtilStart"]
 
 // ----------------------------------------------------------------------------
 
@@ -42,6 +43,12 @@ LSUBS0500:
 
 // ----------------------------------------------------------------------------
 
+.segment Utils [start = $8600, max=$bfff]
+LUTILS1000:
+.import binary "bins/util1000.bin"
+
+// ----------------------------------------------------------------------------
+
 // 5600 - initial loader
 // patched to use TCBM SendByte/GetByte
 // parts copied to $FF20
@@ -55,7 +62,7 @@ LSUBS0500:
 
 // ----------------------------------------------------------------------------
 
-.segment Intro [start = $C000, max=$C3ff]
+.segment Intro [start = $C000, max=$C31f]
 .import binary "boot2.bin"
 
 // ----------------------------------------------------------------------------
@@ -123,6 +130,7 @@ L185B:  jsr     LFFE7
 		sta $FFFF
 		sta $FF3F								// enable RAM
 
+		jsr UtilStartPatch
 		jsr TitlepicStart
 		// skip TITLEPIC/MUSIC/SUBS1/parts of intro loader
 		jmp $C02A
@@ -193,3 +201,40 @@ TitlepicStart:
         lda     #$D1                            // 105A
         sta     $FF16                           // 105C
         rts                                     // 105F
+
+// ----------------------------------------------------------------------------
+// patch boot2.s to not load UTILS, but jump into UtilStart
+UtilStartPatch:
+		lda #$4c
+		sta $c052
+		lda #<UtilStart
+		sta $c053
+		lda #>UtilStart
+		sta $c054
+		rts
+
+// ----------------------------------------------------------------------------
+
+.segment UtilStart [start = $c320, max=$c4ff]
+UtilStart:
+		// copy down UTILS from $8600 to $1000
+		lda #<LUTILS1000
+		sta $02
+		lda #>LUTILS1000
+		sta $03
+		lda #$00
+		sta $04
+		sta $FF06		// screen off
+		lda #$10
+		sta $05
+		ldy #0
+!:		lda ($02),y
+		sta ($04),y
+		iny
+		bne !-
+		inc $03
+		inc $05
+		lda $05
+		cmp #$29		// utils end at $28A0
+		bne !-
+		jmp $1000		// start it
