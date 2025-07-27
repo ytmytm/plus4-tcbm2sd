@@ -1,0 +1,15 @@
+
+GLOBAL {
+    OUTPUTNAME "subs.s";
+    INPUTNAME "subs0500.bin";
+    STARTADDR $0500;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+//RANGE { START $1000; END $1060; TYPE Code; };
+
+// code in subs to copy get/write byte from $5600 to $ff20
+LABEL { NAME "Copy_LoaderCode_To_FF20"; addr $4e39; COMMENT "Copies code from $5600 to $ff20"; };

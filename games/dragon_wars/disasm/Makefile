@@ -40,7 +40,7 @@ disasm: boot0.bin boot1.bin boot2.bin boot3.bin boot0.info boot1.info boot2.info
 	$(DA65) -i boot1.info
 	$(DA65) -i boot2.info
 	$(DA65) -i boot3.info
-	cd bins && $(DA65) -i titlepic1000.info
+	cd bins && $(DA65) -i titlepic1000.info && $(DA65) -i subs0500.info && $(DA65) -i util1000.info
 
 %.prg: %.asm boot0.bin
 	$(JAVA) -jar $(KICKASS) $(KICKASSFLAGS) $< -o $@
