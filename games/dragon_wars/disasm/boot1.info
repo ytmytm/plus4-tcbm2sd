@@ -20,3 +20,5 @@ RANGE { START $18ED; END $18F8; TYPE TextTable; };
 LABEL { NAME "L1818"; addr $1818; COMMENT "Patch loader (to C000) for TCBM comm instead of serial (C300 and 5600)"; };
 
 LABEL { NAME "L1827"; addr $1827; COMMENT "Drive code at (18,2 - IEC) or (18,8 - TCBM)"; };
+
+LABEL { NAME "L188F"; addr $188f; COMMENT "Setup IRQ handler for $5747 (boot3.bin)"; };

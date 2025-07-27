@@ -14,6 +14,8 @@ LABEL { NAME "WriteBufferAddr"; ADDR $56B6; SIZE 2; };
 LABEL { NAME "StoreByte"; ADDR $56C6; COMMENT "STA xxxx,X"; };
 LABEL { NAME "ReadBufferAddr"; ADDR $56C7; SIZE 2; };
 
+LABEL { NAME "IRQHandler"; ADDR $5747; COMMENT "boot1.bin sets $FFFE/F to that"; };
+
 // this is ~the same as C64 prodos.s
 LABEL { NAME "SendByte";        addr $5600; COMMENT "Send byte from A, use $FF as tmp"; };
 LABEL { NAME "GetByte";         addr $563A; COMMENT "Get byte into A, use $FF as tmp"; };

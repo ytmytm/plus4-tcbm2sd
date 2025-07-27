@@ -1,5 +1,5 @@
 ; da65 V2.19 - Git dcdf7ade0
-; Created:    2025-07-26 22:10:20
+; Created:    2025-07-27 12:19:22
 ; Input file: boot3.bin
 ; Page:       1
 
@@ -217,6 +217,8 @@ IOStatus:
 BlockNumTmp:
         .word   $0000                           ; 5745
 ; ----------------------------------------------------------------------------
+; boot1.bin sets $FFFE/F to that
+IRQHandler:
         pha                                     ; 5747
         lda     #$FF                            ; 5748
         sta     $FF09                           ; 574A
