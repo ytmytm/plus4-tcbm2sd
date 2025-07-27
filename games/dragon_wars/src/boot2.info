@@ -1,0 +1,41 @@
+
+GLOBAL {
+    OUTPUTNAME "boot2.s";
+    INPUTNAME "boot2.bin";
+    STARTADDR $c000;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+// code in subs to copy get/write byte from $5600 to $ff20
+LABEL { NAME "Copy_LoaderCode_To_FF20"; addr $4e39; COMMENT "Copies code from $5600 to $ff20"; };
+
+// some triplets
+RANGE { START $C15C; END $C16F; TYPE ByteTable; };
+
+// filenames
+RANGE { START $C171; END $C189; TYPE ByteTable; };
+LABEL { NAME "NAME_TITLEPIC"; addr $C171; COMMENT "8, TITLEPIC $C171"; };
+LABEL { NAME "NAME_MUSIC"; addr $C17A; COMMENT "5, MUSIC $C17A"; };
+LABEL { NAME "NAME_UTIL"; addr $C180; COMMENT "4, UTIL $C180"; };
+LABEL { NAME "NAME_SUBS"; addr $C185; COMMENT "5, SUBS1 $C185"; };
+
+// prodos directory buffer
+LABEL { NAME "BUFCE00"; addr $CE00; SIZE 256; COMMENT "ProDOS buffer 1"; };
+LABEL { NAME "BUFCF00"; addr $CF00; SIZE 256; COMMENT "ProDOS buffer 2"; };
+
+
+// calls these directly in loader
+LABEL { NAME "DoSectorOp";      addr $5694; COMMENT "Do operation from DriveOp with block number already converted to track and sector. This must be at 5694(?)"; };
+LABEL { NAME "ConvertBlockTmp"; addr $56EC; COMMENT "Convert from block number to track and sector"; };
+
+LABEL { NAME "BlockNumTmp"; addr $5745; SIZE 2; COMMENT "ProDOS block number / converted track and sector"; };
+//LABEL { NAME "BlockNumTmpHi"; addr $5746; };
+RANGE { START $5745; END $5746; TYPE WordTable; };
+
+LABEL { NAME "DriveOp";         addr $00d5; COMMENT "operation code, 1=read, 2=write, 3=get status byte"; };
+LABEL { NAME "BufferVec";       addr $00d6; SIZE 2; COMMENT "operation buffer vector"; };
+//LABEL { NAME "BufferVecHi";     addr $00d7; };
+LABEL { NAME "BlockNum";        addr $00d8; SIZE 2; COMMENT "operation block number"; };
