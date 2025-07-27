@@ -1,0 +1,16 @@
+
+GLOBAL {
+    OUTPUTNAME "util.s";
+    INPUTNAME "util1000.bin";
+    STARTADDR $1000;
+    CPU "6502";
+    INPUTOFFS 0; # load addr not available
+    PAGELENGTH 0;       # no paging
+    COMMENTS 2;
+};
+
+//RANGE { START $1000; END $1060; TYPE Code; };
+
+RANGE { START $12CC; END $12CD; TYPE TextTable; };
+
+LABEL { NAME "UtilStart"; ADDR $1000; };

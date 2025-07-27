@@ -1,0 +1,25 @@
+
+1. combine all code into one binary:
+    $0500	SUBS1 - binary + patches
+		    patched loader ($37xx)
+		    patched loader copier (not needed - $FF20 will be already there, unless exomizer would fail on that)
+    $1800	start/restart (return from utils)
+    $5600	initial loader - new code
+    $5800	screen1 - from disassembly
+    $5C00	screen2 - from disassembly
+    $6000	bitmap  - from disassembly
+    $8000	music   - binary
+    $c000	intro loader - new code
+    $ff20	game loader (partial) - new code
+
+    New loader based on work done for Bard's Tale 3
+	- booter can detect drive #8 or #9 and set the register offset
+	- DoSectorOp+Read/Write -> ~$13e bytes - may not fit?
+
+2. toolchain:
+    - Kickass
+    - Exomizer
+	if fails on decompressing over I/O ($FD00-$FF1F)
+	put gameloader into virtual and copy from intro loader
+
+3. save to disk 1 with space occupied by former TITLEPIC/SUBS1/MUSIC freed
