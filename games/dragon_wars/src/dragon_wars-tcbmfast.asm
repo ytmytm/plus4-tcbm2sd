@@ -8,6 +8,7 @@
 
 .print "Assembling DRAGONWARS-TCBMFAST.PRG"
 
+// XXX this can't be dynamic anymore, will be fixed but we can provide two executables instead
 .var DefaultDriveNumber = $08
 
 // ----------------------------------------------------------------------------
@@ -17,6 +18,7 @@
 
 // ----------------------------------------------------------------------------
 
+// XXX with TCBM2SD, we can do it in one piece(?)
 // can't do it in one piece b/c we need banking procedures at $0700 for ROM calls
 // (won't be needed for TCBM2SD)
 //.segment Subs1 [start = $0500, max=$50ff]
@@ -53,6 +55,9 @@ LSUBS0500:
 .segment Utils [start = $8600, max=$bfff]
 LUTILS1000:
 .import binary "bins/util1000.bin"
+// UTILS won't work for TCBM2SD, but the game image can be patched (copy BAM from template-freeblocks.d64 and save TCBM2SD 'DRAGONWARS.PRG')
+
+// XXX boot2.bin needs to be patched to not load UTILS, but enter game
 
 // ----------------------------------------------------------------------------
 
@@ -66,6 +71,9 @@ LUTILS1000:
 .var L5681 = $5681	// $01 access changed to 'bit'
 .var L56D4 = $56D4	// $01 access changed to 'bit'
 .var IRQHandler = $5747 // IRQ handler
+
+// XXX we don't need this part anymore
+// XXX but IRQHandler is still required
 
 // note that $FF3E/$FF3F are used for RAM/ROM selection and can't be part of the code
 // $FF20		SendByte
@@ -83,7 +91,7 @@ LUTILS1000:
 .segment Intro [start = $C000, max=$C31f]
 .import binary "boot2.bin"
 
-// calls:
+// calls: - but we don't load anything anymore, game loads from high loader ($FF9F)
 // LABEL { NAME "Copy_LoaderCode_To_FF20"; addr $4e39; COMMENT "Copies code from $5600 to $ff20"; };
 // LABEL { NAME "DoSectorOp";      addr $5694; COMMENT "Do operation from DriveOp with block number already converted to track and sector. This must be at 5694(?)"; };
 // LABEL { NAME "ConvertBlockTmp"; addr $56EC; COMMENT "Convert from block number to track and sector"; };
@@ -527,3 +535,6 @@ DoBlockOp:
 
 // XXX must add whole missing code for ConvertBlockTmp here ($ffaf), uses table at $37dd
 // (if ConvertBlockTmp saves to TCBM2SD_ReadWriteCmd_Track/Sector more bytes can be saved)
+
+// XXX there is no reversed pseudo-pc, need to move these high segments, recalc lengths and add error checking
+// XXX for critical addresses
