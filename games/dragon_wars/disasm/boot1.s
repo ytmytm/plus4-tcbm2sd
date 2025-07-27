@@ -1,5 +1,5 @@
 ; da65 V2.19 - Git dcdf7ade0
-; Created:    2025-07-26 22:10:20
+; Created:    2025-07-27 12:19:22
 ; Input file: boot1.bin
 ; Page:       1
 
@@ -80,7 +80,8 @@ L1880:  lda     $1C17,x                         ; 1880
         sta     $5700,x                         ; 1889
         inx                                     ; 188C
         bne     L1880                           ; 188D
-        lda     #$47                            ; 188F
+; Setup IRQ handler for $5747 (boot3.bin)
+L188F:  lda     #$47                            ; 188F
         sta     $FFFE                           ; 1891
         lda     #$57                            ; 1894
         sta     $FFFF                           ; 1896
