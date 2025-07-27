@@ -31,7 +31,8 @@ Remaining part of the loader within game is embedded in `SUBS1`.
 If 'U' is pressed, then instead of starting the game:
 
 - `UTILS` will be loaded and started
-- tool returns by jumping back into `$1800` - `boot1.bin`
+- tool returns by loading `:*`, relying on autostart of `boot0.bin`
+- a change to load&run would require a patch near `$12C9`
 
 ### boot3.bin
 
