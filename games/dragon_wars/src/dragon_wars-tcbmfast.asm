@@ -426,6 +426,8 @@ WriteBlockLoop:
 
 .segment TCBMLoaderHighLo[min=$ff20,max=$ff3d]
 	.pc=$ff20 "TCBMLoaderHighLo ($FF20-$FF3D)"
+	.errorif * != $ff20, "TCBMLoaderHighLo must start at $FF20"
+
 DoSectorOp:
 // DriveOp: 1=read, 2=write, 3=get status (0 == success)
 	lda DriveOp
@@ -447,10 +449,12 @@ DoSectorOp:
 	lda #0
 	clc
 	rts
+	.errorif * > $ff3d, "TCBMLoaderHighLo must not exceed $FF3D"
 
 .segment TCBMLoaderHighHi[min=$ff40,max=$ff9e]
 	.pc=$ff40 "TCBMLoaderHighHi ($FF40-$FF9E)"
 
+	.errorif * != $ff40, "TCBMLoaderHighHi must start at $FF40"
 TCBM2SD_SendParams:
 	sta TCBM2SD_ReadWriteCmd_Oper
 	lda Track 
@@ -520,11 +524,13 @@ TCBM2SD_ReadWriteCmd_Sector:
 	.byte 0
 	.byte 1		// number of sectors
 TCBM2SD_ReadWriteCmd_End:
+	.errorif * > $ff9e, "TCBMLoaderHighHi must not exceed $FF9E"
 
 
 .segment TCBMLoaderHighFix[min=$ff9f,max=$ffae]
 	.pc=$ff9f "TCBMLoaderHighFix ($FF9F-$FFAE)"
 // called externally, MUST be at $ff9f
+	.errorif * != $ff9f, "TCBMLoaderHighFix must be at $FF9F"
 DoBlockOp:
 	lda BlockNum
 	sta BlockNumTmp+1
@@ -532,6 +538,7 @@ DoBlockOp:
 	sta BlockNumTmp
 	jsr $ffaf		// ConvertBlockTmp, uses table at $37dd
 	jmp DoSectorOp
+
 
 // XXX must add whole missing code for ConvertBlockTmp here ($ffaf), uses table at $37dd
 // (if ConvertBlockTmp saves to TCBM2SD_ReadWriteCmd_Track/Sector more bytes can be saved)
