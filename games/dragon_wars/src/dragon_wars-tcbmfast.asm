@@ -14,7 +14,7 @@
 // ----------------------------------------------------------------------------
 
 //.segmentdef Combined  [outPrg="dragon_wars-repack.prg", segments="Startup,Subs1,TitlePicColorBitmap,Music,IntroLoader,Intro"]
-.segmentdef Combined  [outPrg="dragon_wars-tcbmfast.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,Utils,IntroLoader,Intro,UtilStart,Patch0,TCBMLoaderLow,TCBMLoaderHigh",allowOverlap]
+.segmentdef Combined  [outPrg="dragon_wars-tcbmfast.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,Utils,IntroLoader,Intro,UtilStart,Patch0,Patch1,TCBMLoaderLow,TCBMLoaderHigh",allowOverlap]
 
 // ----------------------------------------------------------------------------
 
@@ -145,13 +145,12 @@ Startup:
 		inx
 		bne !-
 
-		lda #<IRQHandler // $5747
+		lda #<IRQHandler
 		sta $FFFE
 		lda #>IRQHandler
 		sta $FFFF
 		sta $FF3F								// enable RAM
 
-		jsr UtilStartPatch
 		jsr TitlepicStart
 		// skip TITLEPIC/MUSIC/SUBS1/parts of intro loader
 		jmp $C02A
@@ -185,14 +184,11 @@ TitlepicStart:
 
 // ----------------------------------------------------------------------------
 // patch boot2.s to not load UTILS, but jump into UtilStart
-UtilStartPatch:
-		lda #$4c
-		sta $c052
-		lda #<UtilStart
-		sta $c053
-		lda #>UtilStart
-		sta $c054
-		rts
+.segment Patch1[min=$c052,max=$c054]
+
+	.pc=$c052 "Patch1 ($C052-$C054)"
+	// skip over part that loads UTILS
+	jmp UtilStart
 
 // ----------------------------------------------------------------------------
 
