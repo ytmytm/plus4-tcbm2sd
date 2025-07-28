@@ -1,136 +1,72 @@
 
-# Dragon Wars repackaged
+Dragon Wars patched for TCBM2SD fastloader
 
-This is a stepping stone towards TCBM2SD version.
+by Maciej 'YTM/Elysium' Witkowiak
 
-This is Dragon Wars loader repackaged to have all pieces in one single
-file that you can load and run.
+# Source
 
-Data files loaded by the game loader are stored in `bins/` except for
-title picture, from which we take only bitmap and color data.
+Csory's version from https://plus4world.powweb.com/software/Dragon_Wars
 
-Sectors occupied by these files in ProDOS format on the disk were freed,
-the template disk is provided. These were tracks 2-9.
+# Notes
 
-Result is compressed using Exomizer and put into memory in appropriate places
-for faster startup.
+Only the boot disk required changes.
 
-UTILS can't return to the game because the return option only loads `:*` file
-and relies on autostart feature to run it.
-This could be mitigated by actually having an autostart file that would load
-'DRAGON WARS' and run it. (or somehow injecting SHIFT+RUN/STOP keystroke after reset)
+This version is fixed to disk device #8.
 
-This supports 1551 (TCBM) only.
+## Tools
+
+KickAss
+
+Exomizer
+
+c1541 (from VICE)
+
+## Makefile
+
+`make` prepares everything and generates a new disk image `dragon_wars-tcbmfast.d64` and zips it together with the original disks 2-5.
+
+## `boot2.s`
+
+Decompiled intro. This source code is not used; the main source code patches it:
+
+- nothing is loaded anymore; all loaded parts: TITLEPIC, MUSIC, SUBS1 (game) and UTILS are embedded into the main PRG
+- therefore the loader at `$5600-5700` (boot3.s in disasm and repack folders) is not used anymore (which breaks UTILS)
+
+## `dragon_wars-tcbmfast.asm`
+
+This file combines the whole game code and intro. There is no detection of 1541/1551 anymore and the game is fixed to run from drive #8 - all due to fixed addresses of TCBM ports.
+
+The whole ProDOS loader has been replaced by TCBM2SD code with fast block-read and block-write utility commands (`U0`).
+This code fits almost perfectly into the gaps left by the original implementation.
+
+Fast block read/write code was taken from my earlier GEOS patch with changes to optimize for size.
+
+Unchanged data files loaded by the game loader are stored in `bins/` except for the title picture.
+
+Sectors occupied by these files in ProDOS format on the disk (tracks 2-9) were freed.
 
 # Boot process
 
-## boot.raw
+The new program starts at `$5400` (segment `Startup`). It enables RAM access and copies low RAM data into place (SUBS1 was split into a section below `$0800` and the rest).
+It also copies the fastloader into `$FF20-$FF3D` and `$FF40-$FFFF` from `$9F00`.
 
-`dragon wars` file, loads into `$0265`
+Then it calls a routine to set up the picture display and passes control to the original intro code.
 
-That binary is split into following pieces
+The original intro has already been patched to not load anything and just start the game or utilities.
 
-### boot0.bin
+The utilities are broken at the moment - they expect the ProDOS loader to exist in the `$5600-$57FF` area (`boot3.s`), but this is not implemented.
 
-Loads into `$0265`, until vector for the next byte is intercepted and routes control to $0265.
-That code continues loading bytes from that file but starting at `$1800`
+The game calls a disk operation procedure at `$FF9F` with parameters in `DriveOp`, memory pointer in `BufferVec` and linear block number in `BlockNum`.
+There are three operations: read/write/get status. With TCBM2SD they all succeed.
 
-### boot1.bin
+The linear block number is converted into D64 image track and sector and then the TCBM2SD utility command for block-read / block-write (initially implemented for GEOS) is called.
 
-Loads into `$1800`:
-
-- Detects drive type, patches itself if drive is TCBM
-- calls `B-E` to run drivecode from (18,2) (`1802.bin` for 1541) or (18,8) (`1808.bin` for 1551)
-- Copies `$18BF` and 4 more pages to `$C000-$C313` (boot2.bin)
-- Copies `$1C17` and 1 more page to `$5600-$5700` (boot3.bin)
-
-### boot2.bin
-
-Loads into `$C000-$C313`, intro and game loader
-
-Before starting the game calls procedure at `$4E39` which copies `GetByte/SendByte` from `$5600` up to `$FF20` - just enough for these two 
-Remaining part of the loader within game is embedded in `SUBS1`.
-
-If 'U' is pressed, then instead of starting the game:
-
-- `UTILS` will be loaded and started
-- tool returns by jumping back into `$1800` - `boot1.bin`
-
-### boot3.bin
-
-Loads into `$5600-$574E`.
-
-- called from boot2.s : `DoSectorOp` (`$5694`) and `ConvertBlockTmp` (`$56EC`) directly
-- boot2.s writes to `BlockNumTmp` (`$5745/6`)
-
-## bins/ files
-
-These were dumped with YaPe with breaking after each load call.
-Loaded in `boot3.bin` via `$C18B` called with X/Y pointing to ProDOS filename structure (<length>,"filename")
-
-### TITLEPIC
-
-This is loaded at `$1000` and copies from itself 8000 bytes of bitmap and 1000+1000 bytes of screen color RAM into `$5800-$7FFF`
-
-### MUSIC
-
-This is loaded at `$8000`, directly after bitmap
-
-### SUBS1
-
-This is loaded at `$0500`, must fit under `$5600` (because pieces of code are copied from there)
-
-Game code, initialization is done by `boot3.bin`
-
-Entry points:
-
-```
-$0400		General sector buffer
-
-$3700-5		zeros
-
-$3706		init, sets IRQ to $3725 and something in TED
-$3725-$3744	IRQ (A/X/Y saved in LDA/LDX/LDY before RTI, saves stack and cycles)
-
-$3745-$378E	zeros
-
-$378F		STA $FF3E(select ROM) / JMP $FFF6 (RESET)
-
-$3795		DoSectorOp (called from DoBlockOp)
-$37C2		DoGetSector (dispatch from DoSectorOp)
-$37B4		DoPutSector (dispatch from DoSectorOp)
-$37CD		DoGetStatus (return C flag, C=0 -- OK)
-$37DD		TrackSecNum (table, 32) right until $37ff=$ff ; number of sectors on each track
-
-/$FD00-$FEFF I/O/
-/$FF00-$FF20 TED/
-$FF20		SendByte
-$FF5A		GetByte
-$FF9F		DoBlockOp	(external entry: from $4178 / $41F9 and more; this must be here)
-$FFAF		ConvertBlockTmp	convert linear ProDOS block number to track & sector
-$FFE4		SendParams
-$FFF9/A		BlockNumTmp	storage, converted t&s
-$FFFB		IOStatus	last status op
-$FFFC/D		$0650	reset vector
-$FFFE/F		$3725	irq vector (note that nmi in $fffa/b is unused)
-
-
-///// DW gamecode
-
-$405b		check for disk side ($F5DF)
-$41D6		read block (X=lo/Y=hi) -> DoBlockOp
-
-$4E39		called on game startup, copies device-specific `GetByte/SendByte` to $FF20-$FFF9
-
-$F5DF		needed disk side (disk1=0, disk2=1 ... in block $0001 (1/1) in byte $00ff
-		; required disk side number (starts with 0), checked at $405b
-
-```
+This code is highly optimized for size, but still very generic. It doesn't support drive #9 anymore though.
 
 # Disk layout
 
-## Template disk1
+## Template disk
 
 `dragon_wars_1_freeblocks.d64`
 
-Freed in BAM sectors for `TITLEPIC`, `MUSIC`, `SUBS1` sectors (2,1)-(7,14) inclusive and deleted `dragon wars`
+Freed in BAM sectors for `TITLEPIC`, `MUSIC`, `SUBS1`, `UTILS` sectors (2,1)-(9,0) inclusive and deleted the former `dragon wars`
