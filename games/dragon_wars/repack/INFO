@@ -1,0 +1,98 @@
+
+w trakcie gry (ale kiedy to jest przepisane? skąd?)
+
+$00D5		DriveOp
+$00D6/7		BufferVec
+$00D8/9		BlockNum
+
+$0400		General sector buffer?
+
+$3700-5		zera
+
+$3706		jakis init, ustawia IRQ vector na $3725 i coś w TED
+$3725-$3744	IRQ (A/X/Y zapisuje w LDA/LDX/LDY przed wyjściem - oszczędza stos i cykle)
+
+$3745-$378E	zera
+
+$378F		STA $FF3E(select ROM) / JMP $FFF6 (RESET) - STA $FF3E jest dwa razy?
+
+$3795		DoSectorOp (called from DoBlockOp)
+$37C2		DoGetSector
+$37B4		DoPutSector
+$37CD		DoGetStatus (cmp #1 bo sprawdana jest flaga C, C=0 -- OK)
+$37DD		TrackSecNum (table, 32) az do $37ff=$ff
+
+/$FD00-$FEFF I/O/
+/$FF00-$FF20 TED/
+$FF20		SendByte
+$FF5A		GetByte
+$FF9F		DoBlockOp	(external entry: from $4178 / $41F9)
+$FFAF		ConvertBlockTmp
+$FFE4		SendParams
+$FFF9/A		BlockNumTmp
+$FFFB		IOStatus
+$FFFC/D		$0650	? reset
+$FFFE/F		$3725	? irq? (nmi w $fffa/b - nadpisywany tutaj)
+
+
+///// DW gamecode
+
+$405b		check for disk side ($F5DF)
+$41D6		read block (X=lo/Y=hi) -> DoBlockOp
+
+$F5DF		needed disk side (disk1=0, disk2=1 ... in block $0001 (1/1) in byte $00ff
+		; required disk side number (starts with 0), checked at $405b
+
+
+///////////////////////////////
+
+/// DW loader
+
+$C000
+	load $C171	8, 'titlepic'	$1000-$3771;	entry $1000
+			    bitmapa $1061-$3061 -> $6000-$8000 (nadmiar $c0)
+			    kolory  $2FA1-$33A1 -> $5800-$5C00 (nadmiar 24)
+			    kolory  $3389-$3789 -> $5C00-$6000 (nadmiar 24)
+			    +setup TED
+	load $C185	5, 'subs'	$0500-$5011;
+			    (tu jest $3700-$37ff)
+	load $C17A	5, 'music'	$8000-$8556
+$C02A	start
+
+	startuje intro, 'u' ładuje utilities (uwaga na przeładowanie)
+	inny startuje gre
+	    -> przepisuje loader $5600 -> $FF20
+	uzywa juz dops z $3795
+
+
+/// po anykey na obrazku tytułowym
+
+loader $5600-$567E -> $FF20 (ale dlaczego poprzez $4D60 skoro to sie dzieje w $4E46, od $4E39?)
+    $5600-$567E -> $4D60-$4DDE ---> $4D60-$4E38 (D9) -> $FF20-FFF8 (bez bajtow)
+
+
+///////////////////////////////////
+
+// dysk: ścieżki 2 (bez sektora 0), całe: 3/4/5/6, kawałek 1 i kawałek 7
+
+titlepic
+
+2,1	$14
+3,0	$14
+4,0?
+
+subs
+4,1	$14
+5,0	$14
+6,0	$14
+7,0	$f
+
+music
+1,$e,$f,$12,$13
+
+util - $1000, $28A0, entry $1000, return -> $1800 -> $c000
+7,$10,$11,$14
+8,0	$14
+9,0?
+
+// freeblocks: zwolnione (2,1)-(7,14) + skasowany loader 'dragon wars'
