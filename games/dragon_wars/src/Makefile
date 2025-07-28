@@ -11,7 +11,7 @@ EXOMIZERFLAGS := sfx 21504 -t 4 -x1 -s"ldx \#0 stx 65286" -f"sta 65342"
 
 SOURCES := dragon_wars-tcbmfast.asm
 
-BOOTDISK := dragon_wars_1-tcbmfast.d64
+BOOTDISK := dragon_wars_1.d64
 
 BINS := $(SOURCES:.asm=.prg)
 D64S := $(SOURCES:.asm=.d64)
@@ -19,9 +19,7 @@ D64S := $(SOURCES:.asm=.d64)
 .PHONY: all clean test love disasm
 
 all: $(BINS) $(D64S)
-
-#all: $(BINS) $(D64S)
-#	zip ../../Bards_Tale_III-tcbmfast.zip bardstale3-tcbmfast.d64 Bard\*disk\ [234].d64
+	zip ../../Dragon_Wars-tcbmfast.zip dragon_wars-tcbmfast.d64 dragon_wars_[2345].d64
 
 boot.raw:
 	c1541 -attach $(BOOTDISK) -read dragon\ wars boot.raw -bread 1802.bin 18 2 -bread 1808.bin 18 8
