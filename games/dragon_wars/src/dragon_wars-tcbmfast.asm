@@ -14,7 +14,7 @@
 // ----------------------------------------------------------------------------
 
 //.segmentdef Combined  [outPrg="dragon_wars-repack.prg", segments="Startup,Subs1,TitlePicColorBitmap,Music,IntroLoader,Intro"]
-.segmentdef Combined  [outPrg="dragon_wars-tcbmfast.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,Utils,IntroLoader,Intro,UtilStart,Patch0,TCBMLoaderLow,TCBMLoaderHighLo,TCBMLoaderHighHi,TCBMLoaderHighFix",allowOverlap]
+.segmentdef Combined  [outPrg="dragon_wars-tcbmfast.prg", segments="Startup,Subs1LO,Subs1HI,TitlePicColorBitmap,Music,Utils,IntroLoader,Intro,UtilStart,Patch0,TCBMLoaderLow,TCBMLoaderHigh",allowOverlap]
 
 // ----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ LSUBS0500:
 
 // ----------------------------------------------------------------------------
 
-.segment Utils [start = $8600, max=$bfff]
+.segment Utils [start = $8600, max=$9eff]
 LUTILS1000:
 .import binary "bins/util1000.bin"
 // UTILS won't work for TCBM2SD, but the game image can be patched (copy BAM from template-freeblocks.d64 and save TCBM2SD 'DRAGONWARS.PRG')
@@ -424,121 +424,124 @@ WriteBlockLoop:
 	bne WriteBlockLoop
 	beq WriteBlockLoopEnd
 
-.segment TCBMLoaderHighLo[min=$ff20,max=$ff3d]
-	.pc=$ff20 "TCBMLoaderHighLo ($FF20-$FF3D)"
-	.errorif * != $ff20, "TCBMLoaderHighLo must start at $FF20"
 
-DoSectorOp:
-// DriveOp: 1=read, 2=write, 3=get status (0 == success)
-	lda DriveOp
-	cmp #$03
-	bne !+
-	lda #0	// status (3), return always success
-	clc
-	rts
-!:	// A=read (1) or write (2)
-	// sector from Track&Sector
-	// into (BufferVec)
-	cmp #2
-	beq !+
-	jsr ReadBlock
-	lda #0
-	clc
-	rts
-!:	jsr WriteBlock
-	lda #0
-	clc
-	rts
-	.errorif * > $ff3d, "TCBMLoaderHighLo must not exceed $FF3D"
+	.segment TCBMLoaderHigh[min=$9f00,max=$9fff]
+	.pc=$9f00 "TCBMLoader ($9F00-$9FFF)"
+	.pseudopc $ff00 {
+		.print "TCBMLoaderHigh: " + *
+//		.pc=$ff20 "TCBMLoaderHighLo ($FF20-$FF3D)"
+		.fill $ff20-*, 0
+		.errorif * != $ff20, "TCBMLoaderHighLo must start at $FF20"
+		DoSectorOp:
+		// DriveOp: 1=read, 2=write, 3=get status (0 == success)
+			lda DriveOp
+			cmp #$03
+			bne !+
+			lda #0	// status (3), return always success
+			clc
+			rts
+		!:	// A=read (1) or write (2)
+			// sector from Track&Sector
+			// into (BufferVec)
+			cmp #2
+			beq !+
+			jsr ReadBlock
+			lda #0
+			clc
+			rts
+		!:	jsr WriteBlock
+			lda #0
+			clc
+			rts
+			.errorif * > $ff3d, "TCBMLoaderHighLo must not exceed $FF3D"
+			//.pc=$ff40 "TCBMLoaderHighHi ($FF40-$FF9E)"
+			.fill $ff40-*, 0
+			.errorif * != $ff40, "TCBMLoaderHighHi must start at $FF40"
+		TCBM2SD_SendParams:
+			sta TCBM2SD_ReadWriteCmd_Oper
+			lda Track 
+			sta TCBM2SD_ReadWriteCmd_Track
+			lda Sector
+			sta TCBM2SD_ReadWriteCmd_Sector
+		//	jmp TCBM_SendDOSCommand
 
-.segment TCBMLoaderHighHi[min=$ff40,max=$ff9e]
-	.pc=$ff40 "TCBMLoaderHighHi ($FF40-$FF9E)"
+		// Send DOS command over channel 15
+		//; input: y=length
 
-	.errorif * != $ff40, "TCBMLoaderHighHi must start at $FF40"
-TCBM2SD_SendParams:
-	sta TCBM2SD_ReadWriteCmd_Oper
-	lda Track 
-	sta TCBM2SD_ReadWriteCmd_Track
-	lda Sector
-	sta TCBM2SD_ReadWriteCmd_Sector
-//	jmp TCBM_SendDOSCommand
+		TCBM_SendDOSCommand:
+			jsr		TCBM_LISTEN
+			lda		#$6F			// command channel
+			jsr		TCBM_SECONDARY
+			ldy		#0
+		!:	lda		TCBM2SD_ReadWriteCmd,y
+			jsr		TCBM_SENDBYTE
+			iny
+			cpy		#<(TCBM2SD_ReadWriteCmd_End-TCBM2SD_ReadWriteCmd)
+			bne		!-
+			//jmp		TCBM_UNLISTEN
 
-// Send DOS command over channel 15
-//; input: y=length
+		TCBM_UNLISTEN:
+			lda		#$3F			// UNLISTEN
+			.byte $2c
 
-TCBM_SendDOSCommand:
-	jsr		TCBM_LISTEN
-	lda		#$6F			// command channel
-	jsr		TCBM_SECONDARY
-	ldy		#0
-!:	lda		TCBM2SD_ReadWriteCmd,y
-	jsr		TCBM_SENDBYTE
-	iny
-	cpy		#<(TCBM2SD_ReadWriteCmd_End-TCBM2SD_ReadWriteCmd)
-	bne		!-
-	//jmp		TCBM_UNLISTEN
+		TCBM_LISTEN:
+			lda		#$20			// LISTEN
+			pha
+				lda     #$81    			// this is a command byte
+				bne     TCBM_Send
 
-TCBM_UNLISTEN:
-	lda		#$3F			// UNLISTEN
-	.byte $2c
+		TCBM_SECONDARY:					// send secondary addr ($60 == SECOND after LISTEN and after TALK)
+			pha
+				lda     #$82    			// this is a second byte
+				bne     TCBM_Send
 
-TCBM_LISTEN:
-	lda		#$20			// LISTEN
-	pha
-        lda     #$81    			// this is a command byte
-        bne     TCBM_Send
+		TCBM_SENDBYTE:
+			pha
+				lda     #$83				// this is a data byte
+		TCBM_Send:					// send using standard Kernal protocol
+				sta TriportA
+		!:	lda TriportC
+			bmi !-
+			pla
+			pha
+				sta TriportA
+				lsr TriportC
+		!:	lda TriportC
+			bpl !-
+				lda #0
+				sta TriportA
+				lsr TriportC
+			pla
+			rts
 
-TCBM_SECONDARY:					// send secondary addr ($60 == SECOND after LISTEN and after TALK)
-	pha
-        lda     #$82    			// this is a second byte
-        bne     TCBM_Send
+		// ----------------------------------------------------------------------------
 
-TCBM_SENDBYTE:
-	pha
-        lda     #$83				// this is a data byte
-TCBM_Send:					// send using standard Kernal protocol
-        sta TriportA
-!:	lda TriportC
-	bmi !-
-	pla
-	pha
-        sta TriportA
-        lsr TriportC
-!:	lda TriportC
-	bpl !-
-        lda #0
-        sta TriportA
-        lsr TriportC
-	pla
-	rts
+		TCBM2SD_ReadWriteCmd:
+			.text "U0"
+		TCBM2SD_ReadWriteCmd_Oper:
+			.byte 0
+		TCBM2SD_ReadWriteCmd_Track:
+			.byte 0
+		TCBM2SD_ReadWriteCmd_Sector:
+			.byte 0
+			.byte 1		// number of sectors
+		TCBM2SD_ReadWriteCmd_End:
+			.errorif * > $ff9e, "TCBMLoaderHighHi must not exceed $FF9E"
 
-// ----------------------------------------------------------------------------
+//		.pc=$ff9f "TCBMLoaderHighFix ($FF9F-$FFAE)"
+		.fill $ff9f-*, 0
+	// called externally, MUST be at $ff9f
+		.errorif * != $ff9f, "TCBMLoaderHighFix must be at $FF9F"
+	DoBlockOp:
+		lda BlockNum
+		sta BlockNumTmp+1
+		lda BlockNum+1
+		sta BlockNumTmp
+		jsr $ffaf		// ConvertBlockTmp, uses table at $37dd
+		jmp DoSectorOp
+				.errorif * != $ffaf, "ConvertBlockTmp must be at $FFAF"
 
-TCBM2SD_ReadWriteCmd:
-	.text "U0"
-TCBM2SD_ReadWriteCmd_Oper:
-	.byte 0
-TCBM2SD_ReadWriteCmd_Track:
-	.byte 0
-TCBM2SD_ReadWriteCmd_Sector:
-	.byte 0
-	.byte 1		// number of sectors
-TCBM2SD_ReadWriteCmd_End:
-	.errorif * > $ff9e, "TCBMLoaderHighHi must not exceed $FF9E"
-
-
-.segment TCBMLoaderHighFix[min=$ff9f,max=$ffae]
-	.pc=$ff9f "TCBMLoaderHighFix ($FF9F-$FFAE)"
-// called externally, MUST be at $ff9f
-	.errorif * != $ff9f, "TCBMLoaderHighFix must be at $FF9F"
-DoBlockOp:
-	lda BlockNum
-	sta BlockNumTmp+1
-	lda BlockNum+1
-	sta BlockNumTmp
-	jsr $ffaf		// ConvertBlockTmp, uses table at $37dd
-	jmp DoSectorOp
-
+	}
 
 // XXX must add whole missing code for ConvertBlockTmp here ($ffaf), uses table at $37dd
 // (if ConvertBlockTmp saves to TCBM2SD_ReadWriteCmd_Track/Sector more bytes can be saved)
