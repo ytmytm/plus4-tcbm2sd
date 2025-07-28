@@ -257,15 +257,17 @@ UtilStart:
 .var BlockNum = $d8	// operation block number
 .var tmpbyte = $ff // temporary byte
 
-.var BlockNumTmp = $FFF9	// BlockNumTmp
-.var Track = $FFF9	// BlockNumTmp
-.var Sector = $FFFA	// BlockNumTmp+1 (BlockNum)
-.var IOStatus = $FFFB	// IOStatus
+//.var BlockNumTmp = $FFF9	// BlockNumTmp
+//.var Track = $FFF9	// BlockNumTmp
+//.var Sector = $FFFA	// BlockNumTmp+1 (BlockNum)
+//.var IOStatus = $FFFB	// IOStatus
 
 .segment TCBMLoaderLow[min=$3745,max=$37dc]
 //.segment TCBMLoaderLow[min=$3745,max=$38ff]
 
 	.pc=$3745 "TCBMLoaderLow ($3745-$37DC)"
+
+.var TrackSizeTab = $37dd
 
 /////////////////////////////////////
 // adapted from GEOS
@@ -373,7 +375,7 @@ WriteBlockLoop:
 	.pc=$9f00 "TCBMLoader ($9F00-$9FFF)"
 TCBMLoaderHighPage:
 	.pseudopc $ff00 {
-		.print "TCBMLoaderHigh: " + *
+		.print "TCBMLoaderHighLo: " + toHexString(*)
 //		.pc=$ff20 "TCBMLoaderHighLo ($FF20-$FF3D)"
 		.fill $ff20-*, 0
 		.errorif * != $ff20, "TCBMLoaderHighLo must start at $FF20"
@@ -399,19 +401,20 @@ TCBMLoaderHighPage:
 			clc
 			rts
 			.errorif * > $ff3d, "TCBMLoaderHighLo must not exceed $FF3D"
+			.print "TCBMLoaderHighLoEnd: " + toHexString(*)
+
+
 			//.pc=$ff40 "TCBMLoaderHighHi ($FF40-$FF9E)"
 			.fill $ff40-*, 0
 			.errorif * != $ff40, "TCBMLoaderHighHi must start at $FF40"
+			.print "TCBMLoaderHighHi: " + toHexString(*)
 		TCBM2SD_SendParams:
 			sta TCBM2SD_ReadWriteCmd_Oper
-			lda Track 
-			sta TCBM2SD_ReadWriteCmd_Track
-			lda Sector
-			sta TCBM2SD_ReadWriteCmd_Sector
-		//	jmp TCBM_SendDOSCommand
+			// no need to copy Track/Sector to TCBM2SD_ReadWriteCmd_Track/Sector
+			// because ConvertBlockTmp will use them directly
+		//	jmp TCBM_SendDOSCommand // fall through
 
 		// Send DOS command over channel 15
-		//; input: y=length
 
 		TCBM_SendDOSCommand:
 			jsr		TCBM_LISTEN
@@ -466,26 +469,59 @@ TCBMLoaderHighPage:
 		TCBM2SD_ReadWriteCmd_Oper:
 			.byte 0
 		TCBM2SD_ReadWriteCmd_Track:
+		Track:
 			.byte 0
 		TCBM2SD_ReadWriteCmd_Sector:
+		Sector:
 			.byte 0
 			.byte 1		// number of sectors
 		TCBM2SD_ReadWriteCmd_End:
+			.print "TCBMLoaderHighHiEnd: " + toHexString(*)
 			.errorif * > $ff9e, "TCBMLoaderHighHi must not exceed $FF9E"
 
 //		.pc=$ff9f "TCBMLoaderHighFix ($FF9F-$FFAE)"
 		.fill $ff9f-*, 0
 	// called externally, MUST be at $ff9f
+		.print "TCBMLoaderHighFix: " + toHexString(*)
 		.errorif * != $ff9f, "TCBMLoaderHighFix must be at $FF9F"
+
 	DoBlockOp:
 		lda BlockNum
-		sta BlockNumTmp+1
+		sta Sector
 		lda BlockNum+1
-		sta BlockNumTmp
-		jsr $ffaf		// ConvertBlockTmp, uses table at $37dd
+		sta Track
+		jsr ConvertBlockTmp		// ConvertBlockTmp, uses table at $37dd
 		jmp DoSectorOp
-				.errorif * != $ffaf, "ConvertBlockTmp must be at $FFAF"
+// Convert block number to track and sector
+ConvertBlockTmp:
+        ldx     #$00
+LFEFF:  sec
+        lda     Sector
+        sbc     TrackSizeTab,x
+        tay
+        lda     Track
+        sbc     #$00
+        bcc     LFF17
+        inx
+        sta     Track
+        sty     Sector
+        bcs     LFEFF
+LFF17:  inx
+        cpx     #$23
+        beq     LFF25
+        cpx     #$12
+        bcc     LFF21
+        inx
+LFF21:  stx     Track
+        rts
 
+LFF25:  lda     #$12
+        sta     Track
+        sec
+        sbc     Sector
+        sta     Sector
+        rts
+		.print "TCBMLoaderHighFixEnd: " + toHexString(*)
 	}
 
 // XXX must add whole missing code for ConvertBlockTmp here ($ffaf), uses table at $37dd
