@@ -45,9 +45,9 @@ disasm: boot2.bin boot3.bin boot2.info boot3.info
 	$(JAVA) -jar $(KICKASS) $(KICKASSFLAGS) $< -o $@
 
 %.d64: %.prg
-#	$(EXOMIZER) $(EXOMIZERFLAGS) -o $*-exo.prg $<
-#	cp dragon_wars_1_freeblocks.d64 $@
-#	c1541 -attach $@ 8 -write $*-exo.prg dragon\ wars
+	$(EXOMIZER) $(EXOMIZERFLAGS) -o $*-exo.prg $<
+	cp dragon_wars_1_freeblocks.d64 $@
+	c1541 -attach $@ 8 -write $*-exo.prg dragon\ wars
 
 clean:
 	-rm -f $(BINS) $(D64S) $(SOURCES:.asm=-exo.prg) *.sym
