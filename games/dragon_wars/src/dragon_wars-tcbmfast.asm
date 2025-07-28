@@ -57,23 +57,19 @@ LUTILS1000:
 .import binary "bins/util1000.bin"
 // UTILS won't work for TCBM2SD, but the game image can be patched (copy BAM from template-freeblocks.d64 and save TCBM2SD 'DRAGONWARS.PRG')
 
-// XXX boot2.bin needs to be patched to not load UTILS, but enter game
-
 // ----------------------------------------------------------------------------
 
 // 5600 - initial loader
 // patched to use TCBM SendByte/GetByte
 // parts copied to $FF20
+// removed, but this breaks utils (can be replaced by 2nd copy for TCBM2SD)
 .segment IntroLoader [start = $5600, max=$57ff]
-.import binary "boot3.bin"
-.var L5600 = $5600	// SendByte
-.var L563A = $563A	// GetByte
-.var L5681 = $5681	// $01 access changed to 'bit'
-.var L56D4 = $56D4	// $01 access changed to 'bit'
-.var IRQHandler = $5747 // IRQ handler
-
-// XXX we don't need this part anymore
-// XXX but IRQHandler is still required
+//.import binary "boot3.bin"
+//.var L5600 = $5600	// SendByte
+//.var L563A = $563A	// GetByte
+//.var L5681 = $5681	// $01 access changed to 'bit'
+//.var L56D4 = $56D4	// $01 access changed to 'bit'
+//.var IRQHandler = $5747 // IRQ handler
 
 // note that $FF3E/$FF3F are used for RAM/ROM selection and can't be part of the code
 // $FF20		SendByte
@@ -159,6 +155,15 @@ Startup:
 		jsr TitlepicStart
 		// skip TITLEPIC/MUSIC/SUBS1/parts of intro loader
 		jmp $C02A
+
+// ----------------------------------------------------------------------------
+
+IRQHandler:
+        pha
+        lda     #$FF
+        sta     $FF09
+        pla
+        rti
 
 // ----------------------------------------------------------------------------
 TitlepicStart:
