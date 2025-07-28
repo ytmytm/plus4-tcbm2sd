@@ -120,30 +120,23 @@ Startup:
 		sta $ae
 !:
 
-L185B:  jsr     LFFE7
-        jsr     L18A7
-        jsr     L189A
+		jsr     LFFE7
         sei
-        ldx     #$14
-!:      cpx     $FF1D
-        bne     !-
-        dex
-        bne     !-
+		sta $FF3F								// enable RAM
 
-// we're loading binary boot3.bin so we need to apply the patch
-// to use TCBM SendByte/GetByte
-// XXX this is still fixed to device #8 (offsets)
-        ldx     #$1B
-// Patch loader (to C000) for TCBM comm instead of serial (C300 and 5600)
-!:		lda     L18BB,x
-        sta     L5600,x					// SendByte
-        lda     L18D1,x
-        sta     L563A,x					// GetByte
-        dex
-        bpl 	!-
-		lda		#$24					// $01 access changed to 'bit'
-		sta		L5681
-		sta		L56D4
+// copy high loader to $FF20 in pieces, don't touch $FF3E/$FF3F
+		ldx #$20
+!:		lda TCBMLoaderHighPage,x
+		sta $FF00,x
+		inx
+		cpx #$3e
+		bne !-
+		inx 
+		inx
+!:		lda TCBMLoaderHighPage,x
+		sta $FF00,x
+		inx
+		bne !-
 
 // now we can overwrite low RAM
 		ldx #0
@@ -166,55 +159,6 @@ L185B:  jsr     LFFE7
 		jsr TitlepicStart
 		// skip TITLEPIC/MUSIC/SUBS1/parts of intro loader
 		jmp $C02A
-
-// ----------------------------------------------------------------------------
-L189A:  ldx     #<L18ED
-        ldy     #>L18ED
-        lda     #$0C
-        jsr     LFFBD
-        lda     #$0F
-        bne     L18B2
-L18A7:  lda     #$02
-        ldx     #<L18F9
-        ldy     #>L18F9
-        jsr     LFFBD
-        lda     #$02
-L18B2:  tay
-        ldx     $ae
-        jsr     LFFBA
-        jmp     LFFC0
-
-// ----------------------------------------------------------------------------
-// SendByte/GetByte (TCBM) patched into $5600, later copied to $FF20
-
-L18BB:  sta     $FEE0
-!:      bit     $FEE2
-        bmi     !-
-        asl     $FEE2
-!:      bit     $FEE2
-        bpl     !-
-        lda     #$40
-        sta     $FEE2
-        rts
-
-L18D1:  inc     $FEE3
-!:      bit     $FEE2
-        bmi     !-
-        asl     $FEE2
-        lda     $FEE0
-!:      bit     $FEE2
-        bpl     !-
-        ldy     #$40
-        sty     $FEE2
-        dec     $FEE3
-        rts
-
-// ----------------------------------------------------------------------------
-// Block-Execute command
-L18ED:  .text   "B-E 2 0 18 "
-L18F8:  .text   "8" // 8 for TCBM, 2 for IEC
-// set buffer
-L18F9:  .text   "#0"
 
 // ----------------------------------------------------------------------------
 TitlepicStart:
@@ -427,6 +371,7 @@ WriteBlockLoop:
 
 	.segment TCBMLoaderHigh[min=$9f00,max=$9fff]
 	.pc=$9f00 "TCBMLoader ($9F00-$9FFF)"
+TCBMLoaderHighPage:
 	.pseudopc $ff00 {
 		.print "TCBMLoaderHigh: " + *
 //		.pc=$ff20 "TCBMLoaderHighLo ($FF20-$FF3D)"
