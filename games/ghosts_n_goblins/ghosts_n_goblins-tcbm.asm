@@ -11,7 +11,7 @@
 	jmp $103b	// skip over, executing and putting NOP; NOP; NOP in 1038 would also work
 
 .segment PatchDriveType[]
-.pc = $1521 "Force drivetype"
+.pc = $1529 "Force drivetype"
 	// XXX TCBM2SD is supported but not detected, force it
 	lda $ae		// current device, currdrive
 	sta $1043	// drive_number

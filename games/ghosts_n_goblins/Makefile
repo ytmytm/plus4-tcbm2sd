@@ -23,7 +23,7 @@ ghosts.prg: ghosts_n_goblins_arcade_version.d64
 	$(EXOMIZER) desfx -o $@ ghosts
 	rm ghosts
 
-%.prg: %.asm ghosts_n_goblins-tcbm.prg
+%.prg: %.asm ghosts.prg
 	$(JAVA) -jar $(KICKASS) $(KICKASSFLAGS) $< -o $@
 
 %.d64: %.prg
