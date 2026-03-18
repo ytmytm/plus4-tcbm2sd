@@ -80,15 +80,27 @@ assign port_c[7] = ddrc[7] ? prc[7] : 1'bz;
 // 3.3V RESET only low or floating
 assign _resetout = !_reset ? _reset : 1'bz;
 
+// narrow address decode (not 100% compatible)
+//assign seladr = (
+// 			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
+//			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
+//			!addr[3] && // A3=0
+//			!pla_i[12] // A8=0
+//		) &&
+//		(
+//			(!addr[4] && !pla_i[15] && !pla_i[8]) || // A4==0 && A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
+//			( addr[4] &&  pla_i[15] &&  pla_i[8])    // A4==1 && A5==1 && DEV==1 // FEF0-FEF7 TCBM:1 IEC:8
+//		);
+
+// wide address decoder
 assign seladr = (
  			pla_i[1] && pla_i[2] && pla_i[3] && pla_i[4] && pla_i[5] && // A[15:11]=1
 			pla_i[11] && pla_i[14] && pla_i[9] && pla_i[13] &&          // A[10:9,7:6]=1
-			!addr[3] && // A3=0
 			!pla_i[12] // A8=0
 		) &&
 		(
-			(!addr[4] && !pla_i[15] && !pla_i[8]) || // A4==0 && A5==0 && DEV==0 // FEC0-FEC7 TCBM:0 IEC:9
-			( addr[4] &&  pla_i[15] &&  pla_i[8])    // A4==1 && A5==1 && DEV==1 // FEF0-FEF7 TCBM:1 IEC:8
+			(!pla_i[15] && !pla_i[8]) || // A5==0 && DEV==0 // FEC0-FEDF TCBM:0 IEC:9
+			( pla_i[15] &&  pla_i[8])    // A5==1 && DEV==1 // FEE0-FEFF TCBM:1 IEC:8
 		);
 
 //wire drive_data_out = phi2 && aec && ba && seladr && _write; // E

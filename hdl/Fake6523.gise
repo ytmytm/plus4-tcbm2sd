@@ -22,6 +22,7 @@
   <sourceproject xmlns="http://www.xilinx.com/XMLSchema" xil_pn:fileType="FILE_XISE" xil_pn:name="Fake6523.xise"/>
 
   <files xmlns="http://www.xilinx.com/XMLSchema">
+    <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_LSO" xil_pn:name=".lso"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_NGDBUILD_LOG" xil_pn:name="Fake6523.bld"/>
     <file xil_pn:fileType="FILE_CMD_LOG" xil_pn:name="Fake6523.cmd_log"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_GYD" xil_pn:name="Fake6523.gyd"/>
@@ -39,6 +40,8 @@
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_STX" xil_pn:name="Fake6523.stx"/>
     <file xil_pn:fileType="FILE_SYMBOL" xil_pn:name="Fake6523.sym" xil_pn:origination="imported"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST_REPORT" xil_pn:name="Fake6523.syr"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="Fake6523.tim"/>
+    <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="Fake6523.tspec"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_VM6" xil_pn:name="Fake6523.vm6"/>
     <file xil_pn:fileType="FILE_FITTER_REPORT" xil_pn:name="Fake6523.xml"/>
     <file xil_pn:branch="Implementation" xil_pn:fileType="FILE_XST" xil_pn:name="Fake6523.xst"/>
@@ -56,10 +59,19 @@
   </files>
 
   <transforms xmlns="http://www.xilinx.com/XMLSchema">
-    <transform xil_pn:end_ts="1726337273" xil_pn:in_ck="3389918333788555" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="4809160305107765988" xil_pn:start_ts="1726337269">
+    <transform xil_pn:end_ts="1773867832" xil_pn:name="TRAN_copyInitialToXSTAbstractSynthesis" xil_pn:start_ts="1773867832">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1773867832" xil_pn:name="TRAN_schematicsToHdl" xil_pn:prop_ck="-2239080377587798002" xil_pn:start_ts="1773867832">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
+    </transform>
+    <transform xil_pn:end_ts="1773867838" xil_pn:in_ck="3389918333788555" xil_pn:name="TRANEXT_xstsynthesize_xc9500xl" xil_pn:prop_ck="4809160305107765988" xil_pn:start_ts="1773867832">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <outfile xil_pn:name=".lso"/>
       <outfile xil_pn:name="Fake6523.lso"/>
       <outfile xil_pn:name="Fake6523.ngc"/>
       <outfile xil_pn:name="Fake6523.ngr"/>
@@ -76,7 +88,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1726337276" xil_pn:in_ck="-2759229508827602784" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="-2081320714713457669" xil_pn:start_ts="1726337273">
+    <transform xil_pn:end_ts="1773867842" xil_pn:in_ck="-2759229508827602784" xil_pn:name="TRAN_ngdbuild" xil_pn:prop_ck="-2081320714713457669" xil_pn:start_ts="1773867838">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="Fake6523.bld"/>
@@ -85,8 +97,9 @@
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1726337283" xil_pn:in_ck="3691621065495731182" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-6784470280908785381" xil_pn:start_ts="1726337276">
+    <transform xil_pn:end_ts="1773867848" xil_pn:in_ck="3691621065495731182" xil_pn:name="TRANEXT_vm6File_xc9500xl" xil_pn:prop_ck="-6784470280908785381" xil_pn:start_ts="1773867842">
       <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="Fake6523.gyd"/>
       <outfile xil_pn:name="Fake6523.mfd"/>
@@ -94,21 +107,25 @@
       <outfile xil_pn:name="Fake6523.pad"/>
       <outfile xil_pn:name="Fake6523.pnx"/>
       <outfile xil_pn:name="Fake6523.rpt"/>
+      <outfile xil_pn:name="Fake6523.tim"/>
+      <outfile xil_pn:name="Fake6523.tspec"/>
       <outfile xil_pn:name="Fake6523.vm6"/>
       <outfile xil_pn:name="Fake6523.xml"/>
       <outfile xil_pn:name="Fake6523_build.xml"/>
       <outfile xil_pn:name="Fake6523_html"/>
       <outfile xil_pn:name="Fake6523_pad.csv"/>
     </transform>
-    <transform xil_pn:end_ts="1726337284" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1726337283">
+    <transform xil_pn:end_ts="1773867849" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRANEXT_crtProg_xc9500" xil_pn:prop_ck="-6294026017969277533" xil_pn:start_ts="1773867848">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="Fake6523.jed"/>
     </transform>
     <transform xil_pn:end_ts="1726337283" xil_pn:in_ck="3691621065495740046" xil_pn:name="TRAN_timRpt" xil_pn:prop_ck="111903974446" xil_pn:start_ts="1726337282">
-      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="AbortedRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForInputs"/>
+      <status xil_pn:value="InputChanged"/>
     </transform>
   </transforms>
 
