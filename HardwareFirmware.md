@@ -63,7 +63,7 @@ Parts to be soldered directly:
 * 1x XC9572XL-VQ64 CPLD: U1
 * 4x 0.1uF capacitor (0805 footprint): C1, C2, C3, C4
 * 2x 10K resistors (0805 footprint): R2, R3
-* 2x straight or angled push buttons: SW1, SW2
+* 2x straight or angled push buttons: SW1, SW2; use parts with at least 7-8mm stem, long enough to extend past the case
 * 1x DIP28 socket: U4
 * Arduino Mini Pro with ATmega328P 3.3V or its clone, e.g. SparkFun DEV-11114; unnamed clones usually have 'The Simple' text on bottom soldermask; there are two versions that differ by location of A6/A7 pins, both are supported
 
@@ -252,4 +252,15 @@ This saves `db12b.prg` patched directory browser that can be put on an SD card t
 
 Check the [games/](games/) subfolders. Each one has original disk images and the `Makefile` which applies patch over binaries to create a new disk image with game that can be loaded using standard TCBM protocol (`-tcbm`) or fastloader (`-tcbmfast`).
 
-<!--- XXX Cartridges --->
+### <a name='Cartridges'></a>Cartridges
+
+There is a place onboard for a 64K ROM/EPROM/EEPROM. This allows for two 32K cartridges: C1 (lower half) and C2 (upper half).
+
+Most of C16/116/Plus4 ROMs that you can find on [Plus4World](https://plus4world.powweb.com/) or [zimmers.net](https://www.zimmers.net/anonftp/pub/cbm/plus4/Tools/carts/index.html) work as C1 cartridge and will not allow you to exit to BASIC, so test in emulator first.
+
+The only two known to me cartridge ROMs that work as C2 are:
+
+- [Octasoft BASIC](https://plus4world.powweb.com/software/Octasoft_BASIC_V7_0) - not compatible with JiffyDOS
+- [Parobek](https://github.com/ytmytm/plus4-parobek)
+
+I highly recommend using Parobek from the very beginning as the main utility ROM.
