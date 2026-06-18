@@ -76,12 +76,14 @@ It has been confirmed that tcbm2sd works as a 1551 paddle cartridge replacememen
   - FEF0-FEF7 for device 8
   - FEC0-FEC7 for device 9
 
+### Pi1551
+
+[Pi1551](https://github.com/ytmytm/Pi1551) is a realtime, cycle-exact 1551 emulator based on RaspberryPi 3. It operates in 3.3V logic and can be connected only
+to tcbm2sd, not to the original paddle.
+
 ### Platform for future TCBM developments
 
-The paddle part has all TCBM bus signals exposed and can be used as the basis for future developments porting existing projects to TCBM bus, like:
-
-- Pi1551 - realtime, cycle-exact 1551 emulator
-- sd2tcbm - sd2iec port to TCBM bus
+The paddle part has all TCBM bus signals exposed and can be used as the basis for future developments porting existing projects to TCBM bus.
 
 For development another daughterboard (or a ready to use uC module) can be used. All the signals of TCBM bus are exposed at the cartridge edge (TCBM connector) or Arduino footprint. Signals are already in 3.3V logic, so no additional level shifter for Raspberry Pi is neccessary.
 
@@ -109,6 +111,8 @@ You might be also interested in a cartridge case. It should [fit inside this one
 <img src="media/71.case.jpg" width=640 alt="Side view">
 
 <img src="media/72.case.jpg" width=640 alt="Opened case">
+
+There is also an [updated case project](https://www.thingiverse.com/thing:7314711) that should fit revision 1.3 and 1.4 PCBs without any extra holes.
 
 ## Credits
 
