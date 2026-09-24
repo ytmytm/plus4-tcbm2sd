@@ -4,6 +4,9 @@
 
 CBM 1551 paddle replacement and/or mass storage using an SD card interfacing with the Commodore C16/116/Plus4 simulating a TCBM bus 1551 disk drive.
 
+This board can also serve as the Commodore-side TCBM interface for [Pi1551](https://github.com/ytmytm/Pi1551), a cycle-exact Commodore 1551 emulator for Raspberry Pi,
+using either the [Pi1551-HAT](https://github.com/ytmytm/Pi1551-HAT) or [Pi1551-III](https://github.com/ytmytm/Pi1551-III) interface.
+
 ## Detailed manuals
 
 - [User's manual](UserManual.md)
