@@ -17,6 +17,7 @@ using either the [Pi1551-HAT](https://github.com/ytmytm/Pi1551-HAT) or [Pi1551-I
 - supported by [Siz's I/O library v4](https://github.com/iszell/siziolib)
 - [GEOS for tcbm2sd (D64)](geos/geostcbm.d64)
 - [Collection of patched disk games](games/)
+- [Parobek function ROM](https://github.com/ytmytm/plus4-parobek)
 <!-- XXX patched cartridge images: OctaBASIC, Gamecart -->
 
 [ZIP archive of the above](https://drive.google.com/drive/folders/1UYzHO3PNRJw3JCk5QNncfK0rwXZ2pFXH?usp=drive_link)
