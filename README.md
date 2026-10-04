@@ -81,9 +81,9 @@ It has been confirmed that tcbm2sd works as a 1551 paddle cartridge replacement 
 
 - PLA 251641-3 and 6523T (28 pin triport) integrated into a single CPLD
 - low part count: CPLD, 3.3V voltage regulator and four capacitors
-- improved PLA equations make the paddle occupy only 8 I/O addresses
-  - FEF0-FEF7 for device 8
-  - FEC0-FEC7 for device 9
+- only 8 I/O addresses are needed for I/O, but certain fastloaders require the mirrored registers to be present, so we keep using whole 32-byte space like the original PLA:
+  - FEE0-FEFF (instead of FEF0-FEF7) for device 8
+  - FEC0-FEDF (instead of FEC0-FEC7) for device 9
 
 ### Platform for TCBM developments
 
