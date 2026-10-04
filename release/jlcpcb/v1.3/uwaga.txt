@@ -1,0 +1,9 @@
+nie zapomnieć zmienić nagłówki w pliku pos
+wszystko wczytuje z wielkim offsetem
+
+- rotacja U1 o 90 w lewo
+- XS przesunięte w lewo (kontrola od spodu w dziurkach)
+- C5 o 180
+- C6 o 180
+
+JLCPCB - feedback, że C5/C6/C7 mają za mały footprint
