@@ -8,6 +8,8 @@ CBM 1551 paddle replacement and/or mass storage using an SD card interfacing wit
 
 This board can also serve as the Commodore-side TCBM interface for the [Pi1551](https://github.com/ytmytm/Pi1551), a cycle-exact Commodore 1551 emulator for Raspberry Pi. It can be used with either the [Pi1551-HAT](https://github.com/ytmytm/PI1551-hat) or [Pi1551-III](https://github.com/ytmytm/PI1551-III) interface.
 
+It is also the TCBM interface for the [1551-rePico](https://github.com/ytmytm/1551-rePico), a 1551 drive replacement that uses a real 6510T with Raspberry Pico 2 emulating the analog parts.
+
 The [Parobek function ROM](https://github.com/ytmytm/plus4-parobek) is a useful way to populate the 32/64 KiB ROM socket. It includes the TCBM2SD boot software, so `boot.t2sd` is not needed when using that ROM.
 
 ## Detailed manuals
